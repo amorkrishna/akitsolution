@@ -1,0 +1,1 @@
+DELETE FROM customer_reviews WHERE id = 'cbbf07fa-33cb-490b-b325-299cb6a42757';

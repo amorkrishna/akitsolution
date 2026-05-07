@@ -1,0 +1,2 @@
+ALTER TABLE public.store_orders ADD COLUMN IF NOT EXISTS invoice_id UUID REFERENCES public.invoices(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_store_orders_invoice_id ON public.store_orders(invoice_id);

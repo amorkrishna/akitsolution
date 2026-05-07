@@ -1,0 +1,1 @@
+ALTER TABLE public.projects ADD COLUMN show_in_store boolean NOT NULL DEFAULT false;

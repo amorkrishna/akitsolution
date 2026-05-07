@@ -1,0 +1,4 @@
+project_id = "idrykbgzrymiileewgbg"
+
+[functions.ai-quote-builder]
+verify_jwt = false
