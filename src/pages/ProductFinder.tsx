@@ -80,7 +80,7 @@ export default function ProductFinder() {
         setStatusText(`"${keyword}" দিয়ে Google-এ খুঁজছে...`);
         setProgress(30);
         const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(keyword + " buy price")}&tbm=shop`;
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`;
+        const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(searchUrl)}`;
         
         try {
           const res = await fetch(proxyUrl);
@@ -109,7 +109,7 @@ export default function ProductFinder() {
           setStatusText(`স্ক্যানিং (${i + 1}/${urls.length}): ${currentUrl.slice(0, 50)}...`);
           
           try {
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(currentUrl)}`;
+            const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(currentUrl)}`;
             const res = await fetch(proxyUrl);
             if (!res.ok) throw new Error("Failed to fetch URL via proxy");
             
