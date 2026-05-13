@@ -179,26 +179,30 @@ export default function ProductFinder() {
         for (const product of selected) {
           setStatusText(`ইমপোর্ট হচ্ছে: ${product.name} (${imported + 1}/${selected.length})`);
           setProgress(Math.round((imported / selected.length) * 100));
+          const firstImage = product.image_urls.length > 0 ? product.image_urls[0] : (product.image_url || null);
           const { data: insertedProduct, error: insertError } = await supabase.from("products").insert({
             name: product.name, price: product.price, description: product.description || "",
             category: product.category, brand: product.brand, stock_quantity: 0, show_in_store: true,
             discount_percentage: product.discount_percentage || 0, cash_discount_price: product.cash_discount_price || null,
+            image_url: firstImage
           }).select("id").single();
           if (insertError) { toast.error(`"${product.name}" ইমপোর্ট করতে সমস্যা হয়েছে`); continue; }
           const imagesToProcess = product.image_urls.length > 0 ? product.image_urls : (product.image_url ? [product.image_url] : []);
           if (imagesToProcess.length > 0 && insertedProduct) {
             for (let imgIdx = 0; imgIdx < imagesToProcess.length; imgIdx++) {
+              let finalImageUrl = imagesToProcess[imgIdx];
               try {
                 const { data: imgData } = await supabase.functions.invoke("product-image-proxy", {
                   body: { image_url: imagesToProcess[imgIdx], product_id: insertedProduct.id },
                 });
                 if (imgData?.public_url) {
+                  finalImageUrl = imgData.public_url;
                   if (imgIdx === 0) {
-                    await supabase.from("products").update({ image_url: imgData.public_url }).eq("id", insertedProduct.id);
+                    await supabase.from("products").update({ image_url: finalImageUrl }).eq("id", insertedProduct.id);
                   }
-                  await supabase.from("product_images").insert({ product_id: insertedProduct.id, image_url: imgData.public_url, sort_order: imgIdx });
                 }
               } catch (imgErr) { console.error("Image proxy error:", imgErr); }
+              await supabase.from("product_images").insert({ product_id: insertedProduct.id, image_url: finalImageUrl, sort_order: imgIdx });
             }
           }
           imported++;
