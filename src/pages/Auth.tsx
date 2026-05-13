@@ -28,16 +28,9 @@ export default function Auth() {
         .eq("user_id", userId)
         .single();
 
-      if (data && !data.is_approved) {
-        await supabase.auth.signOut();
-        toast({
-          title: "Account Pending Approval",
-          description: "Your account is waiting for admin approval. Please contact the administrator.",
-          variant: "destructive",
-        });
-        return;
+      if (data) {
+        navigate("/dashboard");
       }
-      navigate("/dashboard");
     };
 
     supabase.auth.onAuthStateChange((_, session) => {
@@ -61,29 +54,13 @@ export default function Auth() {
         if (error) throw error;
         toast({
           title: "Account created!",
-          description: "Your account is pending admin approval. You'll be able to sign in once approved.",
+          description: "Your account has been created successfully.",
         });
       } else {
         const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
-        if (signInData.user) {
-          const { data: roleData } = await supabase
-            .from("user_roles")
-            .select("is_approved")
-            .eq("user_id", signInData.user.id)
-            .single();
-
-          if (roleData && !roleData.is_approved) {
-            await supabase.auth.signOut();
-            toast({
-              title: "Account Pending Approval",
-              description: "Your account is waiting for admin approval. Please contact the administrator.",
-              variant: "destructive",
-            });
-            return;
-          }
-        }
+        // No approval check required anymore
       }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
