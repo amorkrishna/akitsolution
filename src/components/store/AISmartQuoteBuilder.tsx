@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,24 +72,125 @@ export function AISmartQuoteBuilder({
     setLoading(true);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-quote-builder", {
-        body: {
-          requirement: requirement.trim(),
-          customer_name: customerName.trim() || null,
-          customer_phone: customerPhone.trim() || null,
-          language,
-        },
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) throw new Error("Gemini API Key is not configured.");
+
+      // Fetch products and services from Supabase
+      const { data: products } = await supabase
+        .from("products")
+        .select("id, name, category, brand, price, stock_quantity, description")
+        .eq("show_in_store", true)
+        .gt("stock_quantity", 0)
+        .limit(300);
+
+      const { data: services } = await supabase
+        .from("services")
+        .select("id, name, category, price, description")
+        .eq("status", "active")
+        .limit(100);
+
+      const catalog = {
+        products: (products || []).map(p => ({
+          id: p.id, name: p.name, category: p.category, brand: p.brand,
+          price: Number(p.price), stock: p.stock_quantity, desc: p.description?.slice(0, 120) || "",
+        })),
+        services: (services || []).map(s => ({
+          id: s.id, name: s.name, category: s.category, price: Number(s.price),
+        })),
+      };
+
+      const lang = language === "en" ? "English" : "Bengali (Bangla)";
+      const systemPrompt = `You are AK IT Solution's expert sales engineer for CCTV, attendance devices, networking and IT equipment in Bangladesh. Currency is BDT (৳).
+
+You will receive a customer requirement. Pick the BEST matching products and services from the provided catalog ONLY. Never invent items. Recommend reasonable quantities (e.g. cables, connectors, hard drive sized for camera count, DVR/NVR matching channel count, monitor if needed, installation service).
+
+Respond in ${lang} for human-readable fields. Be concise, practical, and price-conscious.
+
+Return ONLY valid JSON (no markdown, no code blocks), with this exact shape:
+{
+  "summary": "1-2 sentence summary of what was selected and why",
+  "items": [
+    { "type": "product" | "service", "id": "<catalog id>", "name": "<exact catalog name>", "quantity": <int>, "unit_price": <number>, "reason": "<short why>" }
+  ],
+  "notes": "any installation/warranty/delivery note (1-2 lines)"
+}`;
+
+      const userPrompt = `Customer requirement: "${requirement.trim()}"\n\nAvailable catalog:\n${JSON.stringify(catalog)}`;
+
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+        systemInstruction: systemPrompt,
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (!data?.items?.length) {
+
+      const response = await model.generateContent(userPrompt);
+      let content = response.response.text();
+      
+      content = content.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
+
+      let parsed: any;
+      try { parsed = JSON.parse(content); } catch { parsed = { summary: content, items: [], notes: "" }; }
+
+      const productMap = new Map(catalog.products.map(p => [p.id, p]));
+      const serviceMap = new Map(catalog.services.map(s => [s.id, s]));
+      
+      const validItems = (parsed.items || []).map((it: any) => {
+        const ref = it.type === "service" ? serviceMap.get(it.id) : productMap.get(it.id);
+        if (!ref) return null;
+        const qty = Math.max(1, parseInt(it.quantity) || 1);
+        return {
+          type: it.type,
+          id: it.id,
+          name: ref.name,
+          category: (ref as any).category,
+          quantity: qty,
+          unit_price: Number(ref.price),
+          total: Number(ref.price) * qty,
+          reason: String(it.reason || "").slice(0, 200),
+        };
+      }).filter(Boolean);
+
+      if (!validItems.length) {
         toast.error(t("কোনো মিলিয়ে পণ্য পাওয়া যায়নি", "No matching items found"));
-      } else {
-        setResult(data as QuoteResult);
-        if (data.lead_id) {
-          toast.success(t("কোট তৈরি হয়েছে — আমরা যোগাযোগ করবো", "Quote created — we'll reach out"));
+        setLoading(false);
+        return;
+      }
+
+      const subtotal = validItems.reduce((s: number, i: any) => s + i.total, 0);
+
+      // Attempt to save lead
+      let lead_id = null;
+      if (customerName && customerPhone) {
+        try {
+          // Fire and forget insertion, won't block if RLS fails without select
+          const { error: dbErr } = await supabase.from("leads").insert({
+            name: customerName,
+            phone: customerPhone,
+            service_type: "AI Quote",
+            source: "AI Quote Builder",
+            status: "new",
+            message: requirement,
+            notes: `AI generated quote — Subtotal ৳${subtotal.toLocaleString()}\n\nItems:\n${validItems.map((i: any) => `• ${i.name} ×${i.quantity} = ৳${i.total.toLocaleString()}`).join("\n")}\n\n${parsed.notes || ""}`,
+          });
+          if (!dbErr) lead_id = "generated";
+        } catch (e) {
+          console.warn("Failed to insert lead, ignoring RLS error:", e);
         }
       }
+
+      const quoteResult: QuoteResult = {
+        summary: parsed.summary || "",
+        notes: parsed.notes || "",
+        items: validItems,
+        subtotal,
+        lead_id,
+      };
+
+      setResult(quoteResult);
+      if (lead_id) {
+        toast.success(t("কোট তৈরি হয়েছে — আমরা যোগাযোগ করবো", "Quote created — we'll reach out"));
+      }
+
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message || t("ত্রুটি ঘটেছে", "Something went wrong"));
