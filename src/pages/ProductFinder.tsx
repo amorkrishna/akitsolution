@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { useQueryClient } from "@tanstack/react-query";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 type ExtractedProduct = {
   name: string;
@@ -52,46 +53,103 @@ export default function ProductFinder() {
   const queryClient = useQueryClient();
 
   const handleScan = async () => {
-    if (mode === "keyword") {
-      if (!keyword.trim()) { toast.error("কীওয়ার্ড লিখুন"); return; }
-      setLoading(true); setProducts([]); setProgress(20);
-      setStatusText(`"${keyword}" দিয়ে Google-এ খুঁজছে...`);
-      try {
-        const { data, error } = await supabase.functions.invoke("product-scraper", { body: { keyword: keyword.trim() } });
-        if (error) throw error;
-        if (data?.error) { toast.error(data.error); return; }
-        const extracted = (data?.products || []).map((p: any) => ({ ...p, selected: true, discount_percentage: p.discount_percentage ?? 0, cash_discount_price: p.cash_discount_price ?? null, image_urls: [p.image_url, ...(p.image_urls || [])].filter((u: string) => !!u).filter((u: string, i: number, a: string[]) => a.indexOf(u) === i) }));
-        setProducts(extracted); setProgress(100);
-        setStatusText(`"${keyword}" থেকে ${extracted.length}টি প্রোডাক্ট পাওয়া গেছে`);
-        extracted.length === 0 ? toast.info("কোনো প্রোডাক্ট পাওয়া যায়নি") : toast.success(`${extracted.length}টি প্রোডাক্ট পাওয়া গেছে!`);
-      } catch (err: any) { toast.error(err.message || "সার্চ করতে সমস্যা হয়েছে"); setProgress(0); setStatusText(""); }
-      finally { setLoading(false); }
+    const urls = mode === "bulk" ? bulkUrls.split("\n").map((u) => u.trim()).filter((u) => u.length > 0) : mode === "single" ? [url.trim()] : [];
+    
+    if (mode === "keyword" && !keyword.trim()) { toast.error("কীওয়ার্ড লিখুন"); return; }
+    if (mode !== "keyword" && (urls.length === 0 || !urls[0])) { toast.error("অন্তত একটি URL দিন"); return; }
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      toast.error("Gemini API Key is not configured in .env file");
       return;
     }
 
-    const urls = mode === "bulk" ? bulkUrls.split("\n").map((u) => u.trim()).filter((u) => u.length > 0) : [url.trim()];
-    if (urls.length === 0 || (urls.length === 1 && !urls[0])) { toast.error("অন্তত একটি URL দিন"); return; }
-
-    setLoading(true); setProducts([]);
+    setLoading(true); 
+    setProducts([]); 
+    setProgress(10);
+    
     let allProducts: ExtractedProduct[] = [];
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      systemInstruction: `You are a product data extractor. Given webpage content, extract ALL products found. For each product extract name, price (in BDT, convert if needed: 1 USD ≈ 120 BDT), discount_percentage, cash_discount_price, description, category, brand, image_url, original_price. Return ONLY valid JSON (no markdown) with this exact shape: { "products": [ { "name": "string", "price": number, "discount_percentage": number, "cash_discount_price": number | null, "description": "string", "category": "CCTV" | "Networking" | "Accessories" | "Computer" | "Printer" | "Software" | "Server" | "Storage" | "Smart Home" | "Audio/Video" | "Mobile" | "Other", "brand": "string", "image_url": "string", "original_price": "string" } ] }`,
+    });
+
     try {
-      for (let i = 0; i < urls.length; i++) {
-        const currentUrl = urls[i];
-        setProgress(Math.round(((i) / urls.length) * 80) + 10);
-        setStatusText(`স্ক্যানিং (${i + 1}/${urls.length}): ${currentUrl.slice(0, 50)}...`);
+      if (mode === "keyword") {
+        setStatusText(`"${keyword}" দিয়ে Google-এ খুঁজছে...`);
+        setProgress(30);
+        const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(keyword + " buy price")}&tbm=shop`;
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`;
+        
         try {
-          const { data, error } = await supabase.functions.invoke("product-scraper", { body: { url: currentUrl } });
-          if (error) { toast.error(`ব্যর্থ: ${currentUrl.slice(0, 40)}...`); continue; }
-          if (data?.error) { toast.error(`${currentUrl.slice(0, 30)}: ${data.error}`); continue; }
-          const extracted = (data?.products || []).map((p: any) => ({ ...p, selected: true, discount_percentage: p.discount_percentage ?? 0, cash_discount_price: p.cash_discount_price ?? null, image_urls: [p.image_url, ...(p.image_urls || [])].filter((u: string) => !!u).filter((u: string, i: number, a: string[]) => a.indexOf(u) === i) }));
-          allProducts = [...allProducts, ...extracted];
-        } catch { toast.error(`ব্যর্থ: ${currentUrl.slice(0, 40)}...`); }
+          const res = await fetch(proxyUrl);
+          if (!res.ok) throw new Error("Failed to fetch from proxy");
+          let html = await res.text();
+          html = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 30000);
+          
+          setStatusText(`AI ডেটা এক্সট্রাক্ট করছে...`);
+          setProgress(60);
+          
+          const result = await model.generateContent(`Extract products from this webpage:\n\n${html}`);
+          let content = result.response.text().replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
+          let extracted = JSON.parse(content);
+          
+          const formatted = (extracted.products || []).map((p: any) => ({ ...p, selected: true, discount_percentage: p.discount_percentage ?? 0, cash_discount_price: p.cash_discount_price ?? null, image_urls: [p.image_url, ...(p.image_urls || [])].filter((u: string) => !!u).filter((u: string, i: number, a: string[]) => a.indexOf(u) === i) }));
+          allProducts = formatted;
+        } catch (e: any) {
+          toast.error("সার্চ করতে সমস্যা হয়েছে: " + e.message);
+        }
+      } else {
+        for (let i = 0; i < urls.length; i++) {
+          let currentUrl = urls[i];
+          if (!currentUrl.startsWith("http")) currentUrl = "https://" + currentUrl;
+          
+          setProgress(Math.round(((i) / urls.length) * 80) + 10);
+          setStatusText(`স্ক্যানিং (${i + 1}/${urls.length}): ${currentUrl.slice(0, 50)}...`);
+          
+          try {
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(currentUrl)}`;
+            const res = await fetch(proxyUrl);
+            if (!res.ok) throw new Error("Failed to fetch URL via proxy");
+            
+            const html = await res.text();
+            const cleanHtml = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 30000);
+            
+            const imgMatches = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*/gi) || [];
+            const imageUrls = imgMatches
+              .map((tag: string) => { const match = tag.match(/src=["']([^"']+)["']/); return match ? match[1] : null; })
+              .filter((u: string | null): u is string => !!u && (u.startsWith("http") || u.startsWith("//")))
+              .map((u: string) => u.startsWith("//") ? `https:${u}` : u)
+              .slice(0, 50);
+              
+            const pageContent = cleanHtml + "\n\n--- IMAGE URLs FOUND ON PAGE ---\n" + imageUrls.join("\n");
+            
+            setStatusText(`AI ডেটা এক্সট্রাক্ট করছে (${i + 1}/${urls.length})...`);
+            
+            const result = await model.generateContent(`Extract products from this webpage (URL: ${currentUrl}):\n\n${pageContent}`);
+            let content = result.response.text().replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
+            let extracted = JSON.parse(content);
+            
+            const formatted = (extracted.products || []).map((p: any) => ({ ...p, selected: true, discount_percentage: p.discount_percentage ?? 0, cash_discount_price: p.cash_discount_price ?? null, image_urls: [p.image_url, ...(p.image_urls || [])].filter((u: string) => !!u).filter((u: string, i: number, a: string[]) => a.indexOf(u) === i) }));
+            allProducts = [...allProducts, ...formatted];
+          } catch (e: any) {
+            toast.error(`ব্যর্থ: ${currentUrl.slice(0, 40)}... (${e.message})`);
+          }
+        }
       }
-      setProducts(allProducts); setProgress(100);
-      setStatusText(`মোট ${allProducts.length}টি প্রোডাক্ট পাওয়া গেছে (${urls.length}টি URL থেকে)`);
+      
+      setProducts(allProducts); 
+      setProgress(100);
+      setStatusText(`মোট ${allProducts.length}টি প্রোডাক্ট পাওয়া গেছে`);
       allProducts.length === 0 ? toast.info("কোনো প্রোডাক্ট পাওয়া যায়নি") : toast.success(`${allProducts.length}টি প্রোডাক্ট পাওয়া গেছে!`);
-    } catch (err: any) { toast.error(err.message || "স্ক্যান করতে সমস্যা হয়েছে"); setProgress(0); setStatusText(""); }
-    finally { setLoading(false); }
+    } catch (err: any) { 
+      toast.error(err.message || "স্ক্যান করতে সমস্যা হয়েছে"); 
+      setProgress(0); 
+      setStatusText(""); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const toggleProduct = (index: number) => setProducts((prev) => prev.map((p, i) => (i === index ? { ...p, selected: !p.selected } : p)));
