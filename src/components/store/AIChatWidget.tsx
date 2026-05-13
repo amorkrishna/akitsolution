@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, Sparkles, Package, Search, BadgePercent, Wrench, FolderOpen, ShoppingCart, Bot, Zap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
+import { supabase } from "@/integrations/supabase/client";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/store-ai-chat`;
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 const quickActions = [
   { icon: Search, label: "প্রোডাক্ট খুঁজুন", message: "আমি একটা ভালো CCTV ক্যামেরা খুঁজছি, আমাকে কিছু দেখান", gradient: "from-blue-500 to-cyan-500" },
@@ -26,10 +28,132 @@ export function AIChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(() => generateSessionId());
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [systemPrompt, setSystemPrompt] = useState<string>("");
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
+
+  useEffect(() => {
+    if (open && !systemPrompt) {
+      loadContext();
+    }
+  }, [open]);
+
+  const loadContext = async () => {
+    try {
+      const [productsRes, servicesRes, portfolioRes, reviewsRes, servicingRes] = await Promise.all([
+        supabase.from("products").select("name, price, category, brand, description, stock_quantity, discount_percentage, cash_discount_price").eq("show_in_store", true).limit(200),
+        supabase.from("services").select("name, price, category, description").eq("status", "active").limit(50),
+        supabase.from("portfolio_projects").select("title, category, client_name, location, description, is_featured").order("created_at", { ascending: false }).limit(20),
+        supabase.from("customer_reviews").select("reviewer_name, reviewer_role, rating, review_text").eq("is_published", true).order("sort_order").limit(10),
+        supabase.from("servicing").select("category, description, client_name, status").order("created_at", { ascending: false }).limit(20),
+      ]);
+
+      const products = productsRes.data || [];
+      const services = servicesRes.data || [];
+      const portfolio = portfolioRes.data || [];
+      const reviews = reviewsRes.data || [];
+      const recentServicing = servicingRes.data || [];
+
+      const productCatalog = products.map(p => {
+        const discounted = p.discount_percentage ? Math.round(p.price * (1 - p.discount_percentage / 100)) : null;
+        return `- ${p.name} | ৳${p.price}${discounted ? ` (${p.discount_percentage}% ছাড়ে ৳${discounted})` : ""}${p.cash_discount_price ? ` | ক্যাশ: ৳${p.cash_discount_price}` : ""} | ক্যাটাগরি: ${p.category} | ব্র্যান্ড: ${p.brand || "N/A"} | স্টক: ${p.stock_quantity > 0 ? "আছে" : "নেই"}${p.description ? ` | বিবরণ: ${p.description.substring(0, 100)}` : ""}`;
+      }).join("\n");
+
+      const serviceCatalog = services.map(s =>
+        `- ${s.name} | ৳${s.price} | ক্যাটাগরি: ${s.category}${s.description ? ` | ${s.description.substring(0, 80)}` : ""}`
+      ).join("\n");
+
+      const portfolioText = portfolio.length > 0
+        ? portfolio.map(p => `- ${p.title} | ক্যাটাগরি: ${p.category}${p.client_name ? ` | ক্লায়েন্ট: ${p.client_name}` : ""}${p.location ? ` | লোকেশন: ${p.location}` : ""}${p.is_featured ? " ⭐" : ""}`).join("\n")
+        : "কোনো প্রজেক্ট নেই";
+
+      const reviewsText = reviews.length > 0
+        ? reviews.map(r => `- ${r.reviewer_name}${r.reviewer_role ? ` (${r.reviewer_role})` : ""}: "${r.review_text}" — ⭐${r.rating}/5`).join("\n")
+        : "";
+
+      const servicingCategories = [...new Set(recentServicing.map(s => s.category))].join(", ");
+
+      const prompt = `তুমি "AK IT Solution" এর AI সহকারী। তোমার নাম "AK Assistant"। তুমি একজন অভিজ্ঞ সেলস ও টেকনিক্যাল কনসালটেন্ট।
+
+## ভাষার নিয়ম (অত্যন্ত গুরুত্বপূর্ণ)
+- **সবসময় বাংলায় কথা বলবে** — ডিফল্ট ভাষা বাংলা। কাস্টমার ইংরেজিতে লিখলেও বাংলায় উত্তর দাও, যদি না কাস্টমার স্পষ্টভাবে ইংরেজিতে চায়।
+- **একদম সহজ, মুখের ভাষায় কথা বলবে** — যেমন মানুষ দোকানে গিয়ে কথা বলে, সেভাবে। কঠিন/ফর্মাল শব্দ এড়িয়ে চলো।
+- **ইংরেজি শব্দ যতটা সম্ভব এড়াও** — "product" না বলে "জিনিস" বা "মাল" বলো, "discount" না বলে "ছাড়" বলো।
+- **আন্তরিক ও বন্ধুত্বপূর্ণ ভাষা ব্যবহার করো** — "ভাই", "আপু", "জি" এভাবে সম্বোধন করো।
+- **বানলিশ (বাংলা + ইংরেজি মিশ্রিত) বুঝতে পারবে** — কাস্টমার যদি "camera lagabo", "dam koto" এভাবে লেখে, সেটাও বুঝবে এবং বাংলায় উত্তর দিবে।
+
+## তোমার মূল দায়িত্ব
+
+### ১. টেকনিক্যাল এক্সপার্ট হিসেবে কাজ করা
+তুমি নিচের বিষয়গুলোতে গভীর জ্ঞান রাখো:
+
+**CCTV সিস্টেম:**
+- IP ক্যামেরা vs Analog ক্যামেরা: IP ক্যামেরা রিমোট অ্যাক্সেস দেয়, উচ্চ রেজোলিউশন (2MP-8MP)।
+- NVR vs DVR: NVR IP ক্যামেরার জন্য (নেটওয়ার্ক ভিত্তিক), DVR এনালগ ক্যামেরার জন্য।
+- মেগাপিক্সেল গাইড: ছোট রুম (2MP যথেষ্ট), দোকান/অফিস (2MP-4MP), বড় এলাকা (4MP-8MP)।
+
+**অ্যাটেনডেন্স ডিভাইস:**
+- ফিঙ্গারপ্রিন্ট, ফেস রিকগনিশন, কার্ড বেসড, পিন কোড ভিত্তিক।
+
+**নেটওয়ার্কিং:**
+- রাউটার, সুইচ, অ্যাক্সেস পয়েন্ট, ক্যাবলিং।
+
+**IT সার্ভিস:**
+- কম্পিউটার/ল্যাপটপ সেটআপ, সফটওয়্যার ইনস্টল, নেটওয়ার্ক কনফিগারেশন, সার্ভার সেটআপ।
+
+### ২. স্মার্ট সেলস টেকনিক
+- প্রথমে প্রিমিয়াম প্রোডাক্ট দেখাও, তারপর মিড-রেঞ্জ।
+- সোশ্যাল প্রুফ ও সফল প্রজেক্টের রেফারেন্স দাও।
+- ক্রস-সেলিং: ক্যামেরা নিলে DVR/NVR, হার্ডডিস্ক, ইনস্টলেশন সার্ভিস সাজেস্ট করো।
+
+### ৩. আপত্তি হ্যান্ডলিং
+- "দাম বেশি" → ওয়ারেন্টি ও ভ্যালু বুঝিয়ে বলো, ক্যাশ পেমেন্টে ছাড়ের কথা বলো।
+- "ভেবে দেখি" → সীমিত সময়ের অফারের কথা বলো, নম্বর নিয়ে রাখো।
+
+### ৪. কাস্টমারের তথ্য সংগ্রহ (অত্যন্ত গুরুত্বপূর্ণ)
+- কথোপকথনে ২-৩টি মেসেজ পর স্বাভাবিকভাবে কাস্টমারের নাম ও ফোন নম্বর জানতে চাও।
+
+### ৫. WhatsApp এ অর্ডার পাঠানো
+কাস্টমার অর্ডার করতে চাইলে WhatsApp অর্ডার লিংক তৈরি করো:
+- লিংক ফরম্যাট: \`[📱 WhatsApp এ অর্ডার করুন](https://wa.me/8801919060590?text=ORDER_TEXT)\`
+- ORDER_TEXT অবশ্যই URL encoded হতে হবে
+- কাস্টমার সরাসরি ফোনে কথা বলতে চাইলে বলো: "📞 এই নম্বরে কল করুন: 01919-060590"
+
+## দোকানের তথ্য
+- নাম: AK IT Solution
+- ঠিকানা: Suvastu Arcade (ICT Bhaban), Lift-6, Shop-44, 45, 74/3, S.C.C Road, Mohottuli, Dhaka
+- ফোন: 01919-060590, 01762-060590
+- WhatsApp: 8801919060590
+- ইমেইল: akitsolution77@gmail.com
+- ডেলিভারি: ঢাকার মধ্যে ১-২ দিন, ঢাকার বাইরে ২-৫ দিন
+- পেমেন্ট: bKash, Nagad, Rocket, ক্যাশ, ব্যাংক ট্রান্সফার
+- সার্ভিসিং: ${servicingCategories || "CCTV, Networking, Computer"} ক্যাটাগরিতে সার্ভিসিং দিচ্ছি
+
+## প্রোডাক্ট ক্যাটালগ
+${productCatalog || "কোনো প্রোডাক্ট নেই"}
+
+## সার্ভিস ক্যাটালগ
+${serviceCatalog || "কোনো সার্ভিস নেই"}
+
+## আমাদের সম্পন্ন প্রজেক্ট (সোশ্যাল প্রুফ হিসেবে ব্যবহার করো)
+${portfolioText}
+
+${reviewsText ? "## কাস্টমার রিভিউ (বিশ্বাসযোগ্যতা বাড়াতে উল্লেখ করো)\\n" + reviewsText : ""}
+
+## নিয়ম:
+- সবসময় বিনয়ী, পেশাদার এবং উৎসাহী থাকো
+- দাম বাংলা টাকায় (৳) দেখাও
+- Markdown ফরম্যাট ব্যবহার করো (বোল্ড, লিস্ট, হেডিং)
+- কাস্টমার অর্ডার করতে চাইলে WhatsApp অর্ডার লিংক দাও`;
+      
+      setSystemPrompt(prompt);
+    } catch (e) {
+      console.error("Failed to load context", e);
+      setSystemPrompt("তুমি AK IT Solution এর AI সহকারী।");
+    }
+  };
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -39,47 +163,104 @@ export function AIChatWidget() {
     setInput("");
     setIsLoading(true);
     let assistantSoFar = "";
+    
     try {
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ messages: allMessages, session_id: sessionId }),
-      });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: "সমস্যা হয়েছে" }));
-        setMessages(prev => [...prev, { role: "assistant", content: `❌ ${err.error || "সমস্যা হয়েছে, আবার চেষ্টা করুন।"}` }]);
-        setIsLoading(false); return;
-      }
-      if (!resp.body) throw new Error("No stream");
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-        let ni: number;
-        while ((ni = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, ni);
-          textBuffer = textBuffer.slice(ni + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "" || !line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              assistantSoFar += content;
-              setMessages(prev => {
-                const last = prev[prev.length - 1];
-                if (last?.role === "assistant") return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantSoFar } : m);
-                return [...prev, { role: "assistant", content: assistantSoFar }];
-              });
-            }
-          } catch { textBuffer = line + "\n" + textBuffer; break; }
+      // Save session info before calling AI
+      const allText = allMessages.map((m: any) => m.content).join(" ");
+      const phoneMatch = allText.match(/(?:01[3-9]\d{8}|(?:\+?88)?01[3-9]\d{8})/);
+      const customerPhone = phoneMatch ? phoneMatch[0].replace(/^\+?88/, "") : null;
+
+      let customerName: string | null = null;
+      const userMessages = allMessages.filter((m: any) => m.role === "user");
+      for (const msg of userMessages) {
+        const nameMatch = msg.content.match(/(?:আমার নাম|my name is|নাম হলো|I am|আমি হলাম|আমি)\s+([^\s,.।]+(?:\s+[^\s,.।]+)?)/i);
+        if (nameMatch) {
+          customerName = nameMatch[1].trim();
+          break;
         }
       }
+
+      const lastUserMsg = userMessages[userMessages.length - 1]?.content || "";
+      const summary = lastUserMsg.substring(0, 200);
+
+      const allUserText = userMessages.map((m: any) => m.content).join(" ").toLowerCase();
+      let serviceType = "General";
+      if (allUserText.match(/cctv|ক্যামেরা|camera|সিসিটিভি|nvr|dvr/)) serviceType = "CCTV";
+      else if (allUserText.match(/attendance|অ্যাটেনডেন্স|হাজিরা|fingerprint/)) serviceType = "Attendance";
+      else if (allUserText.match(/network|নেটওয়ার্ক|router|রাউটার|wifi|ওয়াইফাই/)) serviceType = "Networking";
+      else if (allUserText.match(/computer|কম্পিউটার|laptop|ল্যাপটপ|pc|পিসি/)) serviceType = "Computer";
+      else if (allUserText.match(/service|সার্ভিস|repair|মেরামত|ঠিক/)) serviceType = "Servicing";
+
+      try {
+        await supabase.from("ai_chat_sessions").upsert({
+          session_id: sessionId,
+          customer_phone: customerPhone,
+          customer_name: customerName,
+          messages: allMessages,
+          summary,
+          status: "active",
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "session_id" });
+
+        if (customerName && customerPhone) {
+          const { data: existingLead } = await supabase.from("leads").select("id").eq("phone", customerPhone).eq("source", "AI Chat").limit(1);
+          if (!existingLead || existingLead.length === 0) {
+            await supabase.from("leads").insert({
+              name: customerName,
+              phone: customerPhone,
+              source: "AI Chat",
+              service_type: serviceType,
+              status: "new",
+              message: `AI চ্যাট থেকে স্বয়ংক্রিয়ভাবে তৈরি। আলোচনার বিষয়: ${summary}`,
+              notes: `Session ID: ${sessionId}`,
+            });
+          }
+        }
+      } catch (dbErr) {
+        console.warn("Could not save session to database (likely RLS policy restriction):", dbErr);
+      }
+
+      // Gemini API Setup
+      if (!GEMINI_API_KEY) throw new Error("Gemini API key is missing");
+      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+        systemInstruction: systemPrompt || "তুমি AK IT Solution এর AI সহকারী।",
+      });
+
+      const history = messages.map(m => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      }));
+
+      const chat = model.startChat({
+        history,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+      });
+
+      const result = await chat.sendMessageStream(text);
+      
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        assistantSoFar += chunkText;
+        setMessages(prev => {
+          const last = prev[prev.length - 1];
+          if (last?.role === "assistant") return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantSoFar } : m);
+          return [...prev, { role: "assistant", content: assistantSoFar }];
+        });
+      }
+
+      // Final upsert to include the complete assistant response
+      try {
+        await supabase.from("ai_chat_sessions").upsert({
+          session_id: sessionId,
+          messages: [...allMessages, { role: "assistant", content: assistantSoFar }],
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "session_id" });
+      } catch (dbErr) {
+        console.warn("Could not save final session to database:", dbErr);
+      }
+
     } catch (e) {
       console.error("Chat error:", e);
       if (!assistantSoFar) setMessages(prev => [...prev, { role: "assistant", content: "❌ সংযোগে সমস্যা, আবার চেষ্টা করুন।" }]);
