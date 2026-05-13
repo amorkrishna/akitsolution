@@ -198,7 +198,7 @@ export default function CreateQuotation() {
           </Card>
 
           {/* Add Item Form */}
-          <Card className="glass-card">
+          <Card className="glass-card relative z-20">
             <CardHeader><CardTitle className="text-lg">Add Items from Catalog</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">

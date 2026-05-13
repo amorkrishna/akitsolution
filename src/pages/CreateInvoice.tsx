@@ -326,7 +326,7 @@ export default function CreateInvoice() {
           <BarcodeScanner onBarcodeDetected={handleBarcodeDetected} />
 
           {/* Add Item Form */}
-          <Card className="glass-card">
+          <Card className="glass-card relative z-20">
             <CardHeader><CardTitle className="text-lg">Add Line Item</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
