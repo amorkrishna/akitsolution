@@ -710,21 +710,22 @@ export default function Products() {
             </DialogHeader>
             <div className="space-y-6 pt-4">
               {/* Current Image Preview */}
-              {aiEditingProductId && (() => {
-                const prod = products?.find((p: any) => p.id === aiEditingProductId);
-                return (
-                  <div className="relative group aspect-video rounded-2xl overflow-hidden bg-black/40 border border-white/5 shadow-inner">
-                    {prod?.image_url ? (
-                      <img src={prod.image_url} alt="" className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <ImageIcon className="h-12 w-12 text-white/10" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                );
-              })()}
+              {aiEditingProductId && (
+                <div className="relative group aspect-video rounded-2xl overflow-hidden bg-black/40 border border-white/5 shadow-inner">
+                  {products?.find((p: any) => p.id === aiEditingProductId)?.image_url ? (
+                    <img 
+                      src={products.find((p: any) => p.id === aiEditingProductId)!.image_url} 
+                      alt="" 
+                      className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" 
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <ImageIcon className="h-12 w-12 text-white/10" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              )}
 
               {/* Quick Suggestions */}
               <div className="space-y-3">
