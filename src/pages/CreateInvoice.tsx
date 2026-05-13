@@ -322,6 +322,25 @@ export default function CreateInvoice() {
             </CardContent>
           </Card>
 
+          {/* Summary Card - Moved to Top */}
+          <Card className="glass-card">
+            <CardContent className="pt-6 space-y-2 text-sm">
+              <div className="flex justify-between items-center bg-primary/5 p-3 rounded-xl border border-primary/10">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-primary/10">
+                    <Plus className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="font-bold text-primary">Running Total</span>
+                </div>
+                <span className="text-2xl font-black text-primary">৳{total.toLocaleString()}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-2 px-1">
+                <div className="flex justify-between border-r border-border/50 pr-4"><span className="text-muted-foreground">Subtotal</span><span className="font-medium text-foreground">৳{subtotal.toLocaleString()}</span></div>
+                <div className="flex justify-between pl-4"><span className="text-muted-foreground">Tax ({taxRate}%)</span><span className="font-medium text-foreground">৳{taxAmount.toLocaleString()}</span></div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Barcode Scanner */}
           <BarcodeScanner onBarcodeDetected={handleBarcodeDetected} />
 
@@ -431,14 +450,6 @@ export default function CreateInvoice() {
               </CardContent>
             </Card>
           )}
-
-          <Card className="glass-card">
-            <CardContent className="pt-6 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>৳{subtotal.toLocaleString()}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Tax ({taxRate}%)</span><span>৳{taxAmount.toLocaleString()}</span></div>
-              <div className="flex justify-between font-bold text-base border-t pt-2 mt-2"><span>Total</span><span>৳{total.toLocaleString()}</span></div>
-            </CardContent>
-          </Card>
 
           <div className="space-y-4">
             <div className="space-y-2"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Payment terms, bank details, etc." /></div>

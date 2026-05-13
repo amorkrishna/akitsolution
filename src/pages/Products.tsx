@@ -240,8 +240,18 @@ export default function Products() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("products").delete().eq("id", id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); toast({ title: "Product deleted" }); },
+    mutationFn: async (id: string) => {
+      // Delete related data first to avoid foreign key violations or orphaned records
+      await supabase.from("product_variants").delete().eq("product_id", id);
+      await supabase.from("product_images").delete().eq("product_id", id);
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["variant-counts"] });
+      toast({ title: "প্রোডাক্ট ডিলিট করা হয়েছে" });
+    },
   });
 
   const handleBulkDelete = async () => {
