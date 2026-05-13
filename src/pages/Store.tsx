@@ -1022,7 +1022,10 @@ export default function Store() {
                 <MessageCircle className="h-4 w-4" />
                 {lang === "bn" ? "মেসেজ" : "Message"}
               </button>
-              <a href="/auth" className={`h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-all ${isDark ? "bg-white/5 hover:bg-white/10 text-white/50 hover:text-white/80 border border-white/5" : "bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700"}`}>Admin</a>
+              <a href={`https://wa.me/8801919060590?text=${encodeURIComponent(lang === "bn" ? "হ্যালো, আমি আপনার প্রোডাক্ট সম্পর্কে জানতে চাই।" : "Hello, I want to know about your products.")}`} target="_blank" rel="noopener noreferrer" className={`h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium bg-[#25D366] text-white hover:bg-[#128C7E] shadow-lg shadow-[#25D366]/25 ml-1 transition-all`}>
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </a>
             </div>
           </div>
         </div>
@@ -2733,7 +2736,6 @@ export default function Store() {
         addToCart={handleAddToCart}
       />
 
-      <WhatsAppButton />
     </div>
   );
 }
