@@ -52,11 +52,11 @@ export default function Products() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [aiSuggestions] = useState([
-    { label: "Facebook পোস্টার", prompt: "Turn this product image into a professional Facebook promotional poster with Bengali text 'বিশেষ মূল্যে পাওয়া যাচ্ছে!', add price tag, gradient background, and call-to-action button style" },
-    { label: "অনলাইন বুকিং ব্যানার", prompt: "Create an online booking banner from this product image with 'অর্ডার করুন' text, modern gradient background, product highlight with glow effect" },
-    { label: "ইন্সটাগ্রাম পোস্ট", prompt: "Transform into a stylish Instagram square post with product centered, minimal clean background, brand watermark area" },
-    { label: "সেল পোস্টার", prompt: "Make a sale/discount poster from this product image with big '৫০% ছাড়!' text, red/yellow sale badge, urgency text 'সীমিত সময়!'" },
-    { label: "ক্লিয়ার ব্যাকগ্রাউন্ড", prompt: "Remove the background and place the product on a clean white professional studio background with soft shadow" },
+    { label: "Facebook পোস্টার", prompt: "Create a professional Facebook promotional poster for this product. Use a modern, dark premium aesthetic with glowing indigo/blue accents. Include bold Bengali text 'AK IT Solution - অবিশ্বাস্য মূল্যে প্রিমিয়াম প্রোডাক্ট!' and 'অর্ডার করতে ইনবক্স করুন।'. Add a stylish price tag badge and a sleek gradient background that highlights the product." },
+    { label: "অনলাইন বুকিং ব্যানার", prompt: "Generate a professional online booking/order banner. Feature the product prominently with a high-end glow effect. Background should be a clean tech-inspired office or data center. Include text 'AK IT Solution - অনলাইন বুকিং চলছে' and a 'Book Now' call-to-action style element." },
+    { label: "ইন্সটাগ্রাম পোস্ট", prompt: "Transform into a minimalist, square Instagram post. Center the product on a clean, professional studio background with soft realistic shadows. Use a premium color palette (slate, indigo, white). Include 'AK IT Solution' branding in a subtle, elegant font." },
+    { label: "সেল পোস্টার", prompt: "Create a high-energy 'SALE' poster. Use vibrant colors like emerald green or electric yellow against a dark background. Include big 'বিরাট মূল্যহ্রাস!' text and a 'Limited Stock' urgency badge. Make the product look heroic with dynamic lighting." },
+    { label: "ক্লিয়ার ব্যাকগ্রাউন্ড", prompt: "Remove the background and place the product on a pure white, professional studio background. Add a soft, realistic drop shadow and improve the product's overall lighting and contrast for a catalog-ready look." },
   ]);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -699,63 +699,82 @@ export default function Products() {
 
         {/* AI Image Edit Dialog */}
         <Dialog open={showAiEdit} onOpenChange={setShowAiEdit}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md bg-[#0f0a1f]/95 border-white/10 backdrop-blur-2xl text-white shadow-2xl shadow-primary/20">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Wand2 className="h-5 w-5 text-primary" />
+              <DialogTitle className="flex items-center gap-2.5 text-xl font-bold tracking-tight text-gradient">
+                <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+                  <Wand2 className="h-5 w-5 text-primary" />
+                </div>
                 AI ছবি এডিট ও পোস্টার
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-6 pt-4">
               {/* Current Image Preview */}
               {aiEditingProductId && (() => {
                 const prod = products?.find((p: any) => p.id === aiEditingProductId);
-                return prod?.image_url ? (
-                  <div className="aspect-square rounded-lg overflow-hidden bg-muted max-h-48 mx-auto">
-                    <img src={prod.image_url} alt="" className="w-full h-full object-contain" />
-                  </div>
-                ) : (
-                  <div className="aspect-square rounded-lg bg-muted flex items-center justify-center max-h-48 mx-auto">
-                    <ImageIcon className="h-12 w-12 text-muted-foreground/30" />
+                return (
+                  <div className="relative group aspect-video rounded-2xl overflow-hidden bg-black/40 border border-white/5 shadow-inner">
+                    {prod?.image_url ? (
+                      <img src={prod.image_url} alt="" className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <ImageIcon className="h-12 w-12 text-white/10" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 );
               })()}
 
               {/* Quick Suggestions */}
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold">AI সাজেশন — এক ক্লিকে:</Label>
-                <div className="grid grid-cols-1 gap-2">
+              <div className="space-y-3">
+                <Label className="text-[10px] uppercase tracking-[0.2em] font-bold text-primary/80">AI সাজেশন — এক ক্লিকে:</Label>
+                <div className="grid grid-cols-1 gap-2.5">
                   {aiSuggestions.map((s, i) => (
                     <Button
                       key={i}
                       variant="outline"
                       size="sm"
-                      className="justify-start text-xs h-auto py-2"
+                      className="group justify-start text-xs h-auto py-3 px-4 rounded-xl border-white/5 bg-white/5 hover:bg-primary/20 hover:border-primary/30 hover:text-white transition-all"
                       disabled={isAiEditing}
                       onClick={() => aiEditingProductId && handleAiEditImage(aiEditingProductId, s.prompt)}
                     >
-                      <Wand2 className="h-3.5 w-3.5 mr-2 text-primary flex-shrink-0" />
+                      <div className="p-1.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 mr-3 transition-colors">
+                        <Wand2 className="h-3.5 w-3.5 text-primary" />
+                      </div>
                       {s.label}
                     </Button>
                   ))}
                 </div>
               </div>
 
+              <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
               {/* Custom prompt */}
-              <div className="space-y-2">
-                <Label className="text-xs">অথবা নিজের ইন্সট্রাকশন লিখুন:</Label>
-                <Input
-                  value={aiEditPrompt}
-                  onChange={(e) => setAiEditPrompt(e.target.value)}
-                  placeholder="e.g. এই ছবিটিকে WhatsApp স্ট্যাটাস পোস্টার বানাও..."
-                  disabled={isAiEditing}
-                />
+              <div className="space-y-3">
+                <Label className="text-[10px] uppercase tracking-[0.2em] font-bold text-primary/80">অথবা নিজের ইন্সট্রাকশন লিখুন:</Label>
+                <div className="relative">
+                  <Input
+                    value={aiEditPrompt}
+                    onChange={(e) => setAiEditPrompt(e.target.value)}
+                    placeholder="e.g. এই ছবিটিকে একটি প্রিমিয়াম সেল পোস্টার বানান..."
+                    className="bg-white/5 border-white/10 rounded-xl pl-4 pr-10 py-6 text-sm placeholder:text-white/20 focus:border-primary/40 focus:ring-primary/20 transition-all"
+                    disabled={isAiEditing}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 bg-primary/10 rounded-lg">
+                    <Search className="h-3.5 w-3.5 text-primary/50" />
+                  </div>
+                </div>
                 <Button
-                  className="w-full"
+                  className="w-full py-6 rounded-xl bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/25 font-bold tracking-wide transition-all hover:scale-[1.02] active:scale-[0.98]"
                   disabled={isAiEditing || !aiEditPrompt.trim()}
                   onClick={() => aiEditingProductId && handleAiEditImage(aiEditingProductId, aiEditPrompt)}
                 >
-                  {isAiEditing ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />AI এডিট হচ্ছে...</> : <><Wand2 className="h-4 w-4 mr-2" />AI দিয়ে এডিট করুন</>}
+                  {isAiEditing ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />AI কাজ করছে...</>
+                  ) : (
+                    <><Wand2 className="h-4 w-4 mr-2" />AI দিয়ে জেনারেট করুন</>
+                  )}
                 </Button>
               </div>
             </div>
