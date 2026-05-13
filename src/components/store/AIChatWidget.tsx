@@ -273,17 +273,16 @@ ${reviewsText ? "## কাস্টমার রিভিউ (বিশ্বা
       {/* Floating button — premium glassmorphism */}
       <button
         onClick={() => setOpen(true)}
-        className={`fixed bottom-20 sm:bottom-6 left-4 z-50 group ${open ? "hidden" : ""}`}
+        className={`fixed bottom-20 sm:bottom-6 right-4 z-50 group ${open ? "hidden" : ""}`}
       >
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur opacity-60 group-hover:opacity-80 transition-opacity animate-pulse" />
-        <div className="relative flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-5 py-3.5 text-white shadow-xl transition-all duration-300 group-hover:scale-105">
+        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-full blur opacity-60 group-hover:opacity-80 transition-opacity animate-pulse" />
+        <div className="relative flex items-center justify-center rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 text-white shadow-xl transition-all duration-300 group-hover:scale-110 shadow-indigo-500/40">
           <div className="relative">
-            <Sparkles className="h-5 w-5 group-hover:rotate-12 transition-transform" />
+            <Sparkles className="h-6 w-6 group-hover:rotate-12 transition-transform" />
             <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border border-white/50">
               <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
             </div>
           </div>
-          <span className="text-sm font-bold hidden sm:inline tracking-wide">AI সহকারী</span>
         </div>
       </button>
 

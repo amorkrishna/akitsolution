@@ -1015,13 +1015,7 @@ export default function Store() {
                   <span className="absolute -top-1 -right-1 h-4.5 w-4.5 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center min-w-[18px] h-[18px]">{totalItems()}</span>
                 )}
               </button>
-              <button
-                onClick={() => { setMsgDialog(true); setMsgForm({ name: "", phone: "", message: "" }); }}
-                className="h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium bg-gradient-to-r from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 text-white shadow-lg shadow-violet-500/25 ml-1 transition-all"
-              >
-                <MessageCircle className="h-4 w-4" />
-                {lang === "bn" ? "মেসেজ" : "Message"}
-              </button>
+
               <a href={`https://wa.me/8801919060590?text=${encodeURIComponent(lang === "bn" ? "হ্যালো, আমি আপনার প্রোডাক্ট সম্পর্কে জানতে চাই।" : "Hello, I want to know about your products.")}`} target="_blank" rel="noopener noreferrer" className={`h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium bg-[#25D366] text-white hover:bg-[#128C7E] shadow-lg shadow-[#25D366]/25 ml-1 transition-all`}>
                 <MessageCircle className="h-4 w-4" />
                 WhatsApp
