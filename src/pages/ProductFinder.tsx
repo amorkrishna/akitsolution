@@ -73,34 +73,27 @@ export default function ProductFinder() {
       
       const product = data?.products?.[0];
       if (product) {
-        const payload = {
-          name: product.name || "Untitled Product",
+        setForm(prev => ({
+          ...prev,
+          name: product.name || prev.name,
+          price: product.price ? product.price.toString() : prev.price,
+          description: product.description || prev.description,
           category: CATEGORIES.includes(product.category) ? product.category : "Other",
           brand: BRANDS.includes(product.brand) ? product.brand : "Other",
-          description: product.description || "",
-          price: Number(product.price) || 0,
-          stock_quantity: 10,
-          discount_percentage: Number(product.discount_percentage) || 0,
-          show_in_store: true,
-          image_url: product.image_url || null,
-        };
-
-        const { data: inserted, error: insertError } = await supabase.from("products").insert(payload).select().single();
-        if (insertError) throw insertError;
-
+          discount_percentage: product.discount_percentage ? product.discount_percentage.toString() : prev.discount_percentage,
+        }));
+        
         if (product.image_url) {
-           await supabase.from("product_images").insert({ product_id: inserted.id, image_url: product.image_url, sort_order: 0 });
+          setImagePreview(product.image_url);
+          setImageFile(null); // Clear local file if any
         }
-
-        toast.success("প্রোডাক্ট সরাসরি লিস্টে সেভ হয়েছে!");
-        queryClient.invalidateQueries({ queryKey: ["products"] });
-        navigate("/products");
+        toast.success("প্রোডাক্ট ডাটা সফলভাবে ফর্ম এ ইমপোর্ট হয়েছে!");
       } else {
         toast.error("এই লিঙ্ক থেকে কোনো প্রোডাক্ট পাওয়া যায়নি");
       }
     } catch (err: any) {
       console.error(err);
-      toast.error(`ইমপোর্ট ও সেভ ব্যর্থ হয়েছে: ${err.message}`);
+      toast.error(`তথ্য আনতে ব্যর্থ হয়েছে: ${err.message}`);
     } finally {
       setScraping(false);
     }
@@ -202,10 +195,10 @@ export default function ProductFinder() {
             <Button 
               onClick={handleScrape} 
               disabled={scraping} 
-              className="h-14 px-8 rounded-xl text-lg font-bold shadow-md w-full md:w-auto transition-all hover:scale-105 active:scale-95 bg-green-600 hover:bg-green-700 text-white"
+              className="h-14 px-8 rounded-xl text-lg font-bold shadow-md w-full md:w-auto transition-all hover:scale-105 active:scale-95"
             >
-              {scraping ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Save className="h-5 w-5 mr-2" />}
-              সরাসরি সেভ করুন
+              {scraping ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Wand2 className="h-5 w-5 mr-2" />}
+              ডাটা নিয়ে আসুন
             </Button>
           </div>
         </CardContent>
