@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, PackagePlus, Image as ImageIcon, Upload, Percent, Eye, EyeOff, Save, ArrowLeft, Link as LinkIcon, Wand2 } from "lucide-react";
@@ -172,7 +171,6 @@ export default function ProductFinder() {
               <Button variant="ghost" size="icon" onClick={() => navigate("/products")} className="text-white hover:bg-white/20">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30 backdrop-blur-md">AI Auto Import</Badge>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight flex items-center gap-3">
               <PackagePlus className="h-10 w-10" /> নতুন প্রোডাক্ট যোগ করুন
