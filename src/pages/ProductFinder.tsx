@@ -66,7 +66,7 @@ export default function ProductFinder() {
 
     try {
       if (mode === "keyword") {
-        setStatusText(`"${keyword}" দিয়ে Google-এ খোঁজা হচ্ছে...`);
+        setStatusText(`"${keyword}" দিয়ে Google - এ খোঁজা হচ্ছে...`);
         setProgress(20);
         const { data, error } = await supabase.functions.invoke("product-scraper", {
           body: { keyword: keyword.trim() }
@@ -81,13 +81,13 @@ export default function ProductFinder() {
         }
       } else {
         for (let i = 0; i < urls.length; i++) {
-          setStatusText(`স্ক্যানিং (${i + 1}/${urls.length})...`);
+          setStatusText(`স্ক্যানিং(${ i + 1}/${urls.length})...`);
           setProgress(Math.round(((i + 1) / urls.length) * 90));
           const { data, error } = await supabase.functions.invoke("product-scraper", {
             body: { url: urls[i] }
           });
           if (error) {
-            console.error(`Error scanning ${urls[i]}:`, error);
+            console.error(`Error scanning ${ urls[i] }: `, error);
             continue;
           }
           if (data?.products) {
@@ -106,8 +106,8 @@ export default function ProductFinder() {
 
       setProducts(allProducts);
       setProgress(100);
-      setStatusText(`মোট ${allProducts.length}টি প্রোডাক্ট পাওয়া গেছে`);
-      allProducts.length === 0 ? toast.info("কোনো প্রোডাক্ট পাওয়া যায়নি") : toast.success(`${allProducts.length}টি প্রোডাক্ট পাওয়া গেছে!`);
+      setStatusText(`মোট ${ allProducts.length }টি প্রোডাক্ট পাওয়া গেছে`);
+      allProducts.length === 0 ? toast.info("কোনো প্রোডাক্ট পাওয়া যায়নি") : toast.success(`${ allProducts.length }টি প্রোডাক্ট পাওয়া গেছে!`);
     } catch (err: any) {
       console.error("Scan error:", err);
       toast.error(err.message || "সমস্যা হয়েছে, আবার চেষ্টা করুন");
@@ -130,7 +130,7 @@ const handleImport = async () => {
   try {
     if (importAs === "package") {
       for (const product of selected) {
-        setStatusText(`প্যাকেজ ইমপোর্ট: ${product.name} (${imported + 1}/${selected.length})`);
+        setStatusText(`প্যাকেজ ইমপোর্ট: ${ product.name } (${ imported + 1 }/${selected.length})`);
         setProgress(Math.round((imported / selected.length) * 100));
         const { error: insertError } = await supabase.from("projects").insert({
           title: product.name, description: product.description || "", budget: product.price,
@@ -141,7 +141,7 @@ const handleImport = async () => {
       }
     } else {
       for (const product of selected) {
-        setStatusText(`ইমপোর্ট হচ্ছে: ${product.name} (${imported + 1}/${selected.length})`);
+        setStatusText(`ইমপোর্ট হচ্ছে: ${ product.name } (${ imported + 1 }/${selected.length})`);
         setProgress(Math.round((imported / selected.length) * 100));
         const firstImage = product.image_urls.length > 0 ? product.image_urls[0] : (product.image_url || null);
         const { data: insertedProduct, error: insertError } = await supabase.from("products").insert({
@@ -174,8 +174,8 @@ const handleImport = async () => {
     }
     setProgress(100);
     const label = importAs === "package" ? "প্যাকেজ" : "প্রোডাক্ট";
-    setStatusText(`${imported}টি ${label} সফলভাবে ইমপোর্ট হয়েছে!`);
-    toast.success(`${imported}টি ${label} ইমপোর্ট সম্পন্ন! Products পেজে দেখুন।`);
+    setStatusText(`${ imported }টি ${ label } সফলভাবে ইমপোর্ট হয়েছে!`);
+    toast.success(`${ imported }টি ${ label } ইমপোর্ট সম্পন্ন! Products পেজে দেখুন।`);
     setProducts([]);
     queryClient.invalidateQueries({ queryKey: ["products"] });
   } catch { toast.error("ইমপোর্ট করতে সমস্যা হয়েছে"); }
@@ -277,11 +277,11 @@ return (
                   className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/50 hover:bg-muted border border-border/50 hover:border-primary/30 transition-all flex items-center gap-1.5"
                   onClick={() => setUrl(`https://www.${site.label}`)}
                 >
-                  <span>{site.icon}</span>{site.label}
-                </button>
+  <span>{site.icon}</span>{ site.label }
+                </button >
               ))}
-            </div>
-          </TabsContent>
+            </div >
+          </TabsContent >
 
           <TabsContent value="bulk" className="mt-4">
             <div className="space-y-3">
@@ -328,229 +328,233 @@ return (
               AI পুরো ইন্টারনেটে সার্চ করে প্রোডাক্ট, দাম ও ছবি খুঁজে আনবে
             </p>
           </TabsContent>
-        </Tabs>
+        </Tabs >
 
-        {(loading || importing || statusText) && (
-          <div className="mt-5 space-y-2.5 p-4 rounded-xl bg-muted/30 border border-border/50">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">{statusText}</span>
-              <span className="text-xs font-bold text-primary">{progress}%</span>
+  {(loading || importing || statusText) && (
+    <div className="mt-5 space-y-2.5 p-4 rounded-xl bg-muted/30 border border-border/50">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">{statusText}</span>
+        <span className="text-xs font-bold text-primary">{progress}%</span>
+      </div>
+      <Progress value={progress} className="h-2 rounded-full" />
+    </div>
+  )}
+      </CardContent >
+    </Card >
+
+  {/* Extracted Results */ }
+{
+  products.length > 0 && (
+    <Card className="border-none shadow-lg bg-card/80 backdrop-blur-sm overflow-hidden">
+      <CardHeader className="pb-3 space-y-3 bg-gradient-to-r from-success/5 to-transparent">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <CardTitle className="text-lg flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-success/10">
+              <Download className="h-4.5 w-4.5 text-success" />
             </div>
-            <Progress value={progress} className="h-2 rounded-full" />
+            পাওয়া প্রোডাক্ট
+            <Badge className="bg-success/10 text-success border-success/20">{filteredProducts.length}/{products.length}</Badge>
+          </CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-0.5 border-2 border-border/50 rounded-lg p-0.5">
+              <Button variant={importAs === "product" ? "default" : "ghost"} size="sm" className="h-7 text-xs rounded-md" onClick={() => setImportAs("product")}>
+                <Package className="h-3 w-3 mr-1" />প্রোডাক্ট
+              </Button>
+              <Button variant={importAs === "package" ? "default" : "ghost"} size="sm" className="h-7 text-xs rounded-md" onClick={() => setImportAs("package")}>
+                <Layers className="h-3 w-3 mr-1" />প্যাকেজ
+              </Button>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="rounded-lg">
+              <Filter className="h-3.5 w-3.5 mr-1.5" />ফিল্টার
+            </Button>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={filteredSelectedCount === filteredProducts.length && filteredProducts.length > 0}
+                onCheckedChange={(checked) => {
+                  const filteredIndices = new Set(filteredProducts.map((_, i) => products.indexOf(filteredProducts[i])));
+                  setProducts((prev) => prev.map((p, i) => filteredIndices.has(i) ? { ...p, selected: !!checked } : p));
+                }}
+              />
+              <span className="text-xs text-muted-foreground">সব</span>
+            </div>
+            <Button onClick={handleImport} disabled={importing || selectedCount === 0} className="rounded-lg bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/20">
+              {importing ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />ইমপোর্ট...</> : <><Download className="h-4 w-4 mr-2" />{selectedCount}টি ইমপোর্ট</>}
+            </Button>
+          </div>
+        </div>
+
+        {showFilters && (
+          <div className="flex flex-wrap items-end gap-4 p-4 rounded-xl border-2 border-border/50 bg-muted/20">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">ক্যাটাগরি</label>
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="w-36 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">সব ক্যাটাগরি</SelectItem>
+                  {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-primary uppercase tracking-wider">বাল্ক ক্যাটাগরি</label>
+              <Select value={bulkCategory} onValueChange={applyBulkCategory}>
+                <SelectTrigger className="w-44 h-8 text-xs border-primary/30 rounded-lg">
+                  <SelectValue placeholder="সিলেক্টেডের ক্যাটাগরি" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5 min-w-[200px] flex-1 max-w-xs">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                দাম: ৳{priceRange[0].toLocaleString()} — ৳{priceRange[1].toLocaleString()}
+              </label>
+              <Slider min={0} max={maxPrice} step={Math.max(1, Math.round(maxPrice / 100))} value={priceRange} onValueChange={(val) => setPriceRange(val as [number, number])} className="mt-2" />
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => { setFilterCategory("all"); setPriceRange([0, maxPrice]); }} className="rounded-lg">
+              <RefreshCw className="h-3.5 w-3.5 mr-1" />রিসেট
+            </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
-
-    {/* Extracted Results */}
-    {products.length > 0 && (
-      <Card className="border-none shadow-lg bg-card/80 backdrop-blur-sm overflow-hidden">
-        <CardHeader className="pb-3 space-y-3 bg-gradient-to-r from-success/5 to-transparent">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <CardTitle className="text-lg flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-success/10">
-                <Download className="h-4.5 w-4.5 text-success" />
-              </div>
-              পাওয়া প্রোডাক্ট
-              <Badge className="bg-success/10 text-success border-success/20">{filteredProducts.length}/{products.length}</Badge>
-            </CardTitle>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-0.5 border-2 border-border/50 rounded-lg p-0.5">
-                <Button variant={importAs === "product" ? "default" : "ghost"} size="sm" className="h-7 text-xs rounded-md" onClick={() => setImportAs("product")}>
-                  <Package className="h-3 w-3 mr-1" />প্রোডাক্ট
-                </Button>
-                <Button variant={importAs === "package" ? "default" : "ghost"} size="sm" className="h-7 text-xs rounded-md" onClick={() => setImportAs("package")}>
-                  <Layers className="h-3 w-3 mr-1" />প্যাকেজ
-                </Button>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="rounded-lg">
-                <Filter className="h-3.5 w-3.5 mr-1.5" />ফিল্টার
-              </Button>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={filteredSelectedCount === filteredProducts.length && filteredProducts.length > 0}
-                  onCheckedChange={(checked) => {
-                    const filteredIndices = new Set(filteredProducts.map((_, i) => products.indexOf(filteredProducts[i])));
-                    setProducts((prev) => prev.map((p, i) => filteredIndices.has(i) ? { ...p, selected: !!checked } : p));
-                  }}
-                />
-                <span className="text-xs text-muted-foreground">সব</span>
-              </div>
-              <Button onClick={handleImport} disabled={importing || selectedCount === 0} className="rounded-lg bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/20">
-                {importing ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />ইমপোর্ট...</> : <><Download className="h-4 w-4 mr-2" />{selectedCount}টি ইমপোর্ট</>}
-              </Button>
-            </div>
-          </div>
-
-          {showFilters && (
-            <div className="flex flex-wrap items-end gap-4 p-4 rounded-xl border-2 border-border/50 bg-muted/20">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">ক্যাটাগরি</label>
-                <Select value={filterCategory} onValueChange={setFilterCategory}>
-                  <SelectTrigger className="w-36 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">সব ক্যাটাগরি</SelectItem>
-                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-primary uppercase tracking-wider">বাল্ক ক্যাটাগরি</label>
-                <Select value={bulkCategory} onValueChange={applyBulkCategory}>
-                  <SelectTrigger className="w-44 h-8 text-xs border-primary/30 rounded-lg">
-                    <SelectValue placeholder="সিলেক্টেডের ক্যাটাগরি" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5 min-w-[200px] flex-1 max-w-xs">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  দাম: ৳{priceRange[0].toLocaleString()} — ৳{priceRange[1].toLocaleString()}
-                </label>
-                <Slider min={0} max={maxPrice} step={Math.max(1, Math.round(maxPrice / 100))} value={priceRange} onValueChange={(val) => setPriceRange(val as [number, number])} className="mt-2" />
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => { setFilterCategory("all"); setPriceRange([0, maxPrice]); }} className="rounded-lg">
-                <RefreshCw className="h-3.5 w-3.5 mr-1" />রিসেট
-              </Button>
-            </div>
-          )}
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2.5">
-            {filteredProducts.map((product) => {
-              const index = products.indexOf(product);
-              return (
-                <div
-                  key={index}
-                  className={`flex items-start gap-3 p-3.5 rounded-xl border-2 transition-all ${product.selected ? "bg-primary/5 border-primary/20 shadow-sm" : "bg-muted/20 border-border/30 hover:border-border/60"
-                    }`}
-                >
-                  <Checkbox checked={product.selected} onCheckedChange={() => toggleProduct(index)} className="mt-1.5 border-2" />
-                  {/* Image Gallery Thumbnails */}
-                  <div className="flex flex-col gap-1.5 flex-shrink-0">
-                    <div className="relative w-20 h-20 rounded-xl bg-gradient-to-br from-muted to-muted/50 overflow-hidden ring-1 ring-border/30 flex items-center justify-center group">
-                      {(product.image_urls.length > 0 ? product.image_urls[0] : product.image_url) ? (
-                        <img src={product.image_urls[0] || product.image_url} alt={product.name} className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
-                      ) : (
-                        <ImageIcon className="h-6 w-6 text-muted-foreground/25" />
-                      )}
-                      {product.image_urls.length > 1 && (
-                        <span className="absolute bottom-1 right-1 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow">
-                          +{product.image_urls.length - 1}
-                        </span>
-                      )}
-                    </div>
-                    {/* Small thumbnails row */}
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2.5">
+          {filteredProducts.map((product) => {
+            const index = products.indexOf(product);
+            return (
+              <div
+                key={index}
+                className={`flex items-start gap-3 p-3.5 rounded-xl border-2 transition-all ${product.selected ? "bg-primary/5 border-primary/20 shadow-sm" : "bg-muted/20 border-border/30 hover:border-border/60"
+                  }`}
+              >
+                <Checkbox checked={product.selected} onCheckedChange={() => toggleProduct(index)} className="mt-1.5 border-2" />
+                {/* Image Gallery Thumbnails */}
+                <div className="flex flex-col gap-1.5 flex-shrink-0">
+                  <div className="relative w-20 h-20 rounded-xl bg-gradient-to-br from-muted to-muted/50 overflow-hidden ring-1 ring-border/30 flex items-center justify-center group">
+                    {(product.image_urls.length > 0 ? product.image_urls[0] : product.image_url) ? (
+                      <img src={product.image_urls[0] || product.image_url} alt={product.name} className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      <ImageIcon className="h-6 w-6 text-muted-foreground/25" />
+                    )}
                     {product.image_urls.length > 1 && (
-                      <div className="flex gap-1 w-20 overflow-x-auto">
-                        {product.image_urls.slice(0, 4).map((imgUrl, imgIdx) => (
-                          <div key={imgIdx} className="relative w-4 h-4 rounded-sm overflow-hidden ring-1 ring-border/20 flex-shrink-0">
-                            <img src={imgUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                          </div>
-                        ))}
-                      </div>
+                      <span className="absolute bottom-1 right-1 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow">
+                        +{product.image_urls.length - 1}
+                      </span>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <Input value={product.name} onChange={(e) => updateProduct(index, "name", e.target.value)} className="font-medium h-8 text-sm rounded-lg" />
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-bold text-primary">৳</span>
-                        <Input type="number" value={product.price} onChange={(e) => updateProduct(index, "price", parseFloat(e.target.value) || 0)} className="w-28 h-7 text-xs rounded-lg" />
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-muted-foreground">ছাড়%</span>
-                        <Input type="number" value={product.discount_percentage} onChange={(e) => updateProduct(index, "discount_percentage", parseFloat(e.target.value) || 0)} className="w-16 h-7 text-xs rounded-lg" />
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-muted-foreground">ক্যাশ৳</span>
-                        <Input type="number" value={product.cash_discount_price ?? ""} onChange={(e) => updateProduct(index, "cash_discount_price", e.target.value ? parseFloat(e.target.value) : null)} className="w-24 h-7 text-xs rounded-lg" placeholder="ক্যাশ দাম" />
-                      </div>
-                      <Select value={product.category} onValueChange={(val) => updateProduct(index, "category", val)}>
-                        <SelectTrigger className="w-32 h-7 text-xs rounded-lg"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <Input value={product.brand} onChange={(e) => updateProduct(index, "brand", e.target.value)} className="w-28 h-7 text-xs rounded-lg" placeholder="ব্র্যান্ড" />
-                      {product.original_price && (
-                        <span className="text-[10px] text-muted-foreground line-through">মূল: {product.original_price}</span>
-                      )}
-                    </div>
-                    {/* Image URLs management */}
-                    <div className="space-y-1">
-                      {product.image_urls.map((imgUrl, imgIdx) => (
-                        <div key={imgIdx} className="flex items-center gap-1.5">
-                          <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-muted">
-                            <img src={imgUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                          </div>
-                          <Input
-                            value={imgUrl}
-                            onChange={(e) => {
-                              const newUrls = [...product.image_urls];
-                              newUrls[imgIdx] = e.target.value;
-                              updateProduct(index, "image_urls", newUrls);
-                            }}
-                            className="h-6 text-[10px] rounded flex-1"
-                            placeholder="ছবির URL"
-                          />
-                          <button onClick={() => {
-                            const newUrls = product.image_urls.filter((_, i) => i !== imgIdx);
-                            updateProduct(index, "image_urls", newUrls);
-                          }} className="text-destructive/60 hover:text-destructive p-0.5">
-                            <X className="h-3 w-3" />
-                          </button>
+                  {/* Small thumbnails row */}
+                  {product.image_urls.length > 1 && (
+                    <div className="flex gap-1 w-20 overflow-x-auto">
+                      {product.image_urls.slice(0, 4).map((imgUrl, imgIdx) => (
+                        <div key={imgIdx} className="relative w-4 h-4 rounded-sm overflow-hidden ring-1 ring-border/20 flex-shrink-0">
+                          <img src={imgUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                         </div>
                       ))}
-                      <button
-                        onClick={() => updateProduct(index, "image_urls", [...product.image_urls, ""])}
-                        className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 font-medium"
-                      >
-                        <Plus className="h-3 w-3" /> ছবি যোগ করুন
-                      </button>
                     </div>
-                    {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
-                  </div>
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-    )}
+                <div className="flex-1 min-w-0 space-y-2">
+                  <Input value={product.name} onChange={(e) => updateProduct(index, "name", e.target.value)} className="font-medium h-8 text-sm rounded-lg" />
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-bold text-primary">৳</span>
+                      <Input type="number" value={product.price} onChange={(e) => updateProduct(index, "price", parseFloat(e.target.value) || 0)} className="w-28 h-7 text-xs rounded-lg" />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-muted-foreground">ছাড়%</span>
+                      <Input type="number" value={product.discount_percentage} onChange={(e) => updateProduct(index, "discount_percentage", parseFloat(e.target.value) || 0)} className="w-16 h-7 text-xs rounded-lg" />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-muted-foreground">ক্যাশ৳</span>
+                      <Input type="number" value={product.cash_discount_price ?? ""} onChange={(e) => updateProduct(index, "cash_discount_price", e.target.value ? parseFloat(e.target.value) : null)} className="w-24 h-7 text-xs rounded-lg" placeholder="ক্যাশ দাম" />
+                    </div>
+                    <Select value={product.category} onValueChange={(val) => updateProduct(index, "category", val)}>
+                      <SelectTrigger className="w-32 h-7 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Input value={product.brand} onChange={(e) => updateProduct(index, "brand", e.target.value)} className="w-28 h-7 text-xs rounded-lg" placeholder="ব্র্যান্ড" />
+                    {product.original_price && (
+                      <span className="text-[10px] text-muted-foreground line-through">মূল: {product.original_price}</span>
+                    )}
+                  </div>
+                  {/* Image URLs management */}
+                  <div className="space-y-1">
+                    {product.image_urls.map((imgUrl, imgIdx) => (
+                      <div key={imgIdx} className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-muted">
+                          <img src={imgUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        </div>
+                        <Input
+                          value={imgUrl}
+                          onChange={(e) => {
+                            const newUrls = [...product.image_urls];
+                            newUrls[imgIdx] = e.target.value;
+                            updateProduct(index, "image_urls", newUrls);
+                          }}
+                          className="h-6 text-[10px] rounded flex-1"
+                          placeholder="ছবির URL"
+                        />
+                        <button onClick={() => {
+                          const newUrls = product.image_urls.filter((_, i) => i !== imgIdx);
+                          updateProduct(index, "image_urls", newUrls);
+                        }} className="text-destructive/60 hover:text-destructive p-0.5">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => updateProduct(index, "image_urls", [...product.image_urls, ""])}
+                      className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 font-medium"
+                    >
+                      <Plus className="h-3 w-3" /> ছবি যোগ করুন
+                    </button>
+                  </div>
+                  {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
-    {/* Empty State */}
-    {!loading && products.length === 0 && (
-      <Card className="border-none shadow-lg bg-card/80 backdrop-blur-sm">
-        <CardContent className="py-16 text-center">
-          <div className="relative inline-block mb-6">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto">
-              <Globe className="h-10 w-10 text-primary/50" />
-            </div>
-            <div className="absolute -top-1 -right-1 p-1 rounded-full bg-primary/10">
-              <Sparkles className="h-4 w-4 text-primary" />
-            </div>
+{/* Empty State */ }
+{
+  !loading && products.length === 0 && (
+    <Card className="border-none shadow-lg bg-card/80 backdrop-blur-sm">
+      <CardContent className="py-16 text-center">
+        <div className="relative inline-block mb-6">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto">
+            <Globe className="h-10 w-10 text-primary/50" />
           </div>
-          <h3 className="font-bold text-xl mb-2">বিশ্বের যেকোনো সাইট থেকে প্রোডাক্ট আনুন</h3>
-          <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            Daraz, AliExpress, Amazon, Alibaba, Google Shopping — অথবা যেকোনো ওয়েবসাইটের URL দিন।
-            AI অটোমেটিক্যালি প্রোডাক্টের নাম, দাম, HD ছবি ও সম্পূর্ণ বিবরণ বের করে আনবে এবং সরাসরি Products পেজে যুক্ত হবে।
-          </p>
-          <div className="flex justify-center gap-3 mt-6">
-            <Button variant="outline" className="rounded-xl" onClick={() => { setMode("keyword"); }}>
-              <Search className="h-4 w-4 mr-2" />কীওয়ার্ড দিয়ে খুঁজুন
-            </Button>
-            <Button className="rounded-xl bg-gradient-to-r from-primary to-accent" onClick={() => { setMode("single"); }}>
-              <Globe className="h-4 w-4 mr-2" />URL দিয়ে স্ক্যান
-            </Button>
+          <div className="absolute -top-1 -right-1 p-1 rounded-full bg-primary/10">
+            <Sparkles className="h-4 w-4 text-primary" />
           </div>
-        </CardContent>
-      </Card>
-    )}
-  </div>
+        </div>
+        <h3 className="font-bold text-xl mb-2">বিশ্বের যেকোনো সাইট থেকে প্রোডাক্ট আনুন</h3>
+        <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
+          Daraz, AliExpress, Amazon, Alibaba, Google Shopping — অথবা যেকোনো ওয়েবসাইটের URL দিন।
+          AI অটোমেটিক্যালি প্রোডাক্টের নাম, দাম, HD ছবি ও সম্পূর্ণ বিবরণ বের করে আনবে এবং সরাসরি Products পেজে যুক্ত হবে।
+        </p>
+        <div className="flex justify-center gap-3 mt-6">
+          <Button variant="outline" className="rounded-xl" onClick={() => { setMode("keyword"); }}>
+            <Search className="h-4 w-4 mr-2" />কীওয়ার্ড দিয়ে খুঁজুন
+          </Button>
+          <Button className="rounded-xl bg-gradient-to-r from-primary to-accent" onClick={() => { setMode("single"); }}>
+            <Globe className="h-4 w-4 mr-2" />URL দিয়ে স্ক্যান
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+  </div >
 );
 }
