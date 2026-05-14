@@ -83,6 +83,7 @@ export default function ProductFinder() {
     } catch (err: any) {
       console.error("Scan error:", err);
       toast.error(err.message || "সমস্যা হয়েছে");
+      alert("Debug Error: " + err.message);
     } finally {
       setLoading(false);
     }
