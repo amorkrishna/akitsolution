@@ -14,62 +14,40 @@ serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
     if (!GEMINI_API_KEY) {
-      return new Response(JSON.stringify({ error: "Gemini API Key missing on server secrets." }), { status: 200, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Gemini API Key missing on server" }), { status: 200, headers: corsHeaders });
     }
 
-    let searchUrl = url || (keyword ? `https://www.google.com/search?q=${encodeURIComponent(keyword + " price in Bangladesh")}` : "");
-    if (!searchUrl) return new Response(JSON.stringify({ error: "URL or keyword is required" }), { status: 200, headers: corsHeaders });
+    let searchUrl = url;
+    if (keyword && !url) {
+      searchUrl = `https://www.google.com/search?q=${encodeURIComponent(keyword + " price Bangladesh")}`;
+    }
 
     if (!searchUrl.startsWith("http")) searchUrl = `https://${searchUrl}`;
 
-    console.log("Ultimate Scraping:", searchUrl);
+    console.log("Fetching via Proxy:", searchUrl);
 
-    let html = "";
+    // Use a robust proxy as primary
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(searchUrl)}`;
+    const resp = await fetch(proxyUrl);
     
-    // STRATEGY 1: Direct Fetch with specialized headers
-    try {
-      const resp = await fetch(searchUrl, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        },
-      });
-      if (resp.ok) html = await resp.text();
-    } catch (e) { console.log("Direct failed"); }
-
-    // STRATEGY 2: AllOrigins Proxy
-    if (!html || html.length < 1000) {
-      try {
-        const proxyRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(searchUrl)}`);
-        if (proxyRes.ok) {
-          const data = await proxyRes.json();
-          html = data.contents;
-        }
-      } catch (e) { console.log("Proxy 1 failed"); }
+    if (!resp.ok) {
+      return new Response(JSON.stringify({ error: "Proxy connection failed. Please try again." }), { status: 200, headers: corsHeaders });
     }
 
-    // STRATEGY 3: Alternative CORS Proxy
-    if (!html || html.length < 1000) {
-      try {
-        const proxyRes = await fetch(`https://corsproxy.io/?${encodeURIComponent(searchUrl)}`);
-        if (proxyRes.ok) html = await proxyRes.text();
-      } catch (e) { console.log("Proxy 2 failed"); }
-    }
+    const data = await resp.json();
+    const html = data.contents;
 
     if (!html || html.length < 500) {
-      return new Response(JSON.stringify({ error: "Could not reach the target site after 3 attempts. Please try keyword search with a different term." }), { 
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      });
+      return new Response(JSON.stringify({ error: "Site is blocking access. Try another keyword or link." }), { status: 200, headers: corsHeaders });
     }
 
-    // Clean and Parse
     const textContent = html
       .replace(/<script[\s\S]*?<\/script>/gi, "")
       .replace(/<style[\s\S]*?<\/style>/gi, "")
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim()
-      .slice(0, 28000);
+      .slice(0, 25000);
 
     const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
@@ -77,13 +55,12 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{ 
           parts: [{ 
-            text: `Extract products from this content. Be very aggressive in finding names and prices. 
-            Format: { "products": [{ "name": "...", "price": number, "image_url": "...", "description": "...", "brand": "...", "category": "...", "original_price": "...", "discount_percentage": number }] }
-            Categories: CCTV, Networking, Accessories, Computer, Printer, Software, Server, Storage, Smart Home, Audio/Video, Mobile, Other.
+            text: `Extract products from this text. 
+            Return JSON: { "products": [{ "name": "...", "price": number, "image_url": "...", "description": "...", "brand": "...", "category": "...", "original_price": "...", "discount_percentage": number }] }
             Content: ${textContent}` 
           }] 
         }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
+        generationConfig: { responseMimeType: "application/json" }
       }),
     });
 
@@ -95,6 +72,6 @@ serve(async (req) => {
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message, products: [] }), { status: 200, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: err.message }), { status: 200, headers: corsHeaders });
   }
 });

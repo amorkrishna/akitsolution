@@ -77,16 +77,12 @@ export default function ProductFinder() {
       
       if (results.length === 0) {
         toast.info("কোনো প্রোডাক্ট পাওয়া যায়নি");
-        console.log("Full Server Response:", data);
-        if (data?.error) alert("Server Error: " + data.error);
-        else alert("Server responded but found 0 products. HTML length: " + (data?.debug_info?.html_length || "unknown"));
       } else {
         toast.success("সফল হয়েছে!");
       }
     } catch (err: any) {
       console.error("Scan error:", err);
       toast.error(err.message || "সমস্যা হয়েছে");
-      alert("System Error: " + err.message);
     } finally {
       setLoading(false);
     }
