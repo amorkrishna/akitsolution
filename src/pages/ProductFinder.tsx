@@ -33,6 +33,7 @@ type ExtractedProduct = {
 
 const CATEGORIES = ["CCTV", "DVR/NVR", "Monitor", "Laptop", "Computer", "Networking", "Accessories", "Printer", "Keyboard/Mouse", "Server", "Mobile", "Attendance Device", "Smart Home", "Audio/Video", "Storage", "Software", "Cable", "UPS/IPS", "Other"];
 
+// AI Product Finder component with robust Edge Function scraping
 export default function ProductFinder() {
   const [url, setUrl] = useState("");
   const [bulkUrls, setBulkUrls] = useState("");
