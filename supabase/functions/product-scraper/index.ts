@@ -14,7 +14,7 @@ serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
     if (!GEMINI_API_KEY) {
-      return new Response(JSON.stringify({ error: "Server Error: GEMINI_API_KEY is not set in Supabase Secrets." }), { status: 200, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Server Error: GEMINI_API_KEY is not set in Supabase Secrets." }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     let promptText = "";
@@ -141,7 +141,7 @@ Return ONLY valid JSON in this exact format, with no markdown formatting, no cod
     // Check if Gemini returned an error
     if (aiData.error) {
       console.error("Gemini Error:", aiData.error);
-      return new Response(JSON.stringify({ error: `Gemini AI Error: ${aiData.error.message} (${aiData.error.status})` }), { status: 200, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: `Gemini AI Error: ${aiData.error.message} (${aiData.error.status})` }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     let result = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || '{"products":[]}';
@@ -156,7 +156,7 @@ Return ONLY valid JSON in this exact format, with no markdown formatting, no cod
 
   } catch (err) {
     console.error("System Error:", err);
-    return new Response(JSON.stringify({ error: `System Error: ${err.message}` }), { status: 200, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: `System Error: ${err.message}` }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
 

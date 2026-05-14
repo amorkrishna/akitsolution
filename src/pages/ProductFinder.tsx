@@ -68,10 +68,16 @@ export default function ProductFinder() {
     setScraping(true);
     try {
       const { data, error } = await supabase.functions.invoke("product-scraper", { body: { url: scrapeUrl.trim() } });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
       
-      const product = data?.products?.[0];
+      let responseData = data;
+      if (typeof data === 'string') {
+        try { responseData = JSON.parse(data); } catch(e) {}
+      }
+
+      if (error) throw error;
+      if (responseData?.error) throw new Error(responseData.error);
+      
+      const product = responseData?.products?.[0];
       if (product) {
         setForm(prev => ({
           ...prev,
