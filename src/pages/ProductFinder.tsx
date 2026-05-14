@@ -26,7 +26,7 @@ type ExtractedProduct = {
   category: string;
   brand: string;
   image_url?: string;
-  image_urls: s`2[];
+  image_urls: string[];
   original_price?: string;
   selected: boolean;
 };
