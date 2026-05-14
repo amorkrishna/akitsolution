@@ -76,80 +76,138 @@ export default function ProductFinder() {
     });
 
     try {
+      const extractPageData = (html: string) => {
+        // Extract script data (JSON-LD, pageData, etc.)
+        const scripts: string[] = [];
+        const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/g;
+        let match;
+        while ((match = scriptRegex.exec(html)) !== null) {
+          const content = match[1].trim();
+          if (content.includes("application/ld+json") || content.includes("pageData") || content.includes("product") || content.includes("runParams")) {
+            scripts.push(content.substring(0, 5000)); // Limit per script
+          }
+        }
+        
+        const cleanHtml = html
+          .replace(/<script[\s\S]*?<\/script>/gi, "")
+          .replace(/<style[\s\S]*?<\/script>/gi, "")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .slice(0, 20000);
+
+        return { cleanHtml, scripts: scripts.join("\n\n") };
+      };
+
       if (mode === "keyword") {
         setStatusText(`"${keyword}" দিয়ে Google - এ খুঁজছে...`);
         setProgress(30);
-        const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(keyword + " buy price")}&tbm=shop`;
-const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(searchUrl)}`;
+        const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(keyword + " buy price Bangladesh")}&tbm=shop`;
+        
+        let html = "";
+        try {
+          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(searchUrl)}`);
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          html = data.contents;
+        } catch {
+          const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(searchUrl)}`);
+          html = await res.text();
+        }
 
-try {
-  const res = await fetch(proxyUrl);
-  if (!res.ok) throw new Error("Failed to fetch from proxy");
-  let html = await res.text();
-  html = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 30000);
+        const { cleanHtml } = extractPageData(html);
+        setStatusText(`AI ডেটা এক্সট্রাক্ট করছে...`);
+        setProgress(60);
 
-  setStatusText(`AI ডেটা এক্সট্রাক্ট করছে...`);
-  setProgress(60);
-
-  const result = await model.generateContent(`Extract products from this webpage:\n\n${html}`);
-  let content = result.response.text().replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
-  let extracted = JSON.parse(content);
-
-  const formatted = (extracted.products || []).map((p: any) => ({ ...p, selected: true, discount_percentage: p.discount_percentage ?? 0, cash_discount_price: p.cash_discount_price ?? null, image_urls: [p.image_url, ...(p.image_urls || [])].filter((u: string) => !!u).filter((u: string, i: number, a: string[]) => a.indexOf(u) === i) }));
-  allProducts = formatted;
-} catch (e: any) {
-  toast.error("সার্চ করতে সমস্যা হয়েছে: " + e.message);
-}
+        const result = await model.generateContent(`Extract products from this Google Shopping search:\n\n${cleanHtml}`);
+        let content = result.response.text();
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) content = jsonMatch[0];
+        
+        let extracted = JSON.parse(content);
+        allProducts = (extracted.products || []).map((p: any) => ({
+          ...p,
+          selected: true,
+          discount_percentage: p.discount_percentage ?? 0,
+          cash_discount_price: p.cash_discount_price ?? null,
+          image_urls: [p.image_url, ...(p.image_urls || [])].filter(Boolean).filter((u, i, a) => a.indexOf(u) === i)
+        }));
       } else {
-  for (let i = 0; i < urls.length; i++) {
-    let currentUrl = urls[i];
-    if (!currentUrl.startsWith("http")) currentUrl = "https://" + currentUrl;
+        for (let i = 0; i < urls.length; i++) {
+          let currentUrl = urls[i];
+          if (!currentUrl.startsWith("http")) currentUrl = "https://" + currentUrl;
 
-    setProgress(Math.round(((i) / urls.length) * 80) + 10);
-    setStatusText(`স্ক্যানিং (${i + 1}/${urls.length}): ${currentUrl.slice(0, 50)}...`);
+          setProgress(Math.round(((i) / urls.length) * 80) + 10);
+          setStatusText(`স্ক্যানিং (${i + 1}/${urls.length}): ${currentUrl.slice(0, 50)}...`);
 
-    try {
-      const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(currentUrl)}`;
-      const res = await fetch(proxyUrl);
-      if (!res.ok) throw new Error("Failed to fetch URL via proxy");
+          try {
+            let html = "";
+            try {
+              const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(currentUrl)}`);
+              if (!res.ok) throw new Error();
+              const data = await res.json();
+              html = data.contents;
+            } catch {
+              const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(currentUrl)}`);
+              html = await res.text();
+            }
 
-      const html = await res.text();
-      const cleanHtml = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 30000);
+            const { cleanHtml, scripts } = extractPageData(html);
+            
+            // Extract HD images
+            const imgMatches = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*/gi) || [];
+            const imageUrls = imgMatches
+              .map((tag: string) => { 
+                const match = tag.match(/src=["']([^"']+)["']/); 
+                let url = match ? match[1] : null;
+                if (url && (url.startsWith("//") || url.startsWith("http"))) {
+                  if (url.startsWith("//")) url = "https:" + url;
+                  // Remove thumbnail modifiers for HD
+                  return url.replace(/_\d+x\d+.*\.jpg$/, "").replace(/\.small\.jpg$/, ".jpg");
+                }
+                return null;
+              })
+              .filter((u): u is string => !!u)
+              .slice(0, 60);
 
-      const imgMatches = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*/gi) || [];
-      const imageUrls = imgMatches
-        .map((tag: string) => { const match = tag.match(/src=["']([^"']+)["']/); return match ? match[1] : null; })
-        .filter((u: string | null): u is string => !!u && (u.startsWith("http") || u.startsWith("//")))
-        .map((u: string) => u.startsWith("//") ? `https:${u}` : u)
-        .slice(0, 50);
+            const pageContent = `URL: ${currentUrl}\n\nSTRUCTURED DATA:\n${scripts}\n\nTEXT CONTENT:\n${cleanHtml}\n\nIMAGE URLs:\n${imageUrls.join("\n")}`;
 
-      const pageContent = cleanHtml + "\n\n--- IMAGE URLs FOUND ON PAGE ---\n" + imageUrls.join("\n");
+            setStatusText(`AI ডেটা এক্সট্রাক্ট করছে (${i + 1}/${urls.length})...`);
+            const result = await model.generateContent(`Extract products. Use IMAGE URLs list for high-res images. Return JSON.\n\n${pageContent}`);
+            
+            let content = result.response.text();
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) content = jsonMatch[0];
+            
+            let extracted = JSON.parse(content);
+            const formatted = (extracted.products || []).map((p: any) => ({
+              ...p,
+              selected: true,
+              discount_percentage: p.discount_percentage ?? 0,
+              cash_discount_price: p.cash_discount_price ?? null,
+              image_urls: [p.image_url, ...(p.image_urls || [])]
+                .filter(Boolean)
+                .map(u => u.replace(/_\d+x\d+.*\.jpg$/, "").replace(/\.small\.jpg$/, ".jpg"))
+                .filter((u, i, a) => a.indexOf(u) === i)
+            }));
+            allProducts = [...allProducts, ...formatted];
+          } catch (e: any) {
+            toast.error(`ব্যর্থ: ${currentUrl.slice(0, 40)}...`);
+          }
+        }
+      }
 
-      setStatusText(`AI ডেটা এক্সট্রাক্ট করছে (${i + 1}/${urls.length})...`);
-
-      const result = await model.generateContent(`Extract products from this webpage (URL: ${currentUrl}):\n\n${pageContent}`);
-      let content = result.response.text().replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
-      let extracted = JSON.parse(content);
-
-      const formatted = (extracted.products || []).map((p: any) => ({ ...p, selected: true, discount_percentage: p.discount_percentage ?? 0, cash_discount_price: p.cash_discount_price ?? null, image_urls: [p.image_url, ...(p.image_urls || [])].filter((u: string) => !!u).filter((u: string, i: number, a: string[]) => a.indexOf(u) === i) }));
-      allProducts = [...allProducts, ...formatted];
-    } catch (e: any) {
-      toast.error(`ব্যর্থ: ${currentUrl.slice(0, 40)}... (${e.message})`);
-    }
-  }
-}
-
-setProducts(allProducts);
-setProgress(100);
-setStatusText(`মোট ${allProducts.length}টি প্রোডাক্ট পাওয়া গেছে`);
-allProducts.length === 0 ? toast.info("কোনো প্রোডাক্ট পাওয়া যায়নি") : toast.success(`${allProducts.length}টি প্রোডাক্ট পাওয়া গেছে!`);
+      setProducts(allProducts);
+      setProgress(100);
+      setStatusText(`মোট ${allProducts.length}টি প্রোডাক্ট পাওয়া গেছে`);
+      allProducts.length === 0 ? toast.info("কোনো প্রোডাক্ট পাওয়া যায়নি") : toast.success(`${allProducts.length}টি প্রোডাক্ট পাওয়া গেছে!`);
     } catch (err: any) {
-  toast.error(err.message || "স্ক্যান করতে সমস্যা হয়েছে");
-  setProgress(0);
-  setStatusText("");
-} finally {
-  setLoading(false);
-}
+      toast.error(err.message || "স্ক্যান করতে সমস্যা হয়েছে");
+      setProgress(0);
+      setStatusText("");
+    } finally {
+      setLoading(false);
+    }
+  };
   };
 
 const toggleProduct = (index: number) => setProducts((prev) => prev.map((p, i) => (i === index ? { ...p, selected: !p.selected } : p)));

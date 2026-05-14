@@ -15,7 +15,7 @@ export function WhatsAppButton() {
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50 group"
+      className="fixed bottom-6 left-6 z-50 group"
       aria-label="Contact on WhatsApp"
     >
       <div className="relative flex items-center justify-center">
@@ -28,9 +28,9 @@ export function WhatsAppButton() {
         </div>
         
         {/* Tooltip/Label */}
-        <div className="absolute right-full mr-3 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 whitespace-nowrap shadow-xl border border-white/10">
+        <div className="absolute left-full ml-3 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 whitespace-nowrap shadow-xl border border-white/10">
           {language === "bn" ? "আমাদের সাথে কথা বলুন" : "Chat with us"}
-          <div className="absolute top-1/2 -right-1 -translate-y-1/2 border-4 border-transparent border-l-gray-900"></div>
+          <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
         </div>
       </div>
     </a>

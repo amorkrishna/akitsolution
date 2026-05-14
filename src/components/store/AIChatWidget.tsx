@@ -273,7 +273,7 @@ ${reviewsText ? "## কাস্টমার রিভিউ (বিশ্বা
       {/* Floating button — premium glassmorphism */}
       <button
         onClick={() => setOpen(true)}
-        className={`fixed bottom-20 sm:bottom-6 right-4 z-50 group ${open ? "hidden" : ""}`}
+        className={`fixed bottom-20 sm:bottom-6 right-4 sm:right-24 z-50 group ${open ? "hidden" : ""}`}
       >
         <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-full blur opacity-60 group-hover:opacity-80 transition-opacity animate-pulse" />
         <div className="relative flex items-center justify-center rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 text-white shadow-xl transition-all duration-300 group-hover:scale-110 shadow-indigo-500/40">
@@ -288,7 +288,7 @@ ${reviewsText ? "## কাস্টমার রিভিউ (বিশ্বা
 
       {/* Chat panel — premium design */}
       {open && (
-        <div className="fixed bottom-0 left-0 sm:bottom-6 sm:left-4 z-50 w-full sm:w-[420px] h-[100dvh] sm:h-[620px] flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-0 left-0 sm:bottom-6 sm:right-6 sm:left-auto z-50 w-full sm:w-[420px] h-[100dvh] sm:h-[620px] flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
           {/* Outer glow */}
           <div className="absolute -inset-1 bg-gradient-to-b from-blue-500/20 via-indigo-500/10 to-purple-500/20 rounded-3xl blur-xl hidden sm:block" />
           
