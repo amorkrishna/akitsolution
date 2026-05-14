@@ -1,4 +1,7 @@
-project_id = "idrykbgzrymiileewgbg"
+project_id = "egjtzpbcevotksunohep"
+
+[functions.product-scraper]
+verify_jwt = false
 
 [functions.ai-quote-builder]
 verify_jwt = false

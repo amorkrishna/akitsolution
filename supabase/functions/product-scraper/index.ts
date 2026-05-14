@@ -37,9 +37,9 @@ async function callGemini(apiKey: string, systemPrompt: string, userPrompt: stri
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { 
+    return new Response("ok", {
       status: 200,
-      headers: corsHeaders 
+      headers: corsHeaders
     });
   }
 
@@ -87,10 +87,10 @@ serve(async (req) => {
         });
       }
       const html = await pageResp.text();
-      
+
       // Extract all potential image URLs including lazy-loaded ones
       const foundImageUrls = new Set<string>();
-      
+
       const imgRegex = /<img[^>]+(?:src|data-src|data-original|data-lazy|data-srcset)=["']([^"']+)["'][^>]*>/gi;
       let match;
       while ((match = imgRegex.exec(html)) !== null) {
