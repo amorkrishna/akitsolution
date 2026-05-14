@@ -3,6 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
@@ -34,7 +36,12 @@ async function callGemini(apiKey: string, systemPrompt: string, userPrompt: stri
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { 
+      status: 200,
+      headers: corsHeaders 
+    });
+  }
 
   try {
     const { url, keyword } = await req.json();
@@ -80,22 +87,38 @@ serve(async (req) => {
         });
       }
       const html = await pageResp.text();
+      
+      // Extract all potential image URLs including lazy-loaded ones
+      const foundImageUrls = new Set<string>();
+      
+      const imgRegex = /<img[^>]+(?:src|data-src|data-original|data-lazy|data-srcset)=["']([^"']+)["'][^>]*>/gi;
+      let match;
+      while ((match = imgRegex.exec(html)) !== null) {
+        if (match[1]) {
+          let imgUrl = match[1].split(' ')[0]; // Handle srcset
+          if (imgUrl.startsWith("//")) imgUrl = `https:${imgUrl}`;
+          if (imgUrl.startsWith("http")) foundImageUrls.add(imgUrl);
+        }
+      }
+
+      // Also look for background images
+      const bgImgRegex = /url\(["']?(https?:\/\/[^"']+)["']?\)/gi;
+      while ((match = bgImgRegex.exec(html)) !== null) {
+        if (match[1]) foundImageUrls.add(match[1]);
+      }
+
+      const imageUrls = Array.from(foundImageUrls).slice(0, 100);
+
       pageContent = html
         .replace(/<script[\s\S]*?<\/script>/gi, "")
-        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<style[\s\S]*?<\/script>/gi, "")
+        .replace(/<svg[\s\S]*?<\/svg>/gi, "") // Remove SVGs
         .replace(/<[^>]+>/g, " ")
         .replace(/\s+/g, " ")
         .trim()
-        .slice(0, 30000);
+        .slice(0, 35000);
 
-      const imgMatches = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*/gi) || [];
-      const imageUrls = imgMatches
-        .map((tag: string) => { const match = tag.match(/src=["']([^"']+)["']/); return match ? match[1] : null; })
-        .filter((u: string | null): u is string => !!u && (u.startsWith("http") || u.startsWith("//")))
-        .map((u: string) => u.startsWith("//") ? `https:${u}` : u)
-        .slice(0, 50);
-
-      pageContent += "\n\n--- IMAGE URLs FOUND ON PAGE ---\n" + imageUrls.join("\n");
+      pageContent += "\n\n--- POTENTIAL PRODUCT IMAGE URLs FOUND ON PAGE ---\n" + imageUrls.join("\n");
     } catch (fetchErr) {
       console.error("Fetch error:", fetchErr);
       return new Response(JSON.stringify({ error: `Could not access URL: ${fetchErr instanceof Error ? fetchErr.message : "Unknown error"}` }), {
