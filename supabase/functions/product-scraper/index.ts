@@ -80,39 +80,22 @@ serve(async (req) => {
         });
       }
       const html = await pageResp.text();
-      
-      // Extract all potential image URLs including lazy-loaded ones
-      const imageAttributes = ["src", "data-src", "data-original", "data-lazy", "data-srcset"];
-      const foundImageUrls = new Set<string>();
-      
-      const imgRegex = /<img[^>]+(?:src|data-src|data-original|data-lazy|data-srcset)=["']([^"']+)["'][^>]*>/gi;
-      let match;
-      while ((match = imgRegex.exec(html)) !== null) {
-        if (match[1]) {
-          let url = match[1].split(' ')[0]; // Handle srcset
-          if (url.startsWith("//")) url = `https:${url}`;
-          if (url.startsWith("http")) foundImageUrls.add(url);
-        }
-      }
-
-      // Also look for background images in style attributes or common JSON patterns
-      const bgImgRegex = /url\(["']?(https?:\/\/[^"']+)["']?\)/gi;
-      while ((match = bgImgRegex.exec(html)) !== null) {
-        if (match[1]) foundImageUrls.add(match[1]);
-      }
-
-      const imageUrls = Array.from(foundImageUrls).slice(0, 100);
-
       pageContent = html
         .replace(/<script[\s\S]*?<\/script>/gi, "")
         .replace(/<style[\s\S]*?<\/style>/gi, "")
-        .replace(/<svg[\s\S]*?<\/svg>/gi, "") // Remove SVGs to save tokens
         .replace(/<[^>]+>/g, " ")
         .replace(/\s+/g, " ")
         .trim()
-        .slice(0, 35000); // Increased limit slightly
+        .slice(0, 30000);
 
-      pageContent += "\n\n--- POTENTIAL PRODUCT IMAGE URLs FOUND ON PAGE ---\n" + imageUrls.join("\n");
+      const imgMatches = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*/gi) || [];
+      const imageUrls = imgMatches
+        .map((tag: string) => { const match = tag.match(/src=["']([^"']+)["']/); return match ? match[1] : null; })
+        .filter((u: string | null): u is string => !!u && (u.startsWith("http") || u.startsWith("//")))
+        .map((u: string) => u.startsWith("//") ? `https:${u}` : u)
+        .slice(0, 50);
+
+      pageContent += "\n\n--- IMAGE URLs FOUND ON PAGE ---\n" + imageUrls.join("\n");
     } catch (fetchErr) {
       console.error("Fetch error:", fetchErr);
       return new Response(JSON.stringify({ error: `Could not access URL: ${fetchErr instanceof Error ? fetchErr.message : "Unknown error"}` }), {
