@@ -70,30 +70,37 @@ export default function ProductFinder() {
       const { data, error } = await supabase.functions.invoke("product-scraper", { body: { url: scrapeUrl.trim() } });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-
+      
       const product = data?.products?.[0];
       if (product) {
-        setForm(prev => ({
-          ...prev,
-          name: product.name || prev.name,
-          price: product.price ? product.price.toString() : prev.price,
-          description: product.description || prev.description,
+        const payload = {
+          name: product.name || "Untitled Product",
           category: CATEGORIES.includes(product.category) ? product.category : "Other",
           brand: BRANDS.includes(product.brand) ? product.brand : "Other",
-          discount_percentage: product.discount_percentage ? product.discount_percentage.toString() : prev.discount_percentage,
-        }));
+          description: product.description || "",
+          price: Number(product.price) || 0,
+          stock_quantity: 10,
+          discount_percentage: Number(product.discount_percentage) || 0,
+          show_in_store: true,
+          image_url: product.image_url || null,
+        };
+
+        const { data: inserted, error: insertError } = await supabase.from("products").insert(payload).select().single();
+        if (insertError) throw insertError;
 
         if (product.image_url) {
-          setImagePreview(product.image_url);
-          setImageFile(null); // Clear local file if any
+           await supabase.from("product_images").insert({ product_id: inserted.id, image_url: product.image_url, sort_order: 0 });
         }
-        toast.success("প্রোডাক্ট ডাটা সফলভাবে ফর্ম এ ইমপোর্ট হয়েছে!");
+
+        toast.success("প্রোডাক্ট সরাসরি লিস্টে সেভ হয়েছে!");
+        queryClient.invalidateQueries({ queryKey: ["products"] });
+        navigate("/products");
       } else {
         toast.error("এই লিঙ্ক থেকে কোনো প্রোডাক্ট পাওয়া যায়নি");
       }
     } catch (err: any) {
       console.error(err);
-      toast.error(`তথ্য আনতে ব্যর্থ হয়েছে: ${err.message}`);
+      toast.error(`ইমপোর্ট ও সেভ ব্যর্থ হয়েছে: ${err.message}`);
     } finally {
       setScraping(false);
     }
@@ -136,7 +143,6 @@ export default function ProductFinder() {
           finalImageUrl = data?.publicUrl;
         }
       } else if (!imageFile && imagePreview) {
-        // Extracted URL case
         finalImageUrl = imagePreview;
       }
 
@@ -158,7 +164,6 @@ export default function ProductFinder() {
 
   return (
     <div className="container mx-auto p-4 max-w-5xl space-y-6">
-      {/* Header Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/90 via-primary to-accent p-8 text-primary-foreground shadow-2xl">
         <div className="relative z-10 flex items-center justify-between">
           <div className="space-y-3">
@@ -181,7 +186,6 @@ export default function ProductFinder() {
         </div>
       </div>
 
-      {/* AI Scrape Section */}
       <Card className="border-2 border-primary/20 shadow-lg bg-primary/5 rounded-2xl overflow-hidden">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -196,13 +200,13 @@ export default function ProductFinder() {
                 className="h-14 text-base rounded-xl bg-background shadow-sm border-primary/30 focus-visible:ring-primary"
               />
             </div>
-            <Button
-              onClick={handleScrape}
-              disabled={scraping}
-              className="h-14 px-8 rounded-xl text-lg font-bold shadow-md w-full md:w-auto transition-all hover:scale-105 active:scale-95"
+            <Button 
+              onClick={handleScrape} 
+              disabled={scraping} 
+              className="h-14 px-8 rounded-xl text-lg font-bold shadow-md w-full md:w-auto transition-all hover:scale-105 active:scale-95 bg-green-600 hover:bg-green-700 text-white"
             >
-              {scraping ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Wand2 className="h-5 w-5 mr-2" />}
-              ডাটা নিয়ে আসুন
+              {scraping ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Save className="h-5 w-5 mr-2" />}
+              সরাসরি সেভ করুন
             </Button>
           </div>
         </CardContent>
