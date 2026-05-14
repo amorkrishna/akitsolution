@@ -71,9 +71,26 @@ export default function ProductFinder() {
     let allProducts: ExtractedProduct[] = [];
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: `You are a product data extractor.Given webpage content, extract ALL products found.For each product extract name, price(in BDT, convert if needed: 1 USD ≈ 120 BDT), discount_percentage, cash_discount_price, description, category, brand, image_url, original_price.Return ONLY valid JSON(no markdown) with this exact shape: { "products": [{ "name": "string", "price": number, "discount_percentage": number, "cash_discount_price": number | null, "description": "string", "category": "CCTV" | "Networking" | "Accessories" | "Computer" | "Printer" | "Software" | "Server" | "Storage" | "Smart Home" | "Audio/Video" | "Mobile" | "Other", "brand": "string", "image_url": "string", "original_price": "string" }] } `,
+      model: "gemini-1.5-flash-latest",
     });
+
+    const extractionPrompt = `You are a product data extractor. Given webpage content, extract ALL products found.
+    Return ONLY valid JSON (no markdown, no text before or after) with this exact shape:
+    {
+      "products": [
+        {
+          "name": "string",
+          "price": number,
+          "discount_percentage": number,
+          "cash_discount_price": number | null,
+          "description": "string",
+          "category": "CCTV" | "Networking" | "Accessories" | "Computer" | "Printer" | "Software" | "Server" | "Storage" | "Smart Home" | "Audio/Video" | "Mobile" | "Other",
+          "brand": "string",
+          "image_url": "string",
+          "original_price": "string"
+        }
+      ]
+    }`;
 
     try {
       const extractPageData = (html: string) => {
@@ -136,7 +153,7 @@ export default function ProductFinder() {
         setStatusText(`AI ডেটা এক্সট্রাক্ট করছে...`);
         setProgress(60);
 
-        const result = await model.generateContent(`Extract products from this search result. Return JSON format only.\n\n${cleanHtml}`);
+        const result = await model.generateContent(`${extractionPrompt}\n\nExtract products from this search result:\n\n${cleanHtml}`);
         let content = result.response.text();
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) content = jsonMatch[0];
@@ -178,7 +195,7 @@ export default function ProductFinder() {
             const pageContent = `URL: ${currentUrl}\n\nSTRUCTURED DATA:\n${scripts}\n\nTEXT CONTENT:\n${cleanHtml}\n\nIMAGE URLs:\n${imageUrls.join("\n")}`;
 
             setStatusText(`AI ডেটা এক্সট্রাক্ট করছে (${i + 1}/${urls.length})...`);
-            const result = await model.generateContent(`Extract product information from this page. If this is a StarTech page, look carefully for price and image. Return JSON.\n\n${pageContent}`);
+            const result = await model.generateContent(`${extractionPrompt}\n\nExtract product information from this page content:\n\n${pageContent}`);
             
             let content = result.response.text();
             const jsonMatch = content.match(/\{[\s\S]*\}/);
