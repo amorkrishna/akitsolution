@@ -83,19 +83,46 @@ export default function ProductFinder() {
         let match;
         while ((match = scriptRegex.exec(html)) !== null) {
           const content = match[1].trim();
-          if (content.includes("application/ld+json") || content.includes("pageData") || content.includes("product") || content.includes("runParams")) {
-            scripts.push(content.substring(0, 5000)); // Limit per script
+          if (
+            content.includes("application/ld+json") || 
+            content.includes("pageData") || 
+            content.includes("product") || 
+            content.includes("runParams") ||
+            content.includes("product_id") // StarTech specific
+          ) {
+            scripts.push(content.substring(0, 5000));
           }
         }
         
         const cleanHtml = html
           .replace(/<script[\s\S]*?<\/script>/gi, "")
-          .replace(/<style[\s\S]*?<\/script>/gi, "")
+          .replace(/<style[\s\S]*?<\/style>/gi, "")
           .replace(/<[^>]+>/g, " ")
           .replace(/\s+/g, " ")
-          .slice(0, 20000);
+          .slice(0, 30000); // Increased slice
 
         return { cleanHtml, scripts: scripts.join("\n\n") };
+      };
+
+      const fetchWithProxy = async (targetUrl: string) => {
+        const proxies = [
+          `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
+          `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+          `https://cors-anywhere.herokuapp.com/${targetUrl}`
+        ];
+
+        for (const proxy of proxies) {
+          try {
+            const res = await fetch(proxy);
+            if (!res.ok) continue;
+            if (proxy.includes("allorigins")) {
+              const data = await res.json();
+              return data.contents;
+            }
+            return await res.text();
+          } catch (e) { continue; }
+        }
+        throw new Error("সবগুলো প্রক্সি সার্ভার ব্যর্থ হয়েছে। পরে আবার চেষ্টা করুন।");
       };
 
       if (mode === "keyword") {
@@ -103,22 +130,13 @@ export default function ProductFinder() {
         setProgress(30);
         const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(keyword + " buy price Bangladesh")}&tbm=shop`;
         
-        let html = "";
-        try {
-          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(searchUrl)}`);
-          if (!res.ok) throw new Error();
-          const data = await res.json();
-          html = data.contents;
-        } catch {
-          const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(searchUrl)}`);
-          html = await res.text();
-        }
-
+        const html = await fetchWithProxy(searchUrl);
         const { cleanHtml } = extractPageData(html);
+        
         setStatusText(`AI ডেটা এক্সট্রাক্ট করছে...`);
         setProgress(60);
 
-        const result = await model.generateContent(`Extract products from this Google Shopping search:\n\n${cleanHtml}`);
+        const result = await model.generateContent(`Extract products from this search result. Return JSON format only.\n\n${cleanHtml}`);
         let content = result.response.text();
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) content = jsonMatch[0];
@@ -140,20 +158,9 @@ export default function ProductFinder() {
           setStatusText(`স্ক্যানিং (${i + 1}/${urls.length}): ${currentUrl.slice(0, 50)}...`);
 
           try {
-            let html = "";
-            try {
-              const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(currentUrl)}`);
-              if (!res.ok) throw new Error();
-              const data = await res.json();
-              html = data.contents;
-            } catch {
-              const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(currentUrl)}`);
-              html = await res.text();
-            }
-
+            const html = await fetchWithProxy(currentUrl);
             const { cleanHtml, scripts } = extractPageData(html);
             
-            // Extract HD images
             const imgMatches = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*/gi) || [];
             const imageUrls = imgMatches
               .map((tag: string) => { 
@@ -161,7 +168,6 @@ export default function ProductFinder() {
                 let url = match ? match[1] : null;
                 if (url && (url.startsWith("//") || url.startsWith("http"))) {
                   if (url.startsWith("//")) url = "https:" + url;
-                  // Remove thumbnail modifiers for HD
                   return url.replace(/_\d+x\d+.*\.jpg$/, "").replace(/\.small\.jpg$/, ".jpg");
                 }
                 return null;
@@ -172,7 +178,7 @@ export default function ProductFinder() {
             const pageContent = `URL: ${currentUrl}\n\nSTRUCTURED DATA:\n${scripts}\n\nTEXT CONTENT:\n${cleanHtml}\n\nIMAGE URLs:\n${imageUrls.join("\n")}`;
 
             setStatusText(`AI ডেটা এক্সট্রাক্ট করছে (${i + 1}/${urls.length})...`);
-            const result = await model.generateContent(`Extract products. Use IMAGE URLs list for high-res images. Return JSON.\n\n${pageContent}`);
+            const result = await model.generateContent(`Extract product information from this page. If this is a StarTech page, look carefully for price and image. Return JSON.\n\n${pageContent}`);
             
             let content = result.response.text();
             const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -207,7 +213,6 @@ export default function ProductFinder() {
     } finally {
       setLoading(false);
     }
-  };
   };
 
 const toggleProduct = (index: number) => setProducts((prev) => prev.map((p, i) => (i === index ? { ...p, selected: !p.selected } : p)));
