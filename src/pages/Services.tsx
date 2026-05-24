@@ -91,7 +91,7 @@ export default function Services() {
     setAiLoading(true);
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const prompt = `Write a short, professional service description (2-3 sentences, max 100 words) for an IT company in Bangladesh called "AK IT Solution" for the following service:
 
 Service Name: ${form.name}

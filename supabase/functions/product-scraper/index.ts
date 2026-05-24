@@ -122,22 +122,26 @@ Return ONLY valid JSON in this exact format, with no markdown formatting, no cod
 { "products": [{ "name": "...", "price": number, "image_url": "...", "description": "...", "brand": "...", "category": "..." }] }`;
     }
 
-    console.log("Sending to Gemini API...");
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ 
-          parts: [{ text: promptText }] 
-        }],
-        generationConfig: { 
-          responseMimeType: "application/json" 
-        }
-      }),
-    });
+    const fetchGemini = async (model: string) => {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        }),
+      });
+      return await res.json();
+    };
 
-    const aiData = await geminiRes.json();
+    console.log("Sending to Gemini API (gemini-2.5-flash)...");
+    let aiData = await fetchGemini("gemini-2.5-flash");
     
+    if (aiData.error && aiData.error.status === "RESOURCE_EXHAUSTED") {
+       console.log("Quota exceeded for gemini-2.5-flash, falling back to gemini-2.0-flash...");
+       aiData = await fetchGemini("gemini-2.0-flash");
+    }
+
     // Check if Gemini returned an error
     if (aiData.error) {
       console.error("Gemini Error:", aiData.error);

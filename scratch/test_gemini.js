@@ -1,8 +1,8 @@
-const API_KEY = "AIzaSyAKWssZrpeyFGRGdNuTgSYt2E3H7aiZJVA"; // From .env
+const API_KEY = "AIzaSyB7uEBd5UQtxdlm5CCZWlFjQbHn_FrQDfg"; // From .env
 
 async function testGemini(modelName) {
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${API_KEY}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -16,9 +16,6 @@ async function testGemini(modelName) {
   }
 }
 
-testGemini("gemini-1.5-flash");
-testGemini("gemini-1.5-flash-latest");
-testGemini("gemini-1.5-pro");
-testGemini("gemini-1.5-flash-8b");
-testGemini("gemini-1.5-pro-latest");
-testGemini("gemini-pro");
+testGemini("gemini-2.5-flash");
+testGemini("gemini-2.0-flash");
+testGemini("gemini-3.5-flash");

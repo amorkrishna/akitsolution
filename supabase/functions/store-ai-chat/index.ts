@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent";
 
 async function callGemini(apiKey: string, systemPrompt: string, messages: Array<{role: string; content: string}>, stream = true): Promise<Response> {
   const geminiMessages = messages.map((m) => ({
@@ -23,7 +23,7 @@ async function callGemini(apiKey: string, systemPrompt: string, messages: Array<
 
   const endpoint = stream
     ? `${GEMINI_API_URL}?key=${apiKey}&alt=sse`
-    : `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   const response = await fetch(endpoint, {
     method: "POST",
