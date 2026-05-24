@@ -105,44 +105,42 @@ export default function ProductFinder() {
           try { responseData = JSON.parse(data); } catch(e) {}
         }
 
-        if (error) throw error;
-        if (responseData?.error) throw new Error(responseData.error);
-
-        const extracted = responseData?.products?.[0];
-        if (!extracted) {
+        const products = responseData?.products;
+        if (!products || !Array.isArray(products) || products.length === 0) {
           throw new Error("এই লিঙ্ক থেকে কোনো প্রোডাক্টের ডাটা পাওয়া যায়নি");
         }
 
-        // Add to extracted products list
-        const regularPrice = extracted.price ? extracted.price.toString() : "0";
-        const discountPct = extracted.discount_percentage ? extracted.discount_percentage.toString() : "0";
-        let cashPrice = "";
-        
-        if (Number(regularPrice) > 0 && Number(discountPct) > 0) {
-          cashPrice = Math.round(Number(regularPrice) * (1 - Number(discountPct) / 100)).toString();
-        }
+        const newProducts: ScrapedProduct[] = products.map((extracted: any, subIdx: number) => {
+          const regularPrice = extracted.price ? extracted.price.toString() : "0";
+          const discountPct = extracted.discount_percentage ? extracted.discount_percentage.toString() : "0";
+          let cashPrice = "";
+          
+          if (Number(regularPrice) > 0 && Number(discountPct) > 0) {
+            cashPrice = Math.round(Number(regularPrice) * (1 - Number(discountPct) / 100)).toString();
+          }
 
-        const newProduct: ScrapedProduct = {
-          id: `scraped_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          name: extracted.name || "অজ্ঞাত প্রোডাক্ট",
-          category: CATEGORIES.includes(extracted.category) ? extracted.category : "CCTV",
-          brand: BRANDS.includes(extracted.brand) ? extracted.brand : "Other",
-          description: extracted.description || "",
-          price: regularPrice,
-          cash_discount_price: cashPrice,
-          discount_percentage: discountPct,
-          image_url: extracted.image_url || "",
-          show_in_store: true,
-          sku: "",
-          stock_quantity: "10",
-          sourceUrl: url,
-        };
+          return {
+            id: `scraped_${Date.now()}_${idx}_${subIdx}_${Math.random().toString(36).substring(2, 9)}`,
+            name: extracted.name || "অজ্ঞাত প্রোডাক্ট",
+            category: CATEGORIES.includes(extracted.category) ? extracted.category : "CCTV",
+            brand: BRANDS.includes(extracted.brand) ? extracted.brand : "Other",
+            description: extracted.description || "",
+            price: regularPrice,
+            cash_discount_price: cashPrice,
+            discount_percentage: discountPct,
+            image_url: extracted.image_url || "",
+            show_in_store: true,
+            sku: "",
+            stock_quantity: "10",
+            sourceUrl: url,
+          };
+        });
 
-        setScrapedProducts(prev => [...prev, newProduct]);
+        setScrapedProducts(prev => [...prev, ...newProducts]);
         setProgressList(prev => prev.map((item, i) => i === idx ? { 
           ...item, 
           status: "success", 
-          productName: newProduct.name 
+          productName: `${newProducts.length} টি প্রোডাক্ট পাওয়া গেছে` 
         } : item));
 
       } catch (err: any) {

@@ -86,32 +86,61 @@ serve(async (req) => {
            let slug = url.split('/').filter(Boolean).pop() || "";
            slug = slug.replace(/[-_]/g, ' ').replace(/\.html?/g, '').trim();
            
-           promptText = `You are a product suggestion AI. Generate 3 to 5 real products matching the query "${slug}" with current market prices in BDT. 
+           promptText = `You are a product suggestion AI. Generate 5 to 10 real products matching the query "${slug}" with current market prices in BDT. 
 Return ONLY valid JSON in this exact format, with no markdown formatting, no code blocks, just raw JSON: 
 { "products": [{ "name": "...", "price": number, "image_url": "...", "description": "...", "brand": "...", "category": "..." }] }`;
         } else {
-           // Clean up HTML to reduce token usage
-           let cleanHtml = htmlContent
-             .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-             .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
-             .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, "");
-             
-           cleanHtml = cleanHtml.substring(0, 400000);
+           // Aggressive HTML pre-processing to avoid timeouts and reduce token consumption
+           let cleaned = htmlContent;
+           
+           // Remove comments
+           cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, "");
+           
+           // Remove script, style, head, svg, header, footer, nav, aside tags
+           cleaned = cleaned.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+           cleaned = cleaned.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "");
+           cleaned = cleaned.replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, "");
+           cleaned = cleaned.replace(/<head\b[^<]*(?:(?!<\/head>)<[^<]*)*<\/head>/gi, "");
+           cleaned = cleaned.replace(/<header\b[^<]*(?:(?!<\/header>)<[^<]*)*<\/header>/gi, "");
+           cleaned = cleaned.replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, "");
+           cleaned = cleaned.replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, "");
+           cleaned = cleaned.replace(/<aside\b[^<]*(?:(?!<\/aside>)<[^<]*)*<\/aside>/gi, "");
+           
+           // Remove bloated attributes to shrink size further, keeping src and href
+           cleaned = cleaned.replace(/\s(data-[a-zA-Z0-9_-]+|aria-[a-zA-Z0-9_-]+|style|id|onclick|onload|target|rel)="[^"]*"/g, "");
+           
+           // Compact spaces
+           cleaned = cleaned.replace(/\s+/g, " ").trim();
+           
+           // Limit to a safe maximum context length (approx 80k characters which fits beautifully)
+           cleaned = cleaned.substring(0, 80000);
 
-           promptText = `You are a product extraction AI. Extract the main product details from the following HTML content of a product page. 
+           promptText = `You are an expert product extraction AI. Analyze the following HTML content from a website (it could be a single product page or a category/listing page containing a grid/list of multiple products).
+Extract ALL product details found. For category or search listing pages, extract every single product listed.
 URL: ${url}
 Return ONLY valid JSON in this exact format, with no markdown formatting, no code blocks, just raw JSON: 
-{ "products": [{ "name": "...", "price": number, "image_url": "...", "description": "...", "brand": "...", "category": "..." }] }
+{ 
+  "products": [
+    { 
+      "name": "...", 
+      "price": number, 
+      "image_url": "...", 
+      "description": "...", 
+      "brand": "...", 
+      "category": "..." 
+    }
+  ] 
+}
 
 HTML Content snippet:
-${cleanHtml}`;
+${cleaned}`;
         }
       } catch (e) {
         console.error("Error fetching URL content:", e);
         // Fallback to URL slug parsing instead of erroring out
         let slug = url.split('/').filter(Boolean).pop() || "";
         slug = slug.replace(/[-_]/g, ' ').replace(/\.html?/g, '').trim();
-        promptText = `You are a product suggestion AI. Generate 3 to 5 real products matching the query "${slug}" with current market prices in BDT. 
+        promptText = `You are a product suggestion AI. Generate 5 to 10 real products matching the query "${slug}" with current market prices in BDT. 
 Return ONLY valid JSON in this exact format, with no markdown formatting, no code blocks, just raw JSON: 
 { "products": [{ "name": "...", "price": number, "image_url": "...", "description": "...", "brand": "...", "category": "..." }] }`;
       }
