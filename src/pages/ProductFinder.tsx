@@ -34,6 +34,7 @@ interface ScrapedProduct {
   cash_discount_price: string;
   discount_percentage: string;
   image_url: string;
+  images: string[];
   show_in_store: boolean;
   sku: string;
   stock_quantity: string;
@@ -119,6 +120,14 @@ export default function ProductFinder() {
             cashPrice = Math.round(Number(regularPrice) * (1 - Number(discountPct) / 100)).toString();
           }
 
+          let productImages: string[] = [];
+          if (Array.isArray(extracted.images) && extracted.images.length > 0) {
+            productImages = extracted.images.filter((img: any) => typeof img === 'string' && img.trim() !== "");
+          }
+          if (extracted.image_url && !productImages.includes(extracted.image_url)) {
+            productImages.unshift(extracted.image_url);
+          }
+
           return {
             id: `scraped_${Date.now()}_${idx}_${subIdx}_${Math.random().toString(36).substring(2, 9)}`,
             name: extracted.name || "অজ্ঞাত প্রোডাক্ট",
@@ -128,7 +137,8 @@ export default function ProductFinder() {
             price: regularPrice,
             cash_discount_price: cashPrice,
             discount_percentage: discountPct,
-            image_url: extracted.image_url || "",
+            image_url: extracted.image_url || (productImages.length > 0 ? productImages[0] : ""),
+            images: productImages,
             show_in_store: true,
             sku: "",
             stock_quantity: "10",
@@ -245,22 +255,32 @@ export default function ProductFinder() {
 
       // 3. Insert images into product_images table in bulk
       if (insertedProducts && insertedProducts.length > 0) {
-        const imageInserts = insertedProducts
-          .map((prod, idx) => {
-            const originalProduct = scrapedProducts[idx];
-            if (originalProduct && originalProduct.image_url) {
-              return {
-                product_id: prod.id,
-                image_url: originalProduct.image_url,
-                sort_order: 0,
-              };
+        const imageInserts: any[] = [];
+        insertedProducts.forEach((prod, idx) => {
+          const originalProduct = scrapedProducts[idx];
+          if (originalProduct) {
+            const uniqImages = new Set<string>();
+            if (originalProduct.image_url) {
+              uniqImages.add(originalProduct.image_url);
             }
-            return null;
-          })
-          .filter(Boolean);
+            if (Array.isArray(originalProduct.images)) {
+              originalProduct.images.forEach(img => {
+                if (img && typeof img === 'string') uniqImages.add(img);
+              });
+            }
+            
+            Array.from(uniqImages).forEach((imgUrl, imgIdx) => {
+              imageInserts.push({
+                product_id: prod.id,
+                image_url: imgUrl,
+                sort_order: imgIdx,
+              });
+            });
+          }
+        });
 
         if (imageInserts.length > 0) {
-          const { error: imgError } = await supabase.from("product_images").insert(imageInserts as any);
+          const { error: imgError } = await supabase.from("product_images").insert(imageInserts);
           if (imgError) console.error("Bulk image insert error:", imgError);
         }
       }
@@ -584,38 +604,58 @@ export default function ProductFinder() {
                     </button>
 
                     {/* Image and basic fields */}
-                    <div className="p-5 border-b border-border/50 bg-muted/15 flex items-start gap-4">
-                      <div className="relative shrink-0 w-24 h-24 aspect-square rounded-2xl border bg-white overflow-hidden shadow-inner flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                        {p.image_url ? (
-                          <img src={p.image_url} alt="Product" className="h-full w-full object-contain p-1" />
-                        ) : (
-                          <ImageIcon className="h-8 w-8 text-muted-foreground/60" />
-                        )}
-                        
-                        {/* Source link badge */}
-                        <a 
-                          href={p.sourceUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="absolute bottom-1 right-1 p-1 bg-primary text-white rounded-md hover:scale-110 active:scale-95 transition-all shadow"
-                          title="লিঙ্কে যান"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
+                    <div className="p-5 border-b border-border/50 bg-muted/15 flex flex-col gap-3">
+                      <div className="flex items-start gap-4 w-full">
+                        <div className="relative shrink-0 w-24 h-24 aspect-square rounded-2xl border bg-white overflow-hidden shadow-inner flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                          {p.image_url ? (
+                            <img src={p.image_url} alt="Product" className="h-full w-full object-contain p-1" />
+                          ) : (
+                            <ImageIcon className="h-8 w-8 text-muted-foreground/60" />
+                          )}
+                          
+                          {/* Source link badge */}
+                          <a 
+                            href={p.sourceUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="absolute bottom-1 right-1 p-1 bg-primary text-white rounded-md hover:scale-110 active:scale-95 transition-all shadow"
+                            title="লিঙ্কে যান"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
 
-                      <div className="flex-1 space-y-2.5 min-w-0">
-                        <div className="space-y-1">
-                          <Label className="text-xs font-bold text-muted-foreground">প্রোডাক্টের নাম *</Label>
-                          <Input
-                            value={p.name}
-                            onChange={(e) => handleCardFieldChange(p.id, "name", e.target.value)}
-                            placeholder="Product Name"
-                            className="h-10 text-sm rounded-xl font-bold bg-background shadow-sm"
-                            required
-                          />
+                        <div className="flex-1 space-y-2.5 min-w-0">
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold text-muted-foreground">প্রোডাক্টের নাম *</Label>
+                            <Input
+                              value={p.name}
+                              onChange={(e) => handleCardFieldChange(p.id, "name", e.target.value)}
+                              placeholder="Product Name"
+                              className="h-10 text-sm rounded-xl font-bold bg-background shadow-sm"
+                              required
+                            />
+                          </div>
                         </div>
                       </div>
+
+                      {/* Display multiple scraped image thumbnails if available */}
+                      {p.images && p.images.length > 1 && (
+                        <div className="flex gap-1.5 py-1 overflow-x-auto max-w-full scrollbar-thin">
+                          {p.images.map((imgUrl, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => handleCardFieldChange(p.id, "image_url", imgUrl)}
+                              className={`relative h-10 w-10 shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
+                                p.image_url === imgUrl ? "border-primary shadow-sm" : "border-border/60 hover:border-muted-foreground"
+                              }`}
+                            >
+                              <img src={imgUrl} alt="" className="h-full w-full object-contain bg-white" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Editor Form for single card */}

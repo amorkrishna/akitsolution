@@ -88,7 +88,7 @@ serve(async (req) => {
            
            promptText = `You are a product suggestion AI. Generate 5 to 10 real products matching the query "${slug}" with current market prices in BDT. 
 Return ONLY valid JSON in this exact format, with no markdown formatting, no code blocks, just raw JSON: 
-{ "products": [{ "name": "...", "price": number, "image_url": "...", "description": "...", "brand": "...", "category": "..." }] }`;
+{ "products": [{ "name": "...", "price": number, "image_url": "...", "images": ["image_url_1", "image_url_2"], "description": "...", "brand": "...", "category": "..." }] }`;
         } else {
            // Aggressive HTML pre-processing to avoid timeouts and reduce token consumption
            let cleaned = htmlContent;
@@ -125,12 +125,15 @@ Return ONLY valid JSON in this exact format, with no markdown formatting, no cod
       "name": "...", 
       "price": number, 
       "image_url": "...", 
+      "images": ["image_url_1", "image_url_2", "image_url_3"], 
       "description": "...", 
       "brand": "...", 
       "category": "..." 
     }
   ] 
 }
+
+Make sure "images" is a list of ALL valid, unique image URLs found for the product in the HTML content (like main zoom images, galleries, alternative perspectives, etc.). If only one image is found, put it in the list. if none, return empty list.
 
 HTML Content snippet:
 ${cleaned}`;
@@ -142,13 +145,13 @@ ${cleaned}`;
         slug = slug.replace(/[-_]/g, ' ').replace(/\.html?/g, '').trim();
         promptText = `You are a product suggestion AI. Generate 5 to 10 real products matching the query "${slug}" with current market prices in BDT. 
 Return ONLY valid JSON in this exact format, with no markdown formatting, no code blocks, just raw JSON: 
-{ "products": [{ "name": "...", "price": number, "image_url": "...", "description": "...", "brand": "...", "category": "..." }] }`;
+{ "products": [{ "name": "...", "price": number, "image_url": "...", "images": ["image_url_1", "image_url_2"], "description": "...", "brand": "...", "category": "..." }] }`;
       }
     } else {
       console.log("Searching by keyword:", keyword);
       promptText = `You are a product suggestion AI. Generate 5 real products matching the keyword "${keyword}" with current market prices in BDT. 
 Return ONLY valid JSON in this exact format, with no markdown formatting, no code blocks, just raw JSON: 
-{ "products": [{ "name": "...", "price": number, "image_url": "...", "description": "...", "brand": "...", "category": "..." }] }`;
+{ "products": [{ "name": "...", "price": number, "image_url": "...", "images": ["image_url_1", "image_url_2"], "description": "...", "brand": "...", "category": "..." }] }`;
     }
 
     const fetchGemini = async (model: string) => {
