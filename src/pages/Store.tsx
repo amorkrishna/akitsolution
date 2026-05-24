@@ -26,7 +26,6 @@ import { SEOHead, ProductListJsonLd, LocalBusinessJsonLd, ServiceListJsonLd } fr
 import { AIChatWidget } from "@/components/store/AIChatWidget";
 import { ParticleGlobe } from "@/components/store/ParticleGlobe";
 import { HeroBannerCarousel } from "@/components/store/HeroBannerCarousel";
-import { AISmartQuoteBuilder } from "@/components/store/AISmartQuoteBuilder";
 import { TopBar } from "@/components/store/TopBar";
 import { CompareDrawer } from "@/components/store/CompareDrawer";
 import { CompareModal } from "@/components/store/CompareModal";
@@ -1208,25 +1207,6 @@ export default function Store() {
                 <MessageCircle className="h-5 w-5" />
                 <span>{lang === "bn" ? "এক্সপার্টের সাথে কথা বলুন" : "Talk to an Expert"}</span>
               </button>
-            </div>
-
-            {/* AI Smart Quote Builder — primary differentiator */}
-            <div className="flex justify-center pt-1 animate-slide-up [animation-delay:300ms]">
-              <AISmartQuoteBuilder
-                language={lang as "bn" | "en"}
-                trigger={
-                  <button
-                    className={`group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold border backdrop-blur-xl transition-all hover:-translate-y-0.5 ${isDark
-                      ? "bg-gradient-to-r from-violet-500/15 to-fuchsia-500/15 border-violet-400/30 text-violet-200 hover:border-violet-400/60"
-                      : "bg-gradient-to-r from-violet-50 to-fuchsia-50 border-violet-300 text-violet-700 hover:border-violet-500 shadow-md"
-                      }`}
-                  >
-                    <Sparkles className="h-4 w-4 animate-pulse" />
-                    <span>{lang === "bn" ? "AI দিয়ে স্মার্ট কোট নিন — ৩০ সেকেন্ডে" : "Get an AI Smart Quote — in 30 seconds"}</span>
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </button>
-                }
-              />
             </div>
 
             {/* Trust strip */}
