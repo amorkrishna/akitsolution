@@ -36,6 +36,7 @@ interface ScrapedProduct {
   image_url: string;
   images: string[];
   show_in_store: boolean;
+  call_for_price: boolean;
   sku: string;
   stock_quantity: string;
   sourceUrl: string;
@@ -68,7 +69,7 @@ export default function ProductFinder() {
   const [manualLoading, setManualLoading] = useState(false);
   const [manualForm, setManualForm] = useState({
     name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "10", sku: "",
-    cash_discount_price: "", discount_percentage: "0", show_in_store: true,
+    cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false,
   });
   const [manualImageFile, setManualImageFile] = useState<File | null>(null);
   const [manualImagePreview, setManualImagePreview] = useState<string | null>(null);
@@ -140,6 +141,7 @@ export default function ProductFinder() {
             image_url: extracted.image_url || (productImages.length > 0 ? productImages[0] : ""),
             images: productImages,
             show_in_store: true,
+            call_for_price: false,
             sku: "",
             stock_quantity: "10",
             sourceUrl: url,
@@ -242,6 +244,7 @@ export default function ProductFinder() {
         cash_discount_price: p.cash_discount_price ? Number(p.cash_discount_price) : null,
         discount_percentage: Number(p.discount_percentage) || 0,
         show_in_store: p.show_in_store,
+        call_for_price: p.call_for_price || false,
         image_url: p.image_url || null,
       }));
 
@@ -350,6 +353,7 @@ export default function ProductFinder() {
         cash_discount_price: manualForm.cash_discount_price ? Number(manualForm.cash_discount_price) : null,
         discount_percentage: Number(manualForm.discount_percentage) || 0,
         show_in_store: manualForm.show_in_store,
+        call_for_price: manualForm.call_for_price || false,
       };
 
       const { data: inserted, error } = await supabase.from("products").insert(payload).select().single();
@@ -743,16 +747,30 @@ export default function ProductFinder() {
                       </div>
 
                       {/* Publish / Store Show Control */}
-                      <div className="pt-2 mt-auto border-t border-border/40 flex items-center justify-between">
-                        <span className="text-xs font-bold flex items-center gap-1.5">
-                          {p.show_in_store ? <Eye className="h-4 w-4 text-emerald-500 animate-pulse" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
-                          অনলাইন স্টোরে দেখান
-                        </span>
-                        <Switch 
-                          checked={p.show_in_store} 
-                          onCheckedChange={(val) => handleCardFieldChange(p.id, "show_in_store", val)} 
-                          className="scale-95"
-                        />
+                      <div className="pt-2 mt-auto border-t border-border/40 flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold flex items-center gap-1.5">
+                            {p.show_in_store ? <Eye className="h-4 w-4 text-emerald-500 animate-pulse" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                            অনলাইন স্টোরে দেখান
+                          </span>
+                          <Switch 
+                            checked={p.show_in_store} 
+                            onCheckedChange={(val) => handleCardFieldChange(p.id, "show_in_store", val)} 
+                            className="scale-95"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-border/20 pt-2">
+                          <span className="text-xs font-bold flex items-center gap-1.5">
+                            <Phone className="h-4 w-4 text-amber-500" />
+                            Call for Price (মূল্য হাইড)
+                          </span>
+                          <Switch 
+                            checked={p.call_for_price || false} 
+                            onCheckedChange={(val) => handleCardFieldChange(p.id, "call_for_price", val)} 
+                            className="scale-95"
+                          />
+                        </div>
                       </div>
                     </div>
                   </Card>
@@ -954,6 +972,23 @@ export default function ProductFinder() {
                       </div>
                     </div>
                     <Switch checked={manualForm.show_in_store} onCheckedChange={(v) => setManualForm({ ...manualForm, show_in_store: v })} className="scale-110" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border shadow-sm rounded-3xl overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex gap-4">
+                      <div className="p-3 bg-amber-500/10 rounded-xl">
+                        <Phone className="h-6 w-6 text-amber-500" />
+                      </div>
+                      <div>
+                        <Label className="text-base font-bold block mb-1">Call for Price (মূল্য হাইড)</Label>
+                        <p className="text-xs text-muted-foreground">মূল্য গোপন রেখে সাইটে 'Call for Price' প্রদর্শন করুন</p>
+                      </div>
+                    </div>
+                    <Switch checked={manualForm.call_for_price || false} onCheckedChange={(v) => setManualForm({ ...manualForm, call_for_price: v })} className="scale-110" />
                   </div>
                 </CardContent>
               </Card>

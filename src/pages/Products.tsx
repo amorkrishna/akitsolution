@@ -27,7 +27,7 @@ export default function Products() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [form, setForm] = useState({
     name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "",
-    cash_discount_price: "", discount_percentage: "0", show_in_store: true,
+    cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -189,6 +189,7 @@ export default function Products() {
         cash_discount_price: data.cash_discount_price ? Number(data.cash_discount_price) : null,
         discount_percentage: Number(data.discount_percentage) || 0,
         show_in_store: data.show_in_store,
+        call_for_price: data.call_for_price || false,
       };
       let productId = editing?.id;
       if (editing) {
@@ -370,7 +371,7 @@ export default function Products() {
   };
 
   const resetForm = () => {
-    setForm({ name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "", cash_discount_price: "", discount_percentage: "0", show_in_store: true });
+    setForm({ name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "", cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false });
     setImageFile(null); setImagePreview(null);
     setAdditionalImages([]); setAdditionalPreviews([]); setExistingImages([]);
     setVariants([]); setDeletedVariantIds([]);
@@ -379,11 +380,12 @@ export default function Products() {
   const openEdit = async (p: any) => {
     setEditing(p);
     setForm({
-      name: p.name, category: p.category, brand: (p as any).brand || "Other", description: p.description || "",
+      name: p.name, category: p.category, brand: p.brand || "Other", description: p.description || "",
       price: p.price.toString(), stock_quantity: p.stock_quantity.toString(), sku: p.sku || "",
       cash_discount_price: (p as any).cash_discount_price?.toString() || "",
-      discount_percentage: (p as any).discount_percentage?.toString() || "0",
-      show_in_store: (p as any).show_in_store !== false,
+      discount_percentage: p.discount_percentage?.toString() || "0",
+      show_in_store: p.show_in_store,
+      call_for_price: (p as any).call_for_price || false,
     });
     setImagePreview((p as any).image_url || null);
     setImageFile(null);
@@ -560,6 +562,17 @@ export default function Products() {
                     <Switch checked={form.show_in_store} onCheckedChange={(v) => setForm({ ...form, show_in_store: v })} />
                   </div>
 
+                  <div className="flex items-center justify-between border border-border rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-4 w-4 text-primary" />
+                      <div>
+                        <Label className="text-sm font-medium">Call for Price (মূল্য জানতে কল করুন)</Label>
+                        <p className="text-[10px] text-muted-foreground">মূল্য গোপন রেখে সাইটে 'Call for Price' প্রদর্শন করুন</p>
+                      </div>
+                    </div>
+                    <Switch checked={form.call_for_price} onCheckedChange={(v) => setForm({ ...form, call_for_price: v })} />
+                  </div>
+
                   {/* Variants Section */}
                   <div className="border border-border rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between">
@@ -717,7 +730,13 @@ export default function Products() {
                     </TableCell>
                     <TableCell><Badge variant="outline" className={catColor[p.category] || ""}>{p.category}</Badge></TableCell>
                     <TableCell><span className="text-xs text-muted-foreground">{(p as any).brand || "—"}</span></TableCell>
-                    <TableCell>৳{Number(p.price).toLocaleString()}</TableCell>
+                    <TableCell>
+                      {p.call_for_price ? (
+                        <Badge variant="outline" className="bg-amber-500/10 text-amber-500 font-semibold border-amber-500/30 whitespace-nowrap">Call for Price</Badge>
+                      ) : (
+                        `৳${Number(p.price).toLocaleString()}`
+                      )}
+                    </TableCell>
                     <TableCell>
                       {p.cash_discount_price ? (
                         <span className="text-primary font-medium">৳{Number(p.cash_discount_price).toLocaleString()}</span>

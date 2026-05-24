@@ -203,14 +203,24 @@ export function ProductDetailDialog({ product, onClose, onOrder, isDark, lang }:
 
             {/* Price */}
             <div className={`rounded-xl p-3 mb-4 border ${isDark ? "bg-gradient-to-r from-blue-500/5 to-cyan-500/5 border-blue-500/10" : "bg-blue-50/50 border-blue-100"}`}>
-              <div className="flex items-end gap-2 flex-wrap">
-                <span className={`text-2xl sm:text-3xl font-black ${isDark ? "bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent" : "text-blue-600"}`}>৳{effectivePrice.toLocaleString()}</span>
-                {!selectedVariant && activeProduct.cash_discount_price && (
-                  <span className={`text-sm line-through mb-1 ${textMuted}`}>৳{Number(activeProduct.price).toLocaleString()}</span>
-                )}
-              </div>
-              {hasDiscount && (
-                <p className="text-xs text-emerald-500 font-medium mt-1">💰 {lang === "bn" ? "সেভ করুন" : "You save"} ৳{(Number(activeProduct.price) - effectivePrice).toLocaleString()}</p>
+              {activeProduct.call_for_price ? (
+                <div className="flex items-center gap-2">
+                  <span className={`text-xl sm:text-2xl font-black ${isDark ? "bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent" : "text-amber-600"}`}>
+                    {lang === "bn" ? "মূল্য জানতে কল করুন" : "Call for Price"}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-end gap-2 flex-wrap">
+                    <span className={`text-2xl sm:text-3xl font-black ${isDark ? "bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent" : "text-blue-600"}`}>৳{effectivePrice.toLocaleString()}</span>
+                    {!selectedVariant && activeProduct.cash_discount_price && (
+                      <span className={`text-sm line-through mb-1 ${textMuted}`}>৳{Number(activeProduct.price).toLocaleString()}</span>
+                    )}
+                  </div>
+                  {hasDiscount && (
+                    <p className="text-xs text-emerald-500 font-medium mt-1">💰 {lang === "bn" ? "সেভ করুন" : "You save"} ৳{(Number(activeProduct.price) - effectivePrice).toLocaleString()}</p>
+                  )}
+                </>
               )}
             </div>
 
@@ -259,7 +269,7 @@ export function ProductDetailDialog({ product, onClose, onOrder, isDark, lang }:
             </div>
 
             {/* Quantity Selector */}
-            {inStock && (
+            {inStock && !activeProduct.call_for_price && (
               <div className="mb-4">
                 <label className={`text-xs font-semibold mb-1.5 block ${textSecondary}`}>{lang === "bn" ? "পরিমাণ" : "Quantity"}</label>
                 <QuantitySelector quantity={quantity} onChange={setQuantity} max={effectiveStock} isDark={isDark} />
@@ -275,23 +285,49 @@ export function ProductDetailDialog({ product, onClose, onOrder, isDark, lang }:
               )}
             </div>
 
-            {/* Add to Cart */}
+            {/* Add to Cart / Call for Price */}
             <div className="mt-auto">
-              <Button
-                className="w-full gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 border-0 shadow-xl shadow-blue-500/25 rounded-xl text-white h-12 text-sm font-semibold"
-                disabled={!inStock}
-                onClick={() => {
-                  const label = selectedVariant ? `${activeProduct.name} - ${selectedVariant.variant_label}` : activeProduct.name;
-                  for (let i = 0; i < quantity; i++) {
-                    onOrder(label, effectivePrice, activeProduct.id, selectedVariant?.id, selectedVariant?.variant_label);
-                  }
-                }}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {quantity > 1
-                  ? `${lang === "bn" ? "কার্টে যোগ করুন" : "Add"} (${quantity}) — ৳${(effectivePrice * quantity).toLocaleString()}`
-                  : (lang === "bn" ? "কার্টে যোগ করুন" : "Add to Cart")}
-              </Button>
+              {activeProduct.call_for_price ? (
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 border-0 shadow-xl shadow-amber-500/25 rounded-xl text-white h-12 text-sm font-semibold"
+                    onClick={() => {
+                      window.open(`tel:+8801919060590`);
+                    }}
+                  >
+                    <Phone className="h-5 w-5" />
+                    {lang === "bn" ? "কল করুন" : "Call Now"}
+                  </Button>
+                  <Button
+                    className="flex-1 gap-2 bg-[#25D366] hover:bg-[#20ba5a] border-0 shadow-xl shadow-emerald-500/25 rounded-xl text-white h-12 text-sm font-semibold"
+                    onClick={() => {
+                      const msg = lang === "bn"
+                        ? `হ্যালো, আমি এই প্রোডাক্টটির মূল্য জানতে চাই: ${activeProduct.name}`
+                        : `Hello, I'd like to know the price for this product: ${activeProduct.name}`;
+                      window.open(`https://wa.me/8801919060590?text=${encodeURIComponent(msg)}`, "_blank");
+                    }}
+                  >
+                    <MessageSquareQuote className="h-5 w-5" />
+                    WhatsApp
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  className="w-full gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 border-0 shadow-xl shadow-blue-500/25 rounded-xl text-white h-12 text-sm font-semibold"
+                  disabled={!inStock}
+                  onClick={() => {
+                    const label = selectedVariant ? `${activeProduct.name} - ${selectedVariant.variant_label}` : activeProduct.name;
+                    for (let i = 0; i < quantity; i++) {
+                      onOrder(label, effectivePrice, activeProduct.id, selectedVariant?.id, selectedVariant?.variant_label);
+                    }
+                  }}
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {quantity > 1
+                    ? `${lang === "bn" ? "কার্টে যোগ করুন" : "Add"} (${quantity}) — ৳${(effectivePrice * quantity).toLocaleString()}`
+                    : (lang === "bn" ? "কার্টে যোগ করুন" : "Add to Cart")}
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -1529,7 +1529,7 @@ export default function Store() {
                       >
                         <Heart className={`h-3.5 w-3.5 ${isInWishlist(product.id) ? "fill-white" : ""}`} />
                       </button>
-                      {Number(product.discount_percentage) > 0 && (
+                      {Number(product.discount_percentage) > 0 && !product.call_for_price && (
                         <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-[8px] sm:text-[10px] font-bold text-white shadow-lg shadow-emerald-500/30">-{product.discount_percentage}%</span>
                       )}
                       {product.stock_quantity === 0 && (
@@ -1543,7 +1543,9 @@ export default function Store() {
                       )}
                       <div className="mt-auto pt-2 sm:pt-3 flex items-end justify-between gap-1">
                         <div>
-                          {product.cash_discount_price ? (
+                          {product.call_for_price ? (
+                            <p className="text-xs sm:text-sm font-extrabold text-amber-500">{lang === "bn" ? "মূল্য জানতে কল করুন" : "Call for Price"}</p>
+                          ) : product.cash_discount_price ? (
                             <>
                               <p className={`text-[9px] sm:text-[11px] ${textMuted} line-through`}>৳{Number(product.price).toLocaleString()}</p>
                               <p className={`text-sm sm:text-lg font-black ${gradientPrice}`}>৳{Number(product.cash_discount_price).toLocaleString()}</p>
@@ -1552,10 +1554,16 @@ export default function Store() {
                             <p className={`text-sm sm:text-lg font-black ${gradientPrice}`}>৳{Number(product.price).toLocaleString()}</p>
                           )}
                         </div>
-                        <Button size="sm" className="text-[9px] sm:text-[11px] gap-1 h-8 sm:h-9 px-2.5 sm:px-3.5 bg-gradient-to-r from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 border-0 shadow-lg shadow-violet-500/20 rounded-lg disabled:opacity-40 flex-shrink-0 font-semibold" disabled={product.stock_quantity === 0} onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}>
-                          <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                          <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                        </Button>
+                        {product.call_for_price ? (
+                          <Button size="sm" className="text-[9px] sm:text-[11px] gap-1 h-8 sm:h-9 px-2.5 sm:px-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 border-0 shadow-lg shadow-amber-500/20 rounded-lg flex-shrink-0 font-semibold text-white" onClick={(e) => { e.stopPropagation(); window.open("tel:+8801919060590"); }}>
+                            <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                          </Button>
+                        ) : (
+                          <Button size="sm" className="text-[9px] sm:text-[11px] gap-1 h-8 sm:h-9 px-2.5 sm:px-3.5 bg-gradient-to-r from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 border-0 shadow-lg shadow-violet-500/20 rounded-lg disabled:opacity-40 flex-shrink-0 font-semibold" disabled={product.stock_quantity === 0} onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}>
+                            <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                            <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
