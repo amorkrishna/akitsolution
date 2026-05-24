@@ -44,6 +44,7 @@ export default function Products() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [bulkCategoryValue, setBulkCategoryValue] = useState("");
   const [savingBulkCategory, setSavingBulkCategory] = useState(false);
+  const [savingBulkShow, setSavingBulkShow] = useState(false);
   // AI Image Edit
   const [aiEditingProductId, setAiEditingProductId] = useState<string | null>(null);
   const [aiEditPrompt, setAiEditPrompt] = useState("");
@@ -290,6 +291,24 @@ export default function Products() {
       toast({ title: "ক্যাটাগরি আপডেট ব্যর্থ", variant: "destructive" });
     } finally {
       setSavingBulkCategory(false);
+    }
+  };
+
+  const handleBulkShowChange = async (show: boolean) => {
+    if (selectedIds.size === 0) return;
+    setSavingBulkShow(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const { error } = await supabase.from("products").update({ show_in_store: show } as any).in("id", ids);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast({ title: `${ids.length}টি প্রোডাক্ট অনলাইন স্টোরে ${show ? "দেখানো হয়েছে (Online)" : "সরানো হয়েছে (Offline)"}` });
+      setSelectedIds(new Set());
+      setIsMultiSelect(false);
+    } catch {
+      toast({ title: "স্ট্যাটাস আপডেট ব্যর্থ", variant: "destructive" });
+    } finally {
+      setSavingBulkShow(false);
     }
   };
 
@@ -591,6 +610,29 @@ export default function Products() {
                 </SelectContent>
               </Select>
               {savingBulkCategory && <Loader2 className="h-4 w-4 animate-spin" />}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/20"
+                onClick={() => handleBulkShowChange(true)}
+                disabled={selectedIds.size === 0 || savingBulkShow}
+              >
+                {savingBulkShow ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Eye className="h-3 w-3 mr-1" />}
+                অনলাইন দেখান
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs border-muted-foreground/30 text-muted-foreground hover:bg-muted/50"
+                onClick={() => handleBulkShowChange(false)}
+                disabled={selectedIds.size === 0 || savingBulkShow}
+              >
+                {savingBulkShow ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <EyeOff className="h-3 w-3 mr-1" />}
+                স্টোর থেকে সরান
+              </Button>
+
               <Button
                 variant="destructive"
                 size="sm"
