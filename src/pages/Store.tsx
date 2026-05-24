@@ -937,14 +937,6 @@ export default function Store() {
       {services && <ServiceListJsonLd services={services} />}
       <LocalBusinessJsonLd settings={settings} />
 
-      <TopBar
-        lang={lang}
-        setLang={setLang}
-        theme={theme}
-        setTheme={setTheme}
-        isDark={isDark}
-      />
-
       {/* Navigation */}
       <header className={`sticky top-0 z-50 border-b backdrop-blur-xl ${headerBg}`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -961,6 +953,44 @@ export default function Store() {
               </div>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
+              {/* Language Selector */}
+              <div className={`flex items-center rounded-full p-0.5 border ${
+                isDark ? "bg-white/5 border-white/10" : "bg-gray-200/50 border-gray-300"
+              }`}>
+                <button
+                  onClick={() => setLang("bn")}
+                  className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold transition-all ${
+                    lang === "bn" 
+                    ? "bg-primary text-white shadow-sm" 
+                    : isDark ? "text-white/40 hover:text-white/60" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  BN
+                </button>
+                <button
+                  onClick={() => setLang("en")}
+                  className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold transition-all ${
+                    lang === "en" 
+                    ? "bg-primary text-white shadow-sm" 
+                    : isDark ? "text-white/40 hover:text-white/60" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  EN
+                </button>
+              </div>
+
+              {/* Theme Selector */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-7 w-7 rounded-full ${
+                  isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200"
+                }`}
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+              >
+                {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+              </Button>
+
               <button
                 onClick={() => { setActiveTab("products"); setSearchOpen(true); }}
                 className={`h-7 w-7 rounded-md flex items-center justify-center transition-all ${isDark ? "bg-white/5 hover:bg-white/10 text-white/70" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
@@ -997,7 +1027,45 @@ export default function Store() {
                 <p className={`text-xs ${textAccent} font-medium truncate`}>{settings.company_tagline}</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Language Toggle */}
+              <div className={`flex items-center rounded-full p-0.5 border ${
+                isDark ? "bg-white/5 border-white/10" : "bg-gray-200/50 border-gray-300"
+              }`}>
+                <button
+                  onClick={() => setLang("bn")}
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
+                    lang === "bn" 
+                    ? "bg-primary text-white shadow-sm" 
+                    : isDark ? "text-white/40 hover:text-white/60" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  BN
+                </button>
+                <button
+                  onClick={() => setLang("en")}
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
+                    lang === "en" 
+                    ? "bg-primary text-white shadow-sm" 
+                    : isDark ? "text-white/40 hover:text-white/60" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  EN
+                </button>
+              </div>
+
+              {/* Theme Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-9 w-9 rounded-full ${
+                  isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200"
+                }`}
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+              >
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+
               <button
                 onClick={() => { setActiveTab("products"); setSearchOpen(true); }}
                 className={`h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-all ${isDark ? "bg-white/5 hover:bg-white/10 text-white/70" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
