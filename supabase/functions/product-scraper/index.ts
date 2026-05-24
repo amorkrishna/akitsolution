@@ -74,16 +74,16 @@ serve(async (req) => {
           }
         }
 
-        // Check if the page is a generic 404 or Cloudflare block
+        // Check if the page is a generic 404 or Cloudflare block (challenge pages are small, under 15k chars)
         const isBlocked = htmlContent.toLowerCase().includes("page you requested cannot be found") || 
-                          htmlContent.toLowerCase().includes("cloudflare") ||
-                          htmlContent.toLowerCase().includes("just a moment...");
+                          ((htmlContent.toLowerCase().includes("cloudflare") || htmlContent.toLowerCase().includes("just a moment...")) && htmlContent.length < 15000);
 
         if (!htmlContent || htmlContent.length < 500 || isBlocked) {
            console.log("Scraping blocked or failed, falling back to URL slug parsing.");
            
-           // Extract the last part of the URL as a keyword
-           let slug = url.split('/').filter(Boolean).pop() || "";
+           // Extract the last part of the URL as a keyword (strip query parameters first)
+           let cleanUrl = url.split('?')[0];
+           let slug = cleanUrl.split('/').filter(Boolean).pop() || "";
            slug = slug.replace(/[-_]/g, ' ').replace(/\.html?/g, '').trim();
            
            promptText = `You are a product suggestion AI. Generate 5 to 10 real products matching the query "${slug}" with current market prices in BDT. 
@@ -140,8 +140,9 @@ ${cleaned}`;
         }
       } catch (e) {
         console.error("Error fetching URL content:", e);
-        // Fallback to URL slug parsing instead of erroring out
-        let slug = url.split('/').filter(Boolean).pop() || "";
+        // Fallback to URL slug parsing instead of erroring out (strip query parameters first)
+        let cleanUrl = url.split('?')[0];
+        let slug = cleanUrl.split('/').filter(Boolean).pop() || "";
         slug = slug.replace(/[-_]/g, ' ').replace(/\.html?/g, '').trim();
         promptText = `You are a product suggestion AI. Generate 5 to 10 real products matching the query "${slug}" with current market prices in BDT. 
 Return ONLY valid JSON in this exact format, with no markdown formatting, no code blocks, just raw JSON: 
