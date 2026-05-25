@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Loader2, PackagePlus, Image as ImageIcon, Upload, Percent, 
   Eye, EyeOff, Save, ArrowLeft, Link as LinkIcon, Wand2, 
-  Trash2, Sparkles, CheckCircle2, AlertTriangle, Layers, Plus, ExternalLink
+  Trash2, Sparkles, CheckCircle2, AlertTriangle, Layers, Plus, ExternalLink, Phone
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 

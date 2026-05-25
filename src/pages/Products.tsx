@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Trash2, Camera, CameraOff, ScanBarcode, Upload, ImageIcon, Eye, EyeOff, Percent, X, GripVertical, Layers, Search, Filter, CheckSquare, Wand2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Camera, CameraOff, ScanBarcode, Upload, ImageIcon, Eye, EyeOff, Percent, X, GripVertical, Layers, Search, Filter, CheckSquare, Wand2, Loader2, Phone } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Html5Qrcode } from "html5-qrcode";
