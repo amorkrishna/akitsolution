@@ -46,10 +46,9 @@ import Inventory from "./pages/Inventory";
 import Leads from "./pages/Leads";
 import ServiceRequests from "./pages/ServiceRequests";
 import Tenders from "./pages/Tenders";
-import Marketing from "./pages/Marketing";
-import Today from "./pages/Today";
-import PromoGenerator from "./pages/PromoGenerator";
 import Reports from "./pages/Reports";
+import Today from "./pages/Today";
+import CameraPlanner3D from "./pages/CameraPlanner3D";
 
 const queryClient = new QueryClient();
 
@@ -173,9 +172,7 @@ const App = () => (
             <Route path="/leads" element={<Leads />} />
             <Route path="/service-requests" element={<ServiceRequests />} />
             <Route path="/tenders" element={<Tenders />} />
-            <Route path="/marketing" element={<Marketing />} />
             <Route path="/today" element={<Today />} />
-            <Route path="/promo-generator" element={<PromoGenerator />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/attendance" element={<Attendance />} />
           </Route>
@@ -190,6 +187,7 @@ const App = () => (
           {/* Admin-only routes */}
           <Route element={<AuthGuard adminOnly><DashboardLayout /></AuthGuard>}>
             <Route path="/product-finder" element={<ProductFinder />} />
+            <Route path="/camera-planner-3d" element={<CameraPlanner3D />} />
             <Route path="/users" element={<UserManagement />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/store-settings" element={<StoreSettings />} />

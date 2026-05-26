@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import {
-  LayoutDashboard, Users, FolderKanban, Package, FileText, Wrench, Settings, ShieldCheck, ShoppingCart, Store, Receipt, Hammer, MessageSquareQuote, ChevronRight, Globe, Warehouse, UserPlus, ClipboardList, Megaphone, Briefcase, Sparkles, CalendarDays, Video, Camera, Search, X, Sun, Moon, BarChart3, Clock, Paintbrush, FileBarChart, Languages,
+  LayoutDashboard, Users, FolderKanban, Package, FileText, Wrench, Settings, ShieldCheck, ShoppingCart, Store, Receipt, Hammer, MessageSquareQuote, ChevronRight, Globe, Warehouse, UserPlus, ClipboardList, Briefcase, Sparkles, CalendarDays, Search, X, Sun, Moon, BarChart3, Clock, Paintbrush, FileBarChart, Languages, Box,
 } from "lucide-react";
 import akLogoDefault from "@/assets/ak-logo.png";
 import { NavLink } from "@/components/NavLink";
@@ -47,12 +47,9 @@ const serviceItems = [
 ];
 
 const marketingItems = [
-  { title: "nav.marketing", url: "/marketing", icon: Megaphone },
   { title: "nav.tenders", url: "/tenders", icon: Briefcase },
   { title: "nav.ai_chats", url: "/ai-chats", icon: Sparkles },
-  { title: "nav.ai_quote_leads", url: "/ai-quote-leads", icon: Sparkles },
   { title: "nav.today", url: "/today", icon: CalendarDays },
-  { title: "nav.promo_generator", url: "/promo-generator", icon: Video },
 ];
 
 const hrItems = [
@@ -61,7 +58,7 @@ const hrItems = [
 ];
 
 const adminItems = [
-  { title: "nav.camera_planner", url: "/camera-planner", icon: Camera },
+  { title: "nav.camera_planner_3d", url: "/camera-planner-3d", icon: Box, adminOnly: true },
   { title: "nav.user_management", url: "/users", icon: ShieldCheck, adminOnly: true },
   { title: "nav.store_customize", url: "/store-settings", icon: Paintbrush, adminOnly: true },
   { title: "nav.online_store", url: "/", icon: Store, external: true },
