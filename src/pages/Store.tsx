@@ -795,12 +795,20 @@ export default function Store() {
   // Reset visible count when filters change
   useEffect(() => { setVisibleProducts(8); }, [search, brandFilter, categoryFilter]);
 
+  const priorityCategories = ["CCTV", "Camera", "DVR/NVR"];
+
   const filtered = products?.filter((p: any) => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase());
     const matchesBrand = brandFilter === "all" || (p.brand || "Other") === brandFilter;
     const matchesCategory = categoryFilter === "all" || (p.category || "Other") === categoryFilter;
     const matchesWishlist = !showWishlistOnly || wishlistItems.includes(p.id);
     return matchesSearch && matchesBrand && matchesCategory && matchesWishlist;
+  }).sort((a: any, b: any) => {
+    const aPrio = priorityCategories.includes(a.category) ? 1 : 0;
+    const bPrio = priorityCategories.includes(b.category) ? 1 : 0;
+    if (aPrio > bPrio) return -1;
+    if (aPrio < bPrio) return 1;
+    return 0; // maintain original created_at order for the rest
   }) || [];
 
   const sendMessage = useMutation({
