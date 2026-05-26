@@ -47,13 +47,9 @@ import Leads from "./pages/Leads";
 import ServiceRequests from "./pages/ServiceRequests";
 import Tenders from "./pages/Tenders";
 import Marketing from "./pages/Marketing";
-import AIChatSessions from "./pages/AIChatSessions";
 import Today from "./pages/Today";
-import SharedLayout from "./pages/SharedLayout";
 import PromoGenerator from "./pages/PromoGenerator";
-import CameraPlanner2D from "./pages/CameraPlanner2D";
 import Reports from "./pages/Reports";
-import AIQuoteLeads from "./pages/AIQuoteLeads";
 
 const queryClient = new QueryClient();
 
@@ -153,7 +149,6 @@ const App = () => (
           <Route path="/shop" element={<Navigate to="/" replace />} />
           <Route path="/store" element={<Navigate to="/" replace />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/shared-layout" element={<SharedLayout />} />
           
           <Route path="/employee-dashboard" element={<EmployeeGuard><EmployeeDashboard /></EmployeeGuard>} />
 
@@ -179,11 +174,8 @@ const App = () => (
             <Route path="/service-requests" element={<ServiceRequests />} />
             <Route path="/tenders" element={<Tenders />} />
             <Route path="/marketing" element={<Marketing />} />
-            <Route path="/ai-chats" element={<AIChatSessions />} />
-            <Route path="/ai-quote-leads" element={<AIQuoteLeads />} />
             <Route path="/today" element={<Today />} />
             <Route path="/promo-generator" element={<PromoGenerator />} />
-            <Route path="/camera-planner" element={<CameraPlanner2D />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/attendance" element={<Attendance />} />
           </Route>

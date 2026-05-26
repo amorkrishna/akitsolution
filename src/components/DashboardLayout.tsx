@@ -8,6 +8,7 @@ import { LogOut, Bell, ShoppingCart, MessageCircle, ClipboardList } from "lucide
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuery } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 export function DashboardLayout({ children }: { children?: React.ReactNode }) {
   const navigate = useNavigate();
@@ -61,6 +62,7 @@ export function DashboardLayout({ children }: { children?: React.ReactNode }) {
               </span>
             </div>
             <div className="flex items-center gap-2">
+              <GlobalSearch />
               {/* Notification Bell with Popover */}
               <Popover>
                 <PopoverTrigger asChild>
