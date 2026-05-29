@@ -157,8 +157,16 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
             <p style={{ fontSize: "10px", fontWeight: 600, color: "#4b5563", margin: "2px 0" }}>Customer Signature</p>
             <p style={{ fontSize: "8px", color: "#9ca3af", margin: 0 }}>Name & Date</p>
           </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ borderTop: "2px solid #9ca3af", paddingTop: "6px", marginTop: "40px" }} />
+          <div style={{ textAlign: "center", position: "relative" }}>
+            <div style={{ height: "40px", display: "flex", justifyContent: "center", alignItems: "flex-end", marginBottom: "-5px", zIndex: 10 }}>
+              <img 
+                src="/signature.png" 
+                alt="Signature" 
+                crossOrigin="anonymous"
+                style={{ maxHeight: "50px", objectFit: "contain" }} 
+              />
+            </div>
+            <div style={{ borderTop: "2px solid #9ca3af", paddingTop: "6px" }} />
             <p style={{ fontSize: "10px", fontWeight: 600, color: "#4b5563", margin: "2px 0" }}>Authorized Signature</p>
             <p style={{ fontSize: "8px", color: "#9ca3af", margin: 0 }}>{settings.company_name}</p>
           </div>
