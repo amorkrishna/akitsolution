@@ -49,6 +49,7 @@ import Tenders from "./pages/Tenders";
 import Reports from "./pages/Reports";
 import Today from "./pages/Today";
 import CameraPlanner3D from "./pages/CameraPlanner3D";
+import AIChats from "./pages/AIChats";
 
 const queryClient = new QueryClient();
 
@@ -175,6 +176,7 @@ const App = () => (
             <Route path="/today" element={<Today />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/attendance" element={<Attendance />} />
+            <Route path="/ai-chats" element={<AIChats />} />
           </Route>
 
           {/* Revenue-only routes */}
