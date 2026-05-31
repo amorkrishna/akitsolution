@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Sparkles, MoreVertical, Search, Paperclip, MessageSquare } from "lucide-react";
+import { Send, Bot, User, Sparkles, MoreVertical, Search, Paperclip, MessageSquare, ShoppingCart, Info } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -26,11 +27,99 @@ const AIChats = () => {
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Auto scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isTyping]);
+
+  // Fetch recent store activity and listen for new ones
+  useEffect(() => {
+    const fetchRecentActivity = async () => {
+      const { data: orders } = await supabase
+        .from("store_orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+        
+      const { data: storeMessages } = await supabase
+        .from("store_messages")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      const combined: Message[] = [
+        {
+          id: "1",
+          role: "assistant",
+          content: "Hello! I am your AI Store Assistant. I'm actively monitoring the store and will notify you of any new orders or messages here in real-time.",
+          timestamp: new Date(),
+        }
+      ];
+
+      if (orders) {
+        orders.forEach(order => {
+          combined.push({
+            id: `order-${order.id}`,
+            role: "assistant",
+            content: `🛍️ Store Update: New order received from ${order.customer_name} for ${order.item_name} (Qty: ${order.quantity}).`,
+            timestamp: new Date(order.created_at),
+          });
+        });
+      }
+
+      if (storeMessages) {
+        storeMessages.forEach(msg => {
+          combined.push({
+            id: `msg-${msg.id}`,
+            role: "assistant",
+            content: `💬 New Customer Message: ${msg.customer_name} says: "${msg.message}"`,
+            timestamp: new Date(msg.created_at),
+          });
+        });
+      }
+
+      // Sort by timestamp
+      combined.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      setMessages(combined);
+    };
+
+    fetchRecentActivity();
+
+    // Subscribe to new orders
+    const orderChannel = supabase
+      .channel('aichat-orders')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'store_orders' }, (payload) => {
+        const order = payload.new as any;
+        setMessages(prev => [...prev, {
+          id: `order-${order.id}`,
+          role: "assistant",
+          content: `🛍️ Alert: A new order was just placed by ${order.customer_name} for ${order.item_name} (Qty: ${order.quantity})!`,
+          timestamp: new Date(order.created_at || new Date()),
+        }]);
+      })
+      .subscribe();
+
+    // Subscribe to new messages
+    const messageChannel = supabase
+      .channel('aichat-messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'store_messages' }, (payload) => {
+        const msg = payload.new as any;
+        setMessages(prev => [...prev, {
+          id: `msg-${msg.id}`,
+          role: "assistant",
+          content: `💬 Alert: A new message just arrived from ${msg.customer_name}: "${msg.message}"`,
+          timestamp: new Date(msg.created_at || new Date()),
+        }]);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(orderChannel);
+      supabase.removeChannel(messageChannel);
+    };
+  }, []);
 
   const handleSend = () => {
     if (!input.trim()) return;

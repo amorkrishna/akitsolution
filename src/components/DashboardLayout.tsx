@@ -9,6 +9,8 @@ import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuery } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export function DashboardLayout({ children }: { children?: React.ReactNode }) {
   const navigate = useNavigate();
@@ -42,6 +44,32 @@ export function DashboardLayout({ children }: { children?: React.ReactNode }) {
   });
 
   const totalNotifications = (pendingOrders?.length || 0) + (unreadMessages || 0) + (pendingServiceRequests?.length || 0);
+
+  useEffect(() => {
+    // Listen for new store orders in real-time
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'store_orders',
+        },
+        (payload) => {
+          const newOrder = payload.new as any;
+          toast.success("New Store Order!", {
+            description: `${newOrder.customer_name} ordered ${newOrder.item_name} (Qty: ${newOrder.quantity})`,
+            duration: 5000,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
