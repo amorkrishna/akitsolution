@@ -550,7 +550,10 @@ export default function Store() {
   const [msgForm, setMsgForm] = useState({ name: "", phone: "", message: "" });
   const [activeTab, setActiveTab] = useState<"products" | "services" | "packages" | "builder" | "tracking">("products");
   const [lang, setLang] = useState<"bn" | "en">("en");
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    const saved = localStorage.getItem("theme") as "dark" | "light";
+    return saved || "dark";
+  });
   const [detailProduct, setDetailProduct] = useState<any>(null);
   const [serviceCatFilter, setServiceCatFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -622,6 +625,15 @@ export default function Store() {
   const t = translations[lang];
   const isDark = theme === "dark";
   const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [isDark, theme]);
 
   useEffect(() => {
     const checkAdmin = async () => {
