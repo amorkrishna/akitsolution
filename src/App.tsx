@@ -48,7 +48,6 @@ import ServiceRequests from "./pages/ServiceRequests";
 import Tenders from "./pages/Tenders";
 import Reports from "./pages/Reports";
 import Today from "./pages/Today";
-import CameraPlanner3D from "./pages/CameraPlanner3D";
 import AIChats from "./pages/AIChats";
 
 const queryClient = new QueryClient();
@@ -189,7 +188,6 @@ const App = () => (
           {/* Admin-only routes */}
           <Route element={<AuthGuard adminOnly><DashboardLayout /></AuthGuard>}>
             <Route path="/product-finder" element={<ProductFinder />} />
-            <Route path="/camera-planner-3d" element={<CameraPlanner3D />} />
             <Route path="/users" element={<UserManagement />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/store-settings" element={<StoreSettings />} />

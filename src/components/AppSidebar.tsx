@@ -58,7 +58,6 @@ const hrItems = [
 ];
 
 const adminItems = [
-  { title: "nav.camera_planner_3d", url: "/camera-planner-3d", icon: Box, adminOnly: true },
   { title: "nav.user_management", url: "/users", icon: ShieldCheck, adminOnly: true },
   { title: "nav.store_customize", url: "/store-settings", icon: Paintbrush, adminOnly: true },
   { title: "nav.online_store", url: "/", icon: Store, external: true },

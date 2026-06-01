@@ -45,7 +45,6 @@ const translations: Record<string, Record<Language, string>> = {
   "nav.today": { bn: "আজকের কাজ", en: "Today" },
   "nav.employees": { bn: "কর্মচারী", en: "Employees" },
   "nav.attendance": { bn: "হাজিরা", en: "Attendance" },
-  "nav.camera_planner_3d": { bn: "3D ক্যামেরা প্ল্যানার", en: "3D Camera Planner" },
   "nav.user_management": { bn: "ইউজার ম্যানেজমেন্ট", en: "User Management" },
   "nav.store_customize": { bn: "স্টোর কাস্টমাইজ", en: "Store Customize" },
   "nav.online_store": { bn: "অনলাইন স্টোর", en: "Online Store" },
