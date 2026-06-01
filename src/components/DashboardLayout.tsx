@@ -4,7 +4,7 @@ import { useNavigate, Outlet } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Bell, ShoppingCart, MessageCircle, ClipboardList } from "lucide-react";
+import { LogOut, Bell, ShoppingCart, MessageCircle, ClipboardList, Bot } from "lucide-react";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useQuery } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -43,7 +43,16 @@ export function DashboardLayout({ children }: { children?: React.ReactNode }) {
     refetchInterval: 30000,
   });
 
-  const totalNotifications = (pendingOrders?.length || 0) + (unreadMessages || 0) + (pendingServiceRequests?.length || 0);
+  const { data: activeAiChats } = useQuery({
+    queryKey: ["header-active-ai-chats"],
+    queryFn: async () => {
+      const { data } = await supabase.from("ai_chat_sessions").select("id, customer_name, summary, updated_at").eq("status", "active").order("updated_at", { ascending: false }).limit(5);
+      return data || [];
+    },
+    refetchInterval: 30000,
+  });
+
+  const totalNotifications = (pendingOrders?.length || 0) + (unreadMessages || 0) + (pendingServiceRequests?.length || 0) + (activeAiChats?.length || 0);
 
   useEffect(() => {
     // Listen for new store orders in real-time
@@ -66,8 +75,41 @@ export function DashboardLayout({ children }: { children?: React.ReactNode }) {
       )
       .subscribe();
 
+    const aiChannel = supabase
+      .channel('ai-chat-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'ai_chat_sessions',
+        },
+        () => {
+          toast.info("New AI Chat Started", {
+            description: "A customer is talking to the AI assistant.",
+            duration: 5000,
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'ai_chat_sessions',
+        },
+        () => {
+          toast.success("AI Chat Updated", {
+            description: "New message in store AI chat.",
+            duration: 3000,
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(aiChannel);
     };
   }, []);
 
@@ -144,7 +186,24 @@ export function DashboardLayout({ children }: { children?: React.ReactNode }) {
                       </button>
                     ))}
 
-                    {(!pendingOrders || pendingOrders.length === 0) && (!pendingServiceRequests || pendingServiceRequests.length === 0) && (!unreadMessages || unreadMessages === 0) && (
+                    {activeAiChats && activeAiChats.length > 0 && activeAiChats.map((chat: any) => (
+                      <button
+                        key={`ai-${chat.id}`}
+                        onClick={() => navigate("/ai-chats")}
+                        className="w-full flex items-start gap-3 p-3 hover:bg-muted/50 transition-colors text-left border-b border-border/30 last:border-0"
+                      >
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Bot className="h-3.5 w-3.5 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium truncate">AI Chat: {chat.customer_name || "Visitor"}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{chat.summary || "Active conversation..."}</p>
+                        </div>
+                        <Badge variant="outline" className="text-[8px] bg-primary/10 text-primary border-primary/20">Active</Badge>
+                      </button>
+                    ))}
+
+                    {(!pendingOrders || pendingOrders.length === 0) && (!pendingServiceRequests || pendingServiceRequests.length === 0) && (!unreadMessages || unreadMessages === 0) && (!activeAiChats || activeAiChats.length === 0) && (
                       <p className="text-xs text-muted-foreground text-center py-6">No new notifications</p>
                     )}
                     

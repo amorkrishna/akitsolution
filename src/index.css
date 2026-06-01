@@ -254,3 +254,17 @@
 .animate-marquee {
   animation: marquee 25s linear infinite;
 }
+
+/* Global text and background visibility fixes for dark mode */
+.dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700,
+.dark .text-slate-900, .dark .text-slate-800, .dark .text-slate-700,
+.dark .text-zinc-900, .dark .text-zinc-800, .dark .text-zinc-700,
+.dark .text-neutral-900, .dark .text-neutral-800, .dark .text-neutral-700,
+.dark .text-black {
+  color: hsl(var(--foreground)) !important;
+}
+
+.dark .bg-white, .dark .bg-gray-50, .dark .bg-slate-50, .dark .bg-zinc-50 {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+}
