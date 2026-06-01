@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Sparkles, MoreVertical, Search, MessageSquare, ShoppingCart, Info, Clock, UserCircle } from "lucide-react";
+import { Send, Bot, User, Sparkles, MoreVertical, Search, MessageSquare, ShoppingCart, Info, Clock, UserCircle, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,6 +46,24 @@ export default function AIChats() {
         const updatedSelected = data.find(s => s.id === selectedSession.id);
         if (updatedSelected) setSelectedSession(updatedSelected);
       }
+    }
+  };
+
+  const handleDeleteSession = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this AI chat session?")) return;
+    
+    try {
+      const { error } = await supabase.from("ai_chat_sessions").delete().eq("id", id);
+      if (error) throw error;
+      
+      toast.success("AI Chat session deleted successfully");
+      if (selectedSession?.id === id) {
+        setSelectedSession(null);
+      }
+      fetchSessions();
+    } catch (error: any) {
+      console.error("Error deleting session:", error);
+      toast.error("Failed to delete session: " + error.message);
     }
   };
 
@@ -134,9 +153,22 @@ export default function AIChats() {
               <h1 className="text-lg font-semibold leading-none mb-1">Select a chat</h1>
             </div>
           )}
-          <Badge variant={selectedSession?.status === "active" ? "default" : "secondary"}>
-            {selectedSession?.status || "Unknown"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={selectedSession?.status === "active" ? "default" : "secondary"}>
+              {selectedSession?.status || "Unknown"}
+            </Badge>
+            {selectedSession && (
+              <Button 
+                variant="destructive" 
+                size="icon" 
+                className="h-8 w-8 ml-2 bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground border-none" 
+                onClick={() => handleDeleteSession(selectedSession.id)}
+                title="Delete Chat Session"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Messages */}
