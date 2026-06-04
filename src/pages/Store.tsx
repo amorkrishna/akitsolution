@@ -1031,12 +1031,14 @@ export default function Store() {
                   <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[8px] font-bold text-white flex items-center justify-center">{totalItems()}</span>
                 )}
               </button>
-              <button
-                onClick={() => { setMsgDialog(true); setMsgForm({ name: "", phone: "", message: "" }); }}
-                className="h-7 w-7 rounded-md flex items-center justify-center bg-gradient-to-r from-violet-600 to-indigo-500 text-white shadow-md shadow-violet-500/20 transition-all"
+              <a 
+                href={`https://wa.me/${settings?.whatsapp_number || "8801919060590"}?text=${encodeURIComponent(lang === "bn" ? "আসসালামু আলাইকুম, আমি আপনার প্রোডাক্ট সম্পর্কে জানতে চাই।" : "Hello, I want to know about your products.")}`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="h-7 w-7 rounded-md flex items-center justify-center bg-[#25D366] text-white shadow-md shadow-[#25D366]/25 hover:bg-[#128C7E] transition-all"
               >
                 <MessageCircle className="h-3 w-3" />
-              </button>
+              </a>
               <a href="/auth" className={`text-[8px] px-1 py-0.5 ${isDark ? "text-white/20 hover:text-white/40" : "text-gray-300 hover:text-gray-400"} transition-colors`}>•</a>
             </div>
           </div>
