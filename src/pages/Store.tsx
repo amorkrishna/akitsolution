@@ -813,7 +813,9 @@ export default function Store() {
   // Reset visible count when filters change
   useEffect(() => { setVisibleProducts(8); }, [search, brandFilter, categoryFilter]);
 
-  const priorityCategories = ["CCTV", "Camera", "DVR/NVR"];
+  const priorityCategories = categoryTiles.length > 0 
+    ? [categoryTiles[0].title] 
+    : ["CCTV", "Camera", "DVR/NVR"];
 
   const filtered = products?.filter((p: any) => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase());
@@ -1199,7 +1201,7 @@ export default function Store() {
               {lang === "bn" ? "🛒 ক্যাটাগরি অনুযায়ী কেনাকাটা করুন" : "🛒 Shop by Category"}
             </h3>
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
+          <div className="flex overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {categoryNav.filter(c => c.key !== "all").map((cat) => {
               const Icon = cat.icon;
               const count = products?.filter((p: any) => p.category === cat.key).length || 0;
@@ -1208,7 +1210,7 @@ export default function Store() {
                 <button
                   key={cat.key}
                   onClick={() => { setCategoryFilter(cat.key); setActiveTab("products"); document.getElementById("products-section")?.scrollIntoView({ behavior: "smooth" }); }}
-                  className={`group rounded-xl sm:rounded-2xl p-3 sm:p-4 border text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${isDark
+                  className={`group snap-start min-w-[100px] sm:min-w-0 flex-shrink-0 rounded-xl sm:rounded-2xl p-3 sm:p-4 border text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${isDark
                     ? "bg-white/[0.03] border-white/10 hover:bg-white/[0.07] hover:border-purple-500/30"
                     : "bg-white border-gray-200 hover:bg-purple-50/50 hover:border-purple-300 shadow-sm"
                     }`}

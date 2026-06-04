@@ -53,6 +53,7 @@ export function CategoryTilesManager() {
           subtitle: tile.subtitle,
           image_url: tile.image_url,
           link_url: tile.link_url,
+          sort_order: tile.sort_order,
           is_active: tile.is_active,
         })
         .eq("id", tile.id);
@@ -127,6 +128,14 @@ export function CategoryTilesManager() {
                     <Input
                       value={tile.subtitle || ""}
                       onChange={(e) => update(tile.id, { subtitle: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Sort Order (Lower = First)</Label>
+                    <Input
+                      type="number"
+                      value={tile.sort_order}
+                      onChange={(e) => update(tile.id, { sort_order: parseInt(e.target.value) || 0 })}
                     />
                   </div>
                   <div>
