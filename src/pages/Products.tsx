@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Trash2, Camera, CameraOff, ScanBarcode, Upload, ImageIcon, Eye, EyeOff, Percent, X, GripVertical, Layers, Search, Filter, CheckSquare, Wand2, Loader2, Phone } from "lucide-react";
+import { Plus, Pencil, Trash2, Camera, CameraOff, ScanBarcode, Upload, ImageIcon, Eye, EyeOff, Percent, X, GripVertical, Layers, Search, Filter, CheckSquare, Wand2, Loader2, Phone, Star } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Html5Qrcode } from "html5-qrcode";
@@ -27,7 +27,7 @@ export default function Products() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [form, setForm] = useState({
     name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "",
-    cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false,
+    cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false, is_featured: false,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -189,6 +189,7 @@ export default function Products() {
         cash_discount_price: data.cash_discount_price ? Number(data.cash_discount_price) : null,
         discount_percentage: Number(data.discount_percentage) || 0,
         show_in_store: data.show_in_store,
+        is_featured: data.is_featured || false,
         call_for_price: data.call_for_price || false,
       };
       let productId = editing?.id;
@@ -313,6 +314,24 @@ export default function Products() {
     }
   };
 
+  const handleBulkFeatureChange = async (featured: boolean) => {
+    if (selectedIds.size === 0) return;
+    setSavingBulkShow(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const { error } = await supabase.from("products").update({ is_featured: featured } as any).in("id", ids);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast({ title: `${ids.length}টি প্রোডাক্ট ${featured ? "Feature করা হয়েছে" : "Feature থেকে সরানো হয়েছে"}` });
+      setSelectedIds(new Set());
+      setIsMultiSelect(false);
+    } catch {
+      toast({ title: "স্ট্যাটাস আপডেট ব্যর্থ", variant: "destructive" });
+    } finally {
+      setSavingBulkShow(false);
+    }
+  };
+
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -371,7 +390,7 @@ export default function Products() {
   };
 
   const resetForm = () => {
-    setForm({ name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "", cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false });
+    setForm({ name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "", cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false, is_featured: false });
     setImageFile(null); setImagePreview(null);
     setAdditionalImages([]); setAdditionalPreviews([]); setExistingImages([]);
     setVariants([]); setDeletedVariantIds([]);
@@ -385,6 +404,7 @@ export default function Products() {
       cash_discount_price: (p as any).cash_discount_price?.toString() || "",
       discount_percentage: p.discount_percentage?.toString() || "0",
       show_in_store: p.show_in_store,
+      is_featured: p.is_featured || false,
       call_for_price: (p as any).call_for_price || false,
     });
     setImagePreview((p as any).image_url || null);
@@ -564,6 +584,17 @@ export default function Products() {
 
                   <div className="flex items-center justify-between border border-border rounded-lg p-4">
                     <div className="flex items-center gap-3">
+                      <Star className={`h-4 w-4 ${form.is_featured ? "text-amber-500 fill-amber-500" : "text-muted-foreground"}`} />
+                      <div>
+                        <Label className="text-sm font-medium">Feature in Store (Top)</Label>
+                        <p className="text-[10px] text-muted-foreground">Show this product first in the public store</p>
+                      </div>
+                    </div>
+                    <Switch checked={form.is_featured} onCheckedChange={(v) => setForm({ ...form, is_featured: v })} />
+                  </div>
+
+                  <div className="flex items-center justify-between border border-border rounded-lg p-4">
+                    <div className="flex items-center gap-3">
                       <Phone className="h-4 w-4 text-primary" />
                       <div>
                         <Label className="text-sm font-medium">Call for Price (মূল্য জানতে কল করুন)</Label>
@@ -647,6 +678,17 @@ export default function Products() {
               </Button>
 
               <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs border-amber-500/30 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/20"
+                onClick={() => handleBulkFeatureChange(true)}
+                disabled={selectedIds.size === 0 || savingBulkShow}
+              >
+                {savingBulkShow ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Star className="h-3 w-3 mr-1" />}
+                Top Feature
+              </Button>
+
+              <Button
                 variant="destructive"
                 size="sm"
                 className="h-7 text-xs"
@@ -726,6 +768,7 @@ export default function Products() {
                     </TableCell>
                     <TableCell className="font-medium">
                       {p.name}
+                      {p.is_featured && <Badge className="ml-2 text-[10px] bg-amber-500 hover:bg-amber-600 text-white border-0 shadow-sm"><Star className="h-2 w-2 mr-1 fill-white" /> Top</Badge>}
                       {variantCounts?.[p.id] ? <Badge variant="secondary" className="ml-2 text-[10px]">{variantCounts[p.id]} variants</Badge> : null}
                     </TableCell>
                     <TableCell><Badge variant="outline" className={catColor[p.category] || ""}>{p.category}</Badge></TableCell>

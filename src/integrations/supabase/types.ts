@@ -1066,6 +1066,7 @@ export type Database = {
           name: string
           price: number
           show_in_store: boolean
+          is_featured: boolean
           sku: string | null
           stock_quantity: number
           updated_at: string
@@ -1082,6 +1083,7 @@ export type Database = {
           name: string
           price?: number
           show_in_store?: boolean
+          is_featured?: boolean
           sku?: string | null
           stock_quantity?: number
           updated_at?: string
@@ -1098,6 +1100,7 @@ export type Database = {
           name?: string
           price?: number
           show_in_store?: boolean
+          is_featured?: boolean
           sku?: string | null
           stock_quantity?: number
           updated_at?: string

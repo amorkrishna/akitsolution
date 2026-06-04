@@ -657,7 +657,13 @@ export default function Store() {
       try {
         const { data, error } = await supabase.from("products").select("*").eq("show_in_store", true).order("created_at", { ascending: false });
         if (error) throw error;
-        return data || [];
+        
+        // Sort client-side to prevent crash if SQL column isn't created yet
+        return (data || []).sort((a: any, b: any) => {
+          if (a.is_featured && !b.is_featured) return -1;
+          if (!a.is_featured && b.is_featured) return 1;
+          return 0;
+        });
       } catch (err: any) {
         if (err.name === 'AbortError' || err.message?.includes('AbortError')) throw new Error("Supabase Lock Aborted");
         throw err;
@@ -1556,8 +1562,13 @@ export default function Store() {
                         <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg bg-red-600/90 text-[8px] sm:text-[10px] font-semibold text-white backdrop-blur-sm">{t.outOfStock}</span>
                       )}
                     </div>
-                    <div className="p-3 sm:p-4 flex flex-col flex-1">
-                      <h3 className={`font-semibold text-[11px] sm:text-sm leading-snug line-clamp-2 group-hover:text-violet-400 transition-colors ${textPrimary}`}>{product.name}</h3>
+                    <div className="p-3 sm:p-4 flex flex-col flex-1 relative">
+                      {product.is_featured && (
+                        <div className="absolute -top-3 left-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 z-10 border border-white/20">
+                          <Star className="h-2 w-2 fill-white" /> Top
+                        </div>
+                      )}
+                      <h3 className={`font-semibold text-[11px] sm:text-sm leading-snug line-clamp-2 group-hover:text-violet-400 transition-colors ${product.is_featured ? "mt-1" : ""} ${textPrimary}`}>{product.name}</h3>
                       {product.brand && (
                         <p className={`text-[8px] sm:text-[10px] mt-0.5 ${textMuted}`}>{product.brand}</p>
                       )}
