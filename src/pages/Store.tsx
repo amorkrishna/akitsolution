@@ -593,6 +593,28 @@ export default function Store() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutForm, setCheckoutForm] = useState({ name: "", phone: "", email: "", payment_method: "cash_on_delivery" });
   const [visibleProducts, setVisibleProducts] = useState(8);
+
+  // Handle hardware back button on mobile for modals
+  useEffect(() => {
+    if (cartOpen || checkoutOpen || detailProduct) {
+      window.history.pushState({ modal: "store-modal" }, "");
+      
+      const handlePopState = () => {
+        if (checkoutOpen) setCheckoutOpen(false);
+        else if (cartOpen) setCartOpen(false);
+        else if (detailProduct) setDetailProduct(null);
+      };
+      
+      window.addEventListener("popstate", handlePopState);
+      
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+        if (window.history.state?.modal === "store-modal") {
+          window.history.back();
+        }
+      };
+    }
+  }, [cartOpen, checkoutOpen, !!detailProduct]);
   const { settings } = useCompanySettings();
 
   // Comparison state

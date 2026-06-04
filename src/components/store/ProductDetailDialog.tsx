@@ -98,6 +98,29 @@ export function ProductDetailDialog({ product, onClose, onOrder, isDark, lang }:
     setSelectedVariant(null);
   }, [product?.id]);
 
+  // Handle hardware back button on mobile
+  useEffect(() => {
+    if (product) {
+      // Push a fake state so the back button has something to pop
+      window.history.pushState({ modal: "product-detail" }, "");
+      
+      const handlePopState = () => {
+        setViewingProduct(null);
+        onClose();
+      };
+      
+      window.addEventListener("popstate", handlePopState);
+      
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+        // If the modal is closing by UI (not by back button), we clean up the history state
+        if (window.history.state?.modal === "product-detail") {
+          window.history.back();
+        }
+      };
+    }
+  }, [product ? "open" : "closed"]);
+
   const textPrimary = isDark ? "text-white" : "text-gray-900";
   const textSecondary = isDark ? "text-white/60" : "text-gray-600";
   const textMuted = isDark ? "text-white/40" : "text-gray-400";
