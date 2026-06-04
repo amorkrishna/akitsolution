@@ -557,6 +557,7 @@ export default function Store() {
   const [detailProduct, setDetailProduct] = useState<any>(null);
   const [serviceCatFilter, setServiceCatFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [defaultCategorySet, setDefaultCategorySet] = useState(false);
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -753,6 +754,14 @@ export default function Store() {
       return (data as any[]) || [];
     },
   });
+
+  useEffect(() => {
+    if (categoryTiles.length > 0 && !defaultCategorySet) {
+      // Set to the highest ranked category automatically
+      setCategoryFilter(categoryTiles[0].title);
+      setDefaultCategorySet(true);
+    }
+  }, [categoryTiles, defaultCategorySet]);
 
   const announcementText = storeConfig?.announcement_active && storeConfig?.announcement_text
     ? storeConfig.announcement_text
