@@ -441,7 +441,6 @@ ${reviewsText ? "## কাস্টমার রিভিউ (বিশ্বা
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="আপনার প্রশ্ন লিখুন..."
                     className="w-full bg-muted/40 rounded-xl px-4 py-2.5 text-sm border border-border/30 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all text-foreground placeholder:text-muted-foreground"
-                    disabled={isLoading}
                   />
                 </div>
                 <Button type="submit" size="icon" disabled={!input.trim() || isLoading}
