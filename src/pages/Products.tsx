@@ -28,6 +28,7 @@ export default function Products() {
   const [form, setForm] = useState({
     name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "",
     cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false, is_featured: false,
+    specifications: [] as {feature: string, description: string}[],
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -182,8 +183,16 @@ export default function Products() {
   const saveMutation = useMutation({
     mutationFn: async (data: any) => {
       setUploading(true);
+      let finalDescription = data.description;
+      if (data.specifications && data.specifications.length > 0) {
+        finalDescription = JSON.stringify({
+          text: data.description,
+          specs: data.specifications
+        });
+      }
+
       const payload = {
-        name: data.name, category: data.category, brand: data.brand, description: data.description, sku: data.sku,
+        name: data.name, category: data.category, brand: data.brand, description: finalDescription, sku: data.sku,
         price: Number(data.price) || 0,
         stock_quantity: Number(data.stock_quantity) || 0,
         cash_discount_price: data.cash_discount_price ? Number(data.cash_discount_price) : null,
@@ -390,7 +399,7 @@ export default function Products() {
   };
 
   const resetForm = () => {
-    setForm({ name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "", cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false, is_featured: false });
+    setForm({ name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "", cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false, is_featured: false, specifications: [] });
     setImageFile(null); setImagePreview(null);
     setAdditionalImages([]); setAdditionalPreviews([]); setExistingImages([]);
     setVariants([]); setDeletedVariantIds([]);
@@ -398,14 +407,26 @@ export default function Products() {
 
   const openEdit = async (p: any) => {
     setEditing(p);
+    
+    let parsedDesc = p.description || "";
+    let parsedSpecs = [];
+    try {
+      const obj = JSON.parse(p.description || "{}");
+      if (obj && typeof obj === 'object' && obj.text !== undefined) {
+        parsedDesc = obj.text;
+        parsedSpecs = obj.specs || [];
+      }
+    } catch (e) {}
+
     setForm({
-      name: p.name, category: p.category, brand: p.brand || "Other", description: p.description || "",
+      name: p.name, category: p.category, brand: p.brand || "Other", description: parsedDesc,
       price: p.price.toString(), stock_quantity: p.stock_quantity.toString(), sku: p.sku || "",
       cash_discount_price: (p as any).cash_discount_price?.toString() || "",
       discount_percentage: p.discount_percentage?.toString() || "0",
       show_in_store: p.show_in_store,
       is_featured: p.is_featured || false,
       call_for_price: (p as any).call_for_price || false,
+      specifications: parsedSpecs,
     });
     setImagePreview((p as any).image_url || null);
     setImageFile(null);
@@ -627,6 +648,26 @@ export default function Products() {
                   </div>
 
                   <div className="space-y-2"><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+
+                  {/* Specifications Builder */}
+                  <div className="space-y-3 pt-2 border-t">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold">Specifications</h4>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setForm({ ...form, specifications: [...form.specifications, { feature: "", description: "" }] })}>
+                        <Plus className="h-3 w-3 mr-1" /> Add Spec
+                      </Button>
+                    </div>
+                    {form.specifications.length === 0 && <p className="text-[10px] text-muted-foreground">No specifications added. Click 'Add Spec' to build a specification table.</p>}
+                    {form.specifications.map((spec, idx) => (
+                      <div key={idx} className="grid grid-cols-[1fr_2fr_30px] gap-2 items-end">
+                        <div className="space-y-1"><Label className="text-[10px]">Feature</Label><Input className="h-8 text-xs" placeholder="e.g. Brand" value={spec.feature} onChange={(e) => { const updated = [...form.specifications]; updated[idx].feature = e.target.value; setForm({ ...form, specifications: updated }); }} /></div>
+                        <div className="space-y-1"><Label className="text-[10px]">Description</Label><Input className="h-8 text-xs" placeholder="e.g. Hikvision" value={spec.description} onChange={(e) => { const updated = [...form.specifications]; updated[idx].description = e.target.value; setForm({ ...form, specifications: updated }); }} /></div>
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => { const updated = [...form.specifications]; updated.splice(idx, 1); setForm({ ...form, specifications: updated }); }}>
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                   <Button type="submit" className="w-full" disabled={saveMutation.isPending || uploading}>
                     {uploading ? "Uploading..." : editing ? "Update" : "Add"} Product
                   </Button>

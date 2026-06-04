@@ -276,13 +276,55 @@ export function ProductDetailDialog({ product, onClose, onOrder, isDark, lang }:
               </div>
             )}
 
-            {/* Description */}
+            {/* Description & Specifications */}
             <div className="mb-4 flex-1">
-              {activeProduct.description ? (
-                <p className={`text-sm leading-relaxed break-words ${textSecondary}`}>{activeProduct.description}</p>
-              ) : (
-                <p className={`text-sm italic ${textMuted}`}>{lang === "bn" ? "কোনো বিবরণ নেই" : "No description available"}</p>
-              )}
+              {(() => {
+                let parsedDesc = activeProduct.description || "";
+                let parsedSpecs: any[] = [];
+                try {
+                  if (activeProduct.description) {
+                    const obj = JSON.parse(activeProduct.description);
+                    if (obj && typeof obj === 'object' && obj.text !== undefined) {
+                      parsedDesc = obj.text;
+                      parsedSpecs = obj.specs || [];
+                    }
+                  }
+                } catch (e) {}
+
+                return (
+                  <div className="space-y-4">
+                    {parsedDesc ? (
+                      <p className={`text-sm leading-relaxed break-words whitespace-pre-wrap ${textSecondary}`}>{parsedDesc}</p>
+                    ) : (
+                      <p className={`text-sm italic ${textMuted}`}>{lang === "bn" ? "কোনো বিবরণ নেই" : "No description available"}</p>
+                    )}
+
+                    {parsedSpecs.length > 0 && (
+                      <div className="mt-4">
+                        <h3 className={`text-sm font-bold mb-2 ${textPrimary}`}>Specification</h3>
+                        <div className={`rounded-xl overflow-hidden border ${isDark ? "border-white/10" : "border-gray-200"}`}>
+                          <table className="w-full text-left text-sm">
+                            <thead className={`${isDark ? "bg-white/5" : "bg-gray-50"}`}>
+                              <tr>
+                                <th className={`px-4 py-2 font-semibold ${textPrimary}`}>Feature</th>
+                                <th className={`px-4 py-2 font-semibold ${textPrimary}`}>Description</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 dark:divide-white/10">
+                              {parsedSpecs.map((spec, i) => (
+                                <tr key={i} className={`${isDark ? "hover:bg-white/[0.02]" : "hover:bg-gray-50/50"}`}>
+                                  <td className={`px-4 py-2 font-medium ${textPrimary} w-1/3`}>{spec.feature}</td>
+                                  <td className={`px-4 py-2 ${textSecondary}`}>{spec.description}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Add to Cart / Call for Price */}
