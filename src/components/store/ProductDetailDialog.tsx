@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Package, ChevronLeft, ChevronRight, Check, Minus, Plus, Heart, Star, MessageSquareQuote } from "lucide-react";
+import { ShoppingCart, Package, ChevronLeft, ChevronRight, Check, Minus, Plus, Heart, Star, MessageSquareQuote, Phone } from "lucide-react";
 import { SocialShareButtons } from "./SocialShareButtons";
 import { useWishlistStore } from "@/stores/wishlistStore";
 import { toast } from "sonner";
