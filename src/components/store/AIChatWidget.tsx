@@ -40,6 +40,26 @@ export function AIChatWidget() {
     }
   }, [open]);
 
+  // Handle hardware back button on mobile
+  useEffect(() => {
+    if (open) {
+      window.history.pushState({ modal: "ai-chat" }, "");
+      
+      const handlePopState = () => {
+        setOpen(false);
+      };
+      
+      window.addEventListener("popstate", handlePopState);
+      
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+        if (window.history.state?.modal === "ai-chat") {
+          window.history.back();
+        }
+      };
+    }
+  }, [open]);
+
   const loadContext = async () => {
     try {
       const [productsRes, servicesRes, portfolioRes, reviewsRes, servicingRes] = await Promise.all([
