@@ -1139,44 +1139,7 @@ export default function Store() {
         </section>
       )}
 
-      {/* SIMPLE PROFESSIONAL HERO SECTION */}
-      <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24 border-b border-border/40">
-        <div className={`absolute inset-0 ${isDark ? "bg-[#0A0514]" : "bg-slate-50"}`} />
-        <div className={`absolute inset-0 opacity-20 ${isDark ? "bg-grid-white/[0.05]" : "bg-grid-black/[0.05]"} bg-[length:32px_32px]`} />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-        
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6 bg-primary/10 text-primary border border-primary/20 backdrop-blur-sm animate-fade-in">
-            <Sparkles className="h-3.5 w-3.5" />
-            {lang === "bn" ? "প্রফেশনাল আইটি সলিউশন" : "Professional IT Solutions"}
-          </div>
-          
-          <h2 className={`text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-tight mb-6 ${textPrimary} animate-slide-up`}>
-            {settings.company_name}
-          </h2>
-          
-          <p className={`text-base sm:text-lg max-w-2xl mx-auto mb-10 ${textSecondary} animate-slide-up [animation-delay:100ms]`}>
-            {settings.company_tagline || (lang === "bn" ? "আপনার ব্যবসায়ের নিরাপত্তার জন্য সেরা সিসিটিভি এবং আইটি সলিউশন" : "The best CCTV and IT solutions for your business security")}
-          </p>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up [animation-delay:200ms]">
-            <button
-              onClick={() => { setActiveTab("products"); document.getElementById("products-section")?.scrollIntoView({ behavior: "smooth" }); }}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              {lang === "bn" ? "পণ্য দেখুন" : "Browse Products"}
-            </button>
-            <button
-              onClick={() => openWhatsApp(settings?.whatsapp_number || settings?.phone || "", lang === "bn" ? "আসসালামু আলাইকুম" : "Hello")}
-              className={`w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base border-2 backdrop-blur-md transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 ${isDark ? "border-white/10 hover:bg-white/5 text-white" : "border-gray-200 hover:bg-gray-50 text-gray-900"}`}
-            >
-              <MessageCircle className="h-4 w-4" />
-              {lang === "bn" ? "যোগাযোগ করুন" : "Contact Us"}
-            </button>
-          </div>
-        </div>
-      </section>
+
 
       {/* Featured / Popular Products Banner */}
       {(() => {
