@@ -323,25 +323,41 @@ export function ProductDetailDialog({ product, onClose, onOrder, isDark, lang }:
                     )}
 
                     {parsedSpecs.length > 0 && (
-                      <div className="mt-4">
-                        <h3 className={`text-sm font-bold mb-2 ${textPrimary}`}>Specification</h3>
-                        <div className={`rounded-xl overflow-hidden border ${isDark ? "border-white/10" : "border-gray-200"}`}>
-                          <table className="w-full text-left text-sm">
-                            <thead className={`${isDark ? "bg-white/5" : "bg-gray-50"}`}>
-                              <tr>
-                                <th className={`px-4 py-2 font-semibold ${textPrimary}`}>Feature</th>
-                                <th className={`px-4 py-2 font-semibold ${textPrimary}`}>Description</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 dark:divide-white/10">
-                              {parsedSpecs.map((spec, i) => (
-                                <tr key={i} className={`${isDark ? "hover:bg-white/[0.02]" : "hover:bg-gray-50/50"}`}>
-                                  <td className={`px-4 py-2 font-medium ${textPrimary} w-1/3`}>{spec.feature}</td>
-                                  <td className={`px-4 py-2 ${textSecondary}`}>{spec.description}</td>
+                      <div className={`mt-6 rounded-2xl shadow-sm p-4 sm:p-6 border ${isDark ? "bg-white/[0.02] border-white/10" : "bg-white border-gray-100"}`}>
+                        <h2 className={`text-lg sm:text-xl font-bold mb-4 ${textPrimary}`}>Specification</h2>
+                        
+                        <div className={`px-4 py-2.5 rounded-lg font-semibold text-xs sm:text-sm mb-6 ${isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-900"}`}>
+                          General Information
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-start">
+                          <div className="md:col-span-2 overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-sm">
+                              <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                                <tr className="border-b border-gray-100 dark:border-white/5">
+                                  <td className={`py-3 font-semibold ${textPrimary} w-1/3`}>Product Name</td>
+                                  <td className={`py-3 ${textSecondary}`}>{activeProduct.name}</td>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                                {parsedSpecs.map((spec, i) => (
+                                  <tr key={i} className="border-b border-gray-100 dark:border-white/5 last:border-0">
+                                    <td className={`py-3 font-semibold ${textPrimary} w-1/3`}>{spec.feature}</td>
+                                    <td className={`py-3 ${textSecondary}`}>{spec.description}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className={`flex justify-center items-center rounded-xl aspect-square border overflow-hidden relative ${isDark ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-200"}`}>
+                            {activeProduct.image_url ? (
+                              <img src={activeProduct.image_url} alt={activeProduct.name} className="object-contain w-full h-full p-2" />
+                            ) : (
+                              <div className="text-center text-gray-400 font-medium">
+                                <span className="block text-4xl mb-2">📦</span>
+                                <span className="text-xs">{lang === "bn" ? "কোনো ছবি নেই" : "No Image"}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
