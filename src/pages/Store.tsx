@@ -598,6 +598,7 @@ export default function Store() {
   // Handle hardware back button on mobile for modals
   useEffect(() => {
     if (cartOpen || checkoutOpen || detailProduct) {
+      // Only push state if we are transitioning from nothing open to something open
       window.history.pushState({ modal: "store-modal" }, "");
       
       const handlePopState = () => {
@@ -607,13 +608,7 @@ export default function Store() {
       };
       
       window.addEventListener("popstate", handlePopState);
-      
-      return () => {
-        window.removeEventListener("popstate", handlePopState);
-        if (window.history.state?.modal === "store-modal") {
-          window.history.back();
-        }
-      };
+      return () => window.removeEventListener("popstate", handlePopState);
     }
   }, [cartOpen, checkoutOpen, !!detailProduct]);
   const { settings } = useCompanySettings();
@@ -755,13 +750,8 @@ export default function Store() {
     },
   });
 
-  useEffect(() => {
-    if (categoryTiles.length > 0 && !defaultCategorySet) {
-      // Set to the highest ranked category automatically
-      setCategoryFilter(categoryTiles[0].title);
-      setDefaultCategorySet(true);
-    }
-  }, [categoryTiles, defaultCategorySet]);
+  // Reverted default category logic so all products show by default, 
+  // but they are still sorted with top-ranked categories first.
 
   const announcementText = storeConfig?.announcement_active && storeConfig?.announcement_text
     ? storeConfig.announcement_text
