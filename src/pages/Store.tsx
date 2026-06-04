@@ -1137,260 +1137,41 @@ export default function Store() {
         </section>
       )}
 
-      {/* HERO SECTION — World-class animated hero */}
-      <section className="relative overflow-hidden py-12 sm:py-20 md:py-28">
-        {/* Background mesh gradient + grid */}
-        <div className={`absolute inset-0 ${isDark ? "mesh-gradient grid-pattern" : "grid-pattern-light"}`} />
-        {/* Animated particle network */}
-        <ParticleGlobe isDark={isDark} />
-        <div className="absolute inset-0 pointer-events-none">
-          <div className={`absolute top-10 left-[15%] w-72 h-72 sm:w-[500px] sm:h-[500px] rounded-full blur-[120px] sm:blur-[160px] animate-pulse-soft ${isDark ? "bg-violet-600/15" : "bg-violet-400/10"}`} />
-          <div className={`absolute bottom-10 right-[15%] w-60 h-60 sm:w-[400px] sm:h-[400px] rounded-full blur-[100px] sm:blur-[140px] animate-pulse-soft [animation-delay:1.5s] ${isDark ? "bg-indigo-500/12" : "bg-indigo-400/8"}`} />
-          <div className={`absolute top-1/3 right-[10%] w-32 h-32 sm:w-48 sm:h-48 rounded-full blur-[80px] animate-float ${isDark ? "bg-purple-500/10" : "bg-purple-400/8"}`} />
-        </div>
-
-        {/* Floating tech icons */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
-          <div className={`absolute top-[15%] left-[8%] animate-float ${isDark ? "text-violet-500/10" : "text-violet-400/10"}`}>
-            <Camera className="h-12 w-12 md:h-16 md:w-16" />
+      {/* SIMPLE PROFESSIONAL HERO SECTION */}
+      <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24 border-b border-border/40">
+        <div className={`absolute inset-0 ${isDark ? "bg-[#0A0514]" : "bg-slate-50"}`} />
+        <div className={`absolute inset-0 opacity-20 ${isDark ? "bg-grid-white/[0.05]" : "bg-grid-black/[0.05]"} bg-[length:32px_32px]`} />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+        
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6 bg-primary/10 text-primary border border-primary/20 backdrop-blur-sm animate-fade-in">
+            <Sparkles className="h-3.5 w-3.5" />
+            {lang === "bn" ? "প্রফেশনাল আইটি সলিউশন" : "Professional IT Solutions"}
           </div>
-          <div className={`absolute top-[60%] left-[5%] animate-float-delayed ${isDark ? "text-cyan-500/10" : "text-cyan-400/10"}`}>
-            <Monitor className="h-10 w-10 md:h-14 md:w-14" />
-          </div>
-          <div className={`absolute top-[20%] right-[8%] animate-float-delayed ${isDark ? "text-purple-500/10" : "text-purple-400/10"}`}>
-            <Server className="h-10 w-10 md:h-14 md:w-14" />
-          </div>
-          <div className={`absolute top-[55%] right-[6%] animate-float ${isDark ? "text-emerald-500/10" : "text-emerald-400/10"}`}>
-            <Wifi className="h-8 w-8 md:h-12 md:w-12" />
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center max-w-4xl mx-auto space-y-5 sm:space-y-7">
-            {/* Badge */}
-            <div className="animate-fade-in">
-              <span className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] sm:text-xs font-bold tracking-wider uppercase backdrop-blur-lg ${isDark ? "bg-violet-500/10 border border-violet-500/20 text-violet-300 shadow-lg shadow-violet-500/10" : "bg-primary/8 border border-primary/20 text-primary shadow-md"
-                }`}>
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                {t.tagline}
-              </span>
-            </div>
-
-            {/* Main heading */}
-            <h2 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight leading-[1.05] font-display animate-slide-up">
-              {heroTitle ? (
-                <span className="text-gradient relative">{heroTitle}</span>
-              ) : (
-                <>
-                  <span className={isDark ? "text-white" : "text-foreground"}>
-                    {t.heroTitle1}
-                  </span>{" "}
-                  <span className="text-gradient relative">
-                    {t.heroTitle2}
-                    <svg className="absolute -bottom-2 left-0 w-full" height="8" viewBox="0 0 200 8" fill="none">
-                      <path d="M1 5.5C47 2 153 2 199 5.5" stroke="url(#hero-underline)" strokeWidth="3" strokeLinecap="round" />
-                      <defs><linearGradient id="hero-underline" x1="0" y1="0" x2="200" y2="0"><stop stopColor="hsl(262,83%,58%)" /><stop offset="1" stopColor="hsl(240,60%,60%)" /></linearGradient></defs>
-                    </svg>
-                  </span>
-                </>
-              )}
-            </h2>
-
-            {/* Subtitle */}
-            <p className={`${textSecondary} text-sm sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed animate-slide-up [animation-delay:150ms]`}>
-              {heroSubtitle || t.heroDesc}
-            </p>
-
-            {/* Dual CTA buttons — replaces search bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-2 animate-slide-up [animation-delay:250ms]">
-              <button
-                onClick={() => { setActiveTab("products"); document.getElementById("products-section")?.scrollIntoView({ behavior: "smooth" }); }}
-                className={`group relative w-full sm:w-auto h-14 sm:h-16 px-7 sm:px-9 rounded-2xl font-bold text-sm sm:text-base inline-flex items-center justify-center gap-2.5 overflow-hidden transition-all hover:-translate-y-0.5 ${isDark
-                  ? "bg-gradient-to-r from-violet-600 to-indigo-500 text-white shadow-2xl shadow-violet-600/40 hover:shadow-violet-500/60"
-                  : "bg-gradient-to-r from-violet-600 to-indigo-500 text-white shadow-xl shadow-violet-400/40 hover:shadow-violet-500/60"
-                  }`}
-              >
-                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                <ShoppingCart className="h-5 w-5 relative" />
-                <span className="relative">{lang === "bn" ? "পণ্য দেখুন" : "Browse Products"}</span>
-                <ArrowRight className="h-4 w-4 relative transition-transform group-hover:translate-x-1" />
-              </button>
-
-              <button
-                onClick={() => openWhatsApp(settings?.whatsapp_number || settings?.phone || "", lang === "bn" ? "আসসালামু আলাইকুম, আমি একজন এক্সপার্টের সাথে কথা বলতে চাই।" : "Hello, I'd like to talk to an expert about your products and services.")}
-                className={`group w-full sm:w-auto h-14 sm:h-16 px-7 sm:px-9 rounded-2xl font-bold text-sm sm:text-base inline-flex items-center justify-center gap-2.5 border-2 backdrop-blur-xl transition-all hover:-translate-y-0.5 ${isDark
-                  ? "bg-emerald-500/10 border-emerald-400/30 text-emerald-300 hover:bg-emerald-500/15 hover:border-emerald-400/50"
-                  : "bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-400 shadow-md"
-                  }`}
-              >
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </span>
-                <MessageCircle className="h-5 w-5" />
-                <span>{lang === "bn" ? "এক্সপার্টের সাথে কথা বলুন" : "Talk to an Expert"}</span>
-              </button>
-            </div>
-
-            {/* Trust strip */}
-            <div className={`flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-3 text-[11px] sm:text-xs font-semibold animate-slide-up [animation-delay:350ms] ${textMuted}`}>
-              <span className="hidden sm:inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />{lang === "bn" ? "অথরাইজড ডিলার" : "Authorized Dealer"}</span>
-              <span className={`hidden sm:inline ${isDark ? "text-white/20" : "text-gray-300"}`}>•</span>
-              <span className="inline-flex items-center gap-1.5"><Truck className="h-3.5 w-3.5 text-violet-500" />{lang === "bn" ? "ফ্রি ডেলিভারি" : "Free Delivery"}</span>
-              <span className={isDark ? "text-white/20" : "text-gray-300"}>•</span>
-              <span className="inline-flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5 text-amber-500" />{lang === "bn" ? "ফ্রি ইনস্টলেশন" : "Free Installation"}</span>
-              <span className={isDark ? "text-white/20" : "text-gray-300"}>•</span>
-              <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-indigo-500" />{lang === "bn" ? "২৪/৭ সাপোর্ট" : "24/7 Support"}</span>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* LIVE STATS COUNTER BAR — desktop only */}
-      <section className={`hidden sm:block border-t border-b ${isDark ? "border-white/[0.06] bg-white/[0.02]" : "border-gray-100 bg-white"}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x ${isDark ? 'divide-white/[0.06]' : 'divide-gray-100'}">
-            {[
-              { value: "500+", label: lang === "bn" ? "সফল প্রজেক্ট" : "Projects Completed", icon: CheckCircle, color: "text-emerald-500" },
-              { value: "10+", label: lang === "bn" ? "বছরের অভিজ্ঞতা" : "Years Experience", icon: Award, color: "text-violet-500" },
-              { value: "24/7", label: lang === "bn" ? "কাস্টমার সার্ভিস" : "Customer Support", icon: Headphones, color: "text-purple-500" },
-              { value: "4.8★", label: lang === "bn" ? "কাস্টমার রেটিং" : "Customer Rating", icon: Sparkles, color: "text-amber-500" },
-            ].map(({ value, label, icon: Icon, color }) => (
-              <div key={label} className={`flex items-center gap-3 sm:gap-4 py-5 sm:py-7 px-4 sm:px-8 group`}>
-                <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${isDark ? "bg-white/[0.04]" : "bg-gray-50"}`}>
-                  <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${color}`} />
-                </div>
-                <div>
-                  <p className={`text-lg sm:text-2xl font-black font-display ${textPrimary}`}>{value}</p>
-                  <p className={`text-[9px] sm:text-xs ${textMuted}`}>{label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* QUICK CATEGORY GRID — CCTV / Attendance / Servicing */}
-      <section className={`border-t ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="text-center mb-6 sm:mb-8">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-2 ${isDark ? "bg-violet-500/10 text-violet-300 border border-violet-500/20" : "bg-violet-50 text-violet-700 border border-violet-200"}`}>
-              <Sparkles className="h-3 w-3" />
-              {lang === "bn" ? "দ্রুত শপিং" : "Quick Access"}
-            </span>
-            <h3 className={`text-2xl sm:text-3xl md:text-4xl font-black font-display ${textPrimary}`}>
-              {lang === "bn" ? "আপনার " : "What are you "}
-              <span className="text-gradient">{lang === "bn" ? "প্রয়োজন কী?" : "looking for?"}</span>
-            </h3>
-            <p className={`mt-2 text-xs sm:text-sm ${textMuted}`}>
-              {lang === "bn" ? "এক ক্লিকে পৌঁছে যান আপনার পছন্দের ক্যাটাগরিতে" : "Jump straight to what you need — one click away"}
-            </p>
-          </div>
-
-          <div className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-2">
-            {(() => {
-              const baseCats = [
-                {
-                  key: "CCTV",
-                  slug: "cctv",
-                  icon: Camera,
-                  bn: "সিসিটিভি ক্যামেরা",
-                  en: "CCTV Cameras",
-                  descBn: "HD, 4K, IP, ডোম, বুলেট ক্যামেরা",
-                  descEn: "HD · 4K · IP · Dome · Bullet",
-                  gradient: "from-violet-600 via-purple-600 to-indigo-600",
-                  glow: "shadow-violet-500/30",
-                  accent: isDark ? "bg-violet-500/10 text-violet-300" : "bg-violet-50 text-violet-700",
-                  action: () => { setCategoryFilter("CCTV"); setActiveTab("products"); document.getElementById("products-section")?.scrollIntoView({ behavior: "smooth" }); },
-                },
-                {
-                  key: "Attendance Device",
-                  slug: "attendance",
-                  icon: CheckCheck,
-                  bn: "অ্যাটেনডেন্স ডিভাইস",
-                  en: "Attendance Devices",
-                  descBn: "ফেস, ফিঙ্গারপ্রিন্ট, কার্ড সিস্টেম",
-                  descEn: "Face · Fingerprint · RFID Card",
-                  gradient: "from-emerald-600 via-teal-600 to-cyan-600",
-                  glow: "shadow-emerald-500/30",
-                  accent: isDark ? "bg-emerald-500/10 text-emerald-300" : "bg-emerald-50 text-emerald-700",
-                  action: () => { setCategoryFilter("Attendance Device"); setActiveTab("products"); document.getElementById("products-section")?.scrollIntoView({ behavior: "smooth" }); },
-                },
-                {
-                  key: "Servicing",
-                  slug: "servicing",
-                  icon: Wrench,
-                  bn: "সার্ভিসিং ও মেরামত",
-                  en: "Servicing & Repair",
-                  descBn: "ইনস্টলেশন, মেইনটেন্যান্স, সাপোর্ট",
-                  descEn: "Installation · Maintenance · Support",
-                  gradient: "from-amber-500 via-orange-600 to-rose-600",
-                  glow: "shadow-amber-500/30",
-                  accent: isDark ? "bg-amber-500/10 text-amber-300" : "bg-amber-50 text-amber-700",
-                  action: () => { setActiveTab("services"); document.getElementById("products-section")?.scrollIntoView({ behavior: "smooth" }); },
-                },
-              ];
-              // Merge DB tile data (admin-editable: title, subtitle, image_url) onto base catalog
-              const tileMap: Record<string, any> = {};
-              (categoryTiles as any[]).forEach((t) => { tileMap[t.slug] = t; });
-              return baseCats.map((cat) => {
-                const dbTile = tileMap[cat.slug];
-                const overrideTitle = dbTile?.title;
-                const overrideSubtitle = dbTile?.subtitle;
-                const tileImage: string | null = dbTile?.image_url || null;
-                return { ...cat, dbTile, overrideTitle, overrideSubtitle, tileImage };
-              }).filter((cat) => !cat.dbTile || cat.dbTile.is_active !== false);
-            })().map((cat) => {
-              const Icon = cat.icon;
-              return (
-                <button
-                  key={cat.key}
-                  onClick={cat.action}
-                  className={`group relative text-left rounded-2xl overflow-hidden border transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl snap-start flex-shrink-0 w-[78%] xs:w-[65%] sm:w-[340px] lg:w-[380px] ${cat.glow} ${isDark ? "bg-white/[0.03] border-white/10 hover:border-white/20" : "bg-white border-gray-200 hover:border-gray-300 shadow-sm"
-                    }`}
-                >
-                  {/* Admin-uploaded background image overlay */}
-                  {cat.tileImage && (
-                    <>
-                      <img
-                        src={cat.tileImage}
-                        alt={cat.en}
-                        loading="lazy"
-                        className="absolute inset-0 h-full w-full object-cover opacity-30 group-hover:opacity-50 group-hover:scale-105 transition-all duration-700"
-                      />
-                      <div className={`absolute inset-0 bg-gradient-to-t ${isDark ? "from-[#080510] via-[#080510]/85 to-[#080510]/40" : "from-white via-white/85 to-white/30"}`} />
-                    </>
-                  )}
-                  {/* Gradient backdrop */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${cat.gradient} opacity-0 group-hover:opacity-[0.08] transition-opacity duration-500`} />
-                  {/* Decorative blur orb */}
-                  <div className={`absolute -top-12 -right-12 h-40 w-40 rounded-full bg-gradient-to-br ${cat.gradient} opacity-20 blur-3xl group-hover:opacity-40 transition-opacity duration-500`} />
-
-                  <div className="relative p-5 sm:p-6">
-                    {/* Icon badge */}
-                    <div className={`inline-flex h-14 w-14 sm:h-16 sm:w-16 rounded-2xl items-center justify-center mb-4 bg-gradient-to-br ${cat.gradient} shadow-lg ${cat.glow} group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500`}>
-                      <Icon className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-                    </div>
-
-                    <h4 className={`text-lg sm:text-xl font-black font-display mb-1 ${textPrimary}`}>
-                      {cat.overrideTitle || (lang === "bn" ? cat.bn : cat.en)}
-                    </h4>
-                    <p className={`text-xs sm:text-sm mb-4 ${textMuted}`}>
-                      {cat.overrideSubtitle || (lang === "bn" ? cat.descBn : cat.descEn)}
-                    </p>
-
-                    <div className={`inline-flex items-center gap-1.5 text-xs font-bold ${cat.accent} px-3 py-1.5 rounded-lg group-hover:gap-2.5 transition-all`}>
-                      {lang === "bn" ? "এক্সপ্লোর করুন" : "Explore"}
-                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+          
+          <h2 className={`text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-tight mb-6 ${textPrimary} animate-slide-up`}>
+            {settings.company_name}
+          </h2>
+          
+          <p className={`text-base sm:text-lg max-w-2xl mx-auto mb-10 ${textSecondary} animate-slide-up [animation-delay:100ms]`}>
+            {settings.company_tagline || (lang === "bn" ? "আপনার ব্যবসায়ের নিরাপত্তার জন্য সেরা সিসিটিভি এবং আইটি সলিউশন" : "The best CCTV and IT solutions for your business security")}
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up [animation-delay:200ms]">
+            <button
+              onClick={() => { setActiveTab("products"); document.getElementById("products-section")?.scrollIntoView({ behavior: "smooth" }); }}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              {lang === "bn" ? "পণ্য দেখুন" : "Browse Products"}
+            </button>
+            <button
+              onClick={() => openWhatsApp(settings?.whatsapp_number || settings?.phone || "", lang === "bn" ? "আসসালামু আলাইকুম" : "Hello")}
+              className={`w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base border-2 backdrop-blur-md transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 ${isDark ? "border-white/10 hover:bg-white/5 text-white" : "border-gray-200 hover:bg-gray-50 text-gray-900"}`}
+            >
+              <MessageCircle className="h-4 w-4" />
+              {lang === "bn" ? "যোগাযোগ করুন" : "Contact Us"}
+            </button>
           </div>
         </div>
       </section>
