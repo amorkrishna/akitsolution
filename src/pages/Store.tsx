@@ -1338,9 +1338,8 @@ export default function Store() {
                             <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                           </Button>
                         ) : (
-                          <Button size="sm" className="text-[9px] sm:text-[11px] gap-1 h-8 sm:h-9 px-2.5 sm:px-3.5 bg-gradient-to-r from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 border-0 shadow-lg shadow-violet-500/20 rounded-lg disabled:opacity-40 flex-shrink-0 font-semibold" disabled={product.stock_quantity === 0} onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}>
-                            <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                            <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                          <Button size="sm" className="text-[9px] sm:text-[11px] gap-1.5 h-8 sm:h-9 px-3 sm:px-4 bg-gradient-to-r from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 border-0 shadow-lg shadow-violet-500/20 rounded-lg disabled:opacity-40 flex-shrink-0 font-bold text-white" disabled={product.stock_quantity === 0} onClick={(e) => { e.stopPropagation(); handleAddToCart(product); setCartOpen(true); }}>
+                            {lang === "bn" ? "অর্ডার করুন" : "Buy Now"}
                           </Button>
                         )}
                       </div>
@@ -2220,6 +2219,7 @@ export default function Store() {
           const cartId = variantId ? `${productId}-${variantId}` : productId;
           addItem({ id: cartId, name, price, image_url: product?.image_url, product_id: productId, variant_id: variantId, variant_label: variantLabel, type: "product" });
           toast.success(lang === "bn" ? "কার্টে যোগ হয়েছে" : "Added to cart");
+          setCartOpen(true);
         }}
         isDark={isDark}
         lang={lang}
@@ -2414,6 +2414,24 @@ export default function Store() {
 
       {/* AI Chat Widget */}
       <AIChatWidget />
+
+      {/* Floating Right-Side Cart Logo */}
+      {totalItems() > 0 && (
+        <button
+          onClick={() => setCartOpen(true)}
+          className={`fixed right-0 top-1/2 -translate-y-1/2 z-[60] p-3 rounded-l-2xl shadow-[-4px_0_15px_rgba(0,0,0,0.1)] flex flex-col items-center gap-1 transition-transform hover:-translate-x-1 ${
+            isDark ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-violet-600 hover:bg-violet-700 text-white"
+          }`}
+        >
+          <ShoppingCart className="h-6 w-6" />
+          <span className="bg-white text-violet-700 text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+            {totalItems()}
+          </span>
+          <span className="text-[8px] font-bold tracking-wider uppercase mt-1 [writing-mode:vertical-lr] rotate-180">
+            {lang === "bn" ? "কার্ট" : "Cart"}
+          </span>
+        </button>
+      )}
 
       <CompareDrawer
         items={compareItems}

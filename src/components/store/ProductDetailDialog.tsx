@@ -366,8 +366,8 @@ export function ProductDetailDialog({ product, onClose, onOrder, isDark, lang }:
                 >
                   <ShoppingCart className="h-5 w-5" />
                   {quantity > 1
-                    ? `${lang === "bn" ? "কার্টে যোগ করুন" : "Add"} (${quantity}) — ৳${(effectivePrice * quantity).toLocaleString()}`
-                    : (lang === "bn" ? "কার্টে যোগ করুন" : "Add to Cart")}
+                    ? `${lang === "bn" ? "অর্ডার করুন" : "Buy Now"} (${quantity}) — ৳${(effectivePrice * quantity).toLocaleString()}`
+                    : (lang === "bn" ? "এখুনি কিনুন" : "Buy Now")}
                 </Button>
               )}
             </div>
