@@ -77,8 +77,9 @@ export default function ProductFinder() {
     cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false,
     image_url: "",
   });
-  const [manualImageFile, setManualImageFile] = useState<File | null>(null);
-  const [manualImagePreview, setManualImagePreview] = useState<string | null>(null);
+  const [manualImageFiles, setManualImageFiles] = useState<File[]>([]);
+  const [manualImagePreviews, setManualImagePreviews] = useState<string[]>([]);
+  const [manualPrimaryIndex, setManualPrimaryIndex] = useState<number>(0);
 
   // ---------------------------------------------------------
   // Helper: scrape a single URL or keyword via Edge Function
@@ -364,12 +365,24 @@ export default function ProductFinder() {
   };
 
   const handleManualImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setManualImageFile(file);
-      setManualImagePreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setManualImageFiles(prev => [...prev, ...files]);
+      setManualImagePreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
       setManualForm(f => ({ ...f, image_url: "" }));
     }
+    // reset input so same files can be re-selected
+    e.target.value = "";
+  };
+
+  const removeManualImage = (index: number) => {
+    setManualImageFiles(prev => prev.filter((_, i) => i !== index));
+    setManualImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setManualPrimaryIndex(prev => {
+      if (prev === index) return 0;
+      if (prev > index) return prev - 1;
+      return prev;
+    });
   };
 
   const handleManualSubmit = async (e: React.FormEvent) => {
@@ -399,36 +412,57 @@ export default function ProductFinder() {
         call_for_price: manualForm.call_for_price || false,
       };
 
-      // Set image_url from URL field or after upload
-      if (manualForm.image_url.trim()) {
+      // If a URL is pasted (no files selected), use that as primary image
+      if (manualForm.image_url.trim() && manualImageFiles.length === 0) {
         payload.image_url = manualForm.image_url.trim();
       }
 
       const { data: inserted, error } = await supabase.from("products").insert(payload).select().single();
       if (error) throw error;
 
-      let finalImageUrl: string | null = payload.image_url || null;
-
-      // Upload file if provided
-      if (manualImageFile && inserted) {
-        const ext = manualImageFile.name.split(".").pop();
-        const filePath = `${inserted.id}_${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from("product-images")
-          .upload(filePath, manualImageFile, { upsert: true });
-
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(filePath);
-          finalImageUrl = urlData?.publicUrl || null;
+      // Upload all selected files
+      const uploadedUrls: string[] = [];
+      if (manualImageFiles.length > 0 && inserted) {
+        for (let i = 0; i < manualImageFiles.length; i++) {
+          const file = manualImageFiles[i];
+          const ext = file.name.split(".").pop();
+          const filePath = `${inserted.id}_${Date.now()}_${i}.${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from("product-images")
+            .upload(filePath, file, { upsert: true });
+          if (!uploadError) {
+            const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(filePath);
+            if (urlData?.publicUrl) uploadedUrls.push(urlData.publicUrl);
+          }
         }
       }
 
-      if (finalImageUrl && inserted) {
-        await supabase.from("products").update({ image_url: finalImageUrl } as any).eq("id", inserted.id);
-        await supabase.from("product_images").insert({ product_id: inserted.id, image_url: finalImageUrl, sort_order: 0 });
+      // Also include pasted URL if any files were also uploaded
+      if (manualForm.image_url.trim()) uploadedUrls.unshift(manualForm.image_url.trim());
+
+      // Determine primary image (the one the user set as primary)
+      const primaryUrl = uploadedUrls[manualPrimaryIndex] || uploadedUrls[0] || payload.image_url || null;
+
+      if (inserted) {
+        // Set main image_url
+        if (primaryUrl) {
+          await supabase.from("products").update({ image_url: primaryUrl } as any).eq("id", inserted.id);
+        }
+        // Insert ALL images into product_images table
+        if (uploadedUrls.length > 0) {
+          const imageInserts = uploadedUrls.map((url, idx) => ({
+            product_id: inserted.id,
+            image_url: url,
+            sort_order: idx,
+          }));
+          const { error: imgErr } = await supabase.from("product_images").insert(imageInserts);
+          if (imgErr) console.error("Image gallery insert error:", imgErr);
+        } else if (payload.image_url) {
+          await supabase.from("product_images").insert({ product_id: inserted.id, image_url: payload.image_url, sort_order: 0 });
+        }
       }
 
-      toast.success("✅ প্রোডাক্ট সফলভাবে স্টোরে যুক্ত করা হয়েছে!");
+      toast.success(`✅ প্রোডাক্ট সফলভাবে স্টোরে যুক্ত করা হয়েছে!${uploadedUrls.length > 0 ? ` (${uploadedUrls.length}টি ছবি আপলোড হয়েছে)` : ""}`);
       queryClient.invalidateQueries({ queryKey: ["products"] });
       navigate("/products");
     } catch (err: any) {
@@ -971,40 +1005,96 @@ export default function ProductFinder() {
               {/* Image Upload */}
               <Card className="border shadow-sm rounded-3xl overflow-hidden">
                 <CardHeader className="bg-muted/30 border-b border-border/50 px-6 py-5">
-                  <CardTitle className="text-lg font-bold">প্রোডাক্টের ছবি</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-bold">প্রোডাক্টের ছবি</CardTitle>
+                    {manualImagePreviews.length > 0 && (
+                      <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg">
+                        {manualImagePreviews.length}টি ছবি নির্বাচিত
+                      </span>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
-                  {/* Upload area */}
-                  <div className="w-full aspect-square rounded-2xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center overflow-hidden relative group hover:border-primary/50 transition-colors">
-                    {manualImagePreview ? (
-                      <>
-                        <img src={manualImagePreview} alt="Preview" className="h-full w-full object-contain bg-white p-2" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-sm">
-                          <Label htmlFor="manual-product-image" className="cursor-pointer bg-white text-black px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl flex items-center gap-2">
-                            <Upload className="h-4 w-4" /> ছবি পরিবর্তন
-                          </Label>
+
+                  {/* Multi-image previews grid */}
+                  {manualImagePreviews.length > 0 ? (
+                    <div className="space-y-3">
+                      {/* Primary (large) preview */}
+                      <div className="relative w-full aspect-square rounded-2xl border-2 border-primary/30 bg-white overflow-hidden">
+                        <img
+                          src={manualImagePreviews[manualPrimaryIndex] || manualImagePreviews[0]}
+                          alt="Primary"
+                          className="h-full w-full object-contain p-2"
+                        />
+                        <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          মূল ছবি
                         </div>
-                      </>
-                    ) : manualForm.image_url ? (
-                      <>
-                        <img src={manualForm.image_url} alt="Preview" className="h-full w-full object-contain bg-white p-2" onError={(e) => (e.currentTarget.style.display = "none")} />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-sm">
-                          <Label htmlFor="manual-product-image" className="cursor-pointer bg-white text-black px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl flex items-center gap-2">
-                            <Upload className="h-4 w-4" /> ফাইল থেকে আপলোড
-                          </Label>
-                        </div>
-                      </>
-                    ) : (
-                      <Label htmlFor="manual-product-image" className="cursor-pointer flex flex-col items-center justify-center w-full h-full text-muted-foreground hover:text-primary transition-colors p-6 text-center">
-                        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                          <ImageIcon className="h-8 w-8 text-primary" />
-                        </div>
-                        <span className="font-bold text-sm text-foreground">ক্লিক করে ছবি আপলোড করুন</span>
-                        <span className="text-xs mt-1 opacity-70">JPG, PNG, WebP — সর্বোচ্চ 5MB</span>
-                      </Label>
-                    )}
-                    <input id="manual-product-image" type="file" accept="image/*" className="hidden" onChange={handleManualImageSelect} />
-                  </div>
+                      </div>
+
+                      {/* Thumbnails row */}
+                      <div className="flex gap-2 flex-wrap">
+                        {manualImagePreviews.map((preview, i) => (
+                          <div
+                            key={i}
+                            className={`relative h-14 w-14 rounded-xl border-2 overflow-hidden cursor-pointer transition-all ${
+                              manualPrimaryIndex === i ? "border-primary shadow-md" : "border-border hover:border-primary/50"
+                            }`}
+                            onClick={() => setManualPrimaryIndex(i)}
+                          >
+                            <img src={preview} alt={`ছবি ${i + 1}`} className="h-full w-full object-cover bg-white" />
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); removeManualImage(i); }}
+                              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+                            >
+                              <X className="h-2.5 w-2.5" />
+                            </button>
+                            {manualPrimaryIndex === i && (
+                              <div className="absolute bottom-0 inset-x-0 bg-primary/80 text-white text-[8px] text-center font-bold py-0.5">প্রধান</div>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Add more button */}
+                        <Label
+                          htmlFor="manual-product-image"
+                          className="h-14 w-14 rounded-xl border-2 border-dashed border-border hover:border-primary cursor-pointer flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-all"
+                        >
+                          <Plus className="h-5 w-5" />
+                          <span className="text-[9px] font-bold mt-0.5">আরো</span>
+                        </Label>
+                      </div>
+
+                      <p className="text-[10px] text-muted-foreground">👆 থাম্বনেইলে ক্লিক করে মূল ছবি পরিবর্তন করুন। ❌ দিয়ে ছবি সরান।</p>
+                    </div>
+                  ) : manualForm.image_url ? (
+                    <div className="relative w-full aspect-square rounded-2xl border-2 border-primary/30 bg-white overflow-hidden">
+                      <img src={manualForm.image_url} alt="Preview" className="h-full w-full object-contain p-2" onError={(e) => (e.currentTarget.style.display = "none")} />
+                      <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">URL ছবি</div>
+                    </div>
+                  ) : (
+                    /* Empty state upload area */
+                    <Label
+                      htmlFor="manual-product-image"
+                      className="w-full aspect-square rounded-2xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group"
+                    >
+                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <ImageIcon className="h-8 w-8 text-primary" />
+                      </div>
+                      <span className="font-bold text-sm text-foreground">ক্লিক করে ছবি আপলোড করুন</span>
+                      <span className="text-xs mt-1 text-muted-foreground">একসাথে একাধিক ছবি বেছে নিতে পারবেন</span>
+                      <span className="text-xs mt-0.5 opacity-60">JPG, PNG, WebP</span>
+                    </Label>
+                  )}
+
+                  <input
+                    id="manual-product-image"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleManualImageSelect}
+                  />
 
                   {/* Image URL paste */}
                   <div className="space-y-1">
@@ -1013,18 +1103,27 @@ export default function ProductFinder() {
                       value={manualForm.image_url}
                       onChange={(e) => {
                         setManualForm(f => ({ ...f, image_url: e.target.value }));
-                        if (e.target.value) { setManualImageFile(null); setManualImagePreview(null); }
                       }}
                       placeholder="https://example.com/product.jpg"
                       className="h-10 text-xs rounded-xl bg-muted/20"
                     />
                   </div>
 
-                  {/* Clear preview button */}
-                  {(manualImagePreview || manualForm.image_url) && (
-                    <Button type="button" variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive"
-                      onClick={() => { setManualImageFile(null); setManualImagePreview(null); setManualForm(f => ({ ...f, image_url: "" })); }}>
-                      <X className="h-3.5 w-3.5 mr-1" /> ছবি সরান
+                  {/* Clear all button */}
+                  {(manualImagePreviews.length > 0 || manualForm.image_url) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs text-destructive hover:text-destructive"
+                      onClick={() => {
+                        setManualImageFiles([]);
+                        setManualImagePreviews([]);
+                        setManualPrimaryIndex(0);
+                        setManualForm(f => ({ ...f, image_url: "" }));
+                      }}
+                    >
+                      <X className="h-3.5 w-3.5 mr-1" /> সব ছবি সরান
                     </Button>
                   )}
                 </CardContent>
