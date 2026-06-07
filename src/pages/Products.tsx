@@ -199,27 +199,37 @@ export default function Products() {
         });
       }
 
-      const payload: any = {
+      // Core payload — only columns that are guaranteed to exist in DB
+      const corePayload: any = {
         name: data.name, category: data.category, brand: data.brand, description: finalDescription, sku: data.sku,
         price: Number(data.price) || 0,
         stock_quantity: Number(data.stock_quantity) || 0,
         cash_discount_price: data.cash_discount_price ? Number(data.cash_discount_price) : null,
         discount_percentage: Number(data.discount_percentage) || 0,
         show_in_store: data.show_in_store,
+      };
+      // Extra fields — may not exist if migrations not applied yet; safe-update separately
+      const extraPayload: any = {
         is_featured: data.is_featured || false,
         call_for_price: data.call_for_price || false,
       };
       let productId = currentEditing?.id;
       if (currentEditing) {
-        const { error } = await supabase.from("products").update(payload).eq("id", currentEditing.id);
+        const { error } = await supabase.from("products").update(corePayload).eq("id", currentEditing.id);
         if (error) {
           console.error("Supabase update error:", error);
           throw new Error(error.message || "Failed to update product");
         }
+        // Try to update extra columns — silently skip if columns don't exist yet
+        await supabase.from("products").update(extraPayload).eq("id", currentEditing.id);
       } else {
-        const { data: inserted, error } = await supabase.from("products").insert(payload).select().single();
+        const { data: inserted, error } = await supabase.from("products").insert(corePayload).select().single();
         if (error) throw error;
         productId = inserted.id;
+        // Try to update extra columns after insert
+        if (productId) {
+          await supabase.from("products").update(extraPayload).eq("id", productId);
+        }
       }
       // Upload main image if a new file was selected
       if (currentImageFile && productId) {
