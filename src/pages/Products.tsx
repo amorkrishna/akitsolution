@@ -183,6 +183,14 @@ export default function Products() {
   const saveMutation = useMutation({
     mutationFn: async (data: any) => {
       setUploading(true);
+      // Extract image files passed explicitly from the mutate() call
+      const currentImageFile: File | null = data._imageFile ?? null;
+      const currentAdditionalImages: File[] = data._additionalImages ?? [];
+      const currentExistingImages: any[] = data._existingImages ?? [];
+      const currentEditing = data._editing ?? null;
+      const currentVariants = data._variants ?? [];
+      const currentDeletedVariantIds = data._deletedVariantIds ?? [];
+
       let finalDescription = data.description;
       if (data.specifications && data.specifications.length > 0) {
         finalDescription = JSON.stringify({
@@ -201,29 +209,47 @@ export default function Products() {
         is_featured: data.is_featured || false,
         call_for_price: data.call_for_price || false,
       };
-      let productId = editing?.id;
-      if (editing) {
-        const { error } = await supabase.from("products").update(payload).eq("id", editing.id);
+      let productId = currentEditing?.id;
+      if (currentEditing) {
+        const { error } = await supabase.from("products").update(payload).eq("id", currentEditing.id);
         if (error) throw error;
       } else {
         const { data: inserted, error } = await supabase.from("products").insert(payload).select().single();
         if (error) throw error;
         productId = inserted.id;
       }
-      if (imageFile && productId) {
-        const imageUrl = await uploadImage(productId);
-        if (imageUrl) {
-          await supabase.from("products").update({ image_url: imageUrl } as any).eq("id", productId);
+      // Upload main image if a new file was selected
+      if (currentImageFile && productId) {
+        const ext = currentImageFile.name.split('.').pop();
+        const filePath = `${productId}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("product-images").upload(filePath, currentImageFile, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(filePath);
+        if (urlData?.publicUrl) {
+          await supabase.from("products").update({ image_url: urlData.publicUrl } as any).eq("id", productId);
         }
       }
-      if (additionalImages.length > 0 && productId) {
-        await uploadAdditionalImages(productId);
+      // Upload additional gallery images
+      if (currentAdditionalImages.length > 0 && productId) {
+        for (let i = 0; i < currentAdditionalImages.length; i++) {
+          const file = currentAdditionalImages[i];
+          const ext = file.name.split('.').pop();
+          const filePath = `${productId}_${Date.now()}_${i}.${ext}`;
+          const { error: addErr } = await supabase.storage.from("product-images").upload(filePath, file, { upsert: true });
+          if (addErr) continue;
+          const { data: addUrlData } = supabase.storage.from("product-images").getPublicUrl(filePath);
+          await supabase.from("product_images").insert({
+            product_id: productId,
+            image_url: addUrlData.publicUrl,
+            sort_order: currentExistingImages.length + i,
+          });
+        }
       }
       if (productId) {
-        for (const delId of deletedVariantIds) {
+        for (const delId of currentDeletedVariantIds) {
           await supabase.from("product_variants").delete().eq("id", delId);
         }
-        for (const v of variants) {
+        for (const v of currentVariants) {
           const variantPayload = {
             product_id: productId,
             variant_label: v.variant_label,
@@ -240,13 +266,14 @@ export default function Products() {
           }
         }
       }
+      return { isEditing: !!currentEditing };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       setUploading(false);
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["variant-counts"] });
       setOpen(false); setEditing(null); resetForm();
-      toast({ title: editing ? "Product updated" : "Product added" });
+      toast({ title: result?.isEditing ? "Product updated" : "Product added" });
     },
     onError: (err: any) => { setUploading(false); toast({ title: "Error", description: err.message, variant: "destructive" }); },
   });
@@ -560,7 +587,7 @@ export default function Products() {
                   {cameraOpen && <div id="dialog-barcode-reader" className="rounded-lg overflow-hidden border border-border" />}
                 </div>
 
-                <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate({ ...form, _imageFile: imageFile, _additionalImages: additionalImages, _existingImages: existingImages, _editing: editing, _variants: variants, _deletedVariantIds: deletedVariantIds }); }} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
                     <div className="space-y-2"><Label>Category</Label>
