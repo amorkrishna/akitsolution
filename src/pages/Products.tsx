@@ -199,7 +199,7 @@ export default function Products() {
         });
       }
 
-      const payload = {
+      const payload: any = {
         name: data.name, category: data.category, brand: data.brand, description: finalDescription, sku: data.sku,
         price: Number(data.price) || 0,
         stock_quantity: Number(data.stock_quantity) || 0,
@@ -212,7 +212,10 @@ export default function Products() {
       let productId = currentEditing?.id;
       if (currentEditing) {
         const { error } = await supabase.from("products").update(payload).eq("id", currentEditing.id);
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase update error:", error);
+          throw new Error(error.message || "Failed to update product");
+        }
       } else {
         const { data: inserted, error } = await supabase.from("products").insert(payload).select().single();
         if (error) throw error;
