@@ -13,7 +13,6 @@ import { ShieldX, LogOut, Clock } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";

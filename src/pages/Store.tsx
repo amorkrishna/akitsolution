@@ -2438,6 +2438,9 @@ export default function Store() {
       {/* AI Chat Widget */}
       <AIChatWidget />
 
+      {/* Floating WhatsApp Chat Button */}
+      <WhatsAppButton phone={settings?.whatsapp_number || settings?.phone} />
+
       {/* Floating Right-Side Cart Logo */}
       {totalItems() > 0 && (
         <button

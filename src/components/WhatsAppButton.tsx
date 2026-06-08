@@ -1,21 +1,31 @@
 import { MessageCircle } from "lucide-react";
 import { useTranslation } from "@/contexts/LanguageContext";
 
-export function WhatsAppButton() {
+export function WhatsAppButton({ phone }: { phone?: string }) {
   const { language } = useTranslation();
-  const phoneNumber = "+8801919060590";
-  const message = language === "bn" 
-    ? "হ্যালো, আমি আপনার প্রোডাক্ট সম্পর্কে জানতে চাই।" 
-    : "Hello, I want to know about your products.";
   
-  const whatsappUrl = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+  // Normalize the phone number for WhatsApp
+  let rawPhone = phone || "+8801919060590";
+  // If number starts with 0 and doesn't have country code, prepend 88
+  let formattedPhone = rawPhone.replace(/[^0-9]/g, '');
+  if (formattedPhone.length === 11 && formattedPhone.startsWith('0')) {
+    formattedPhone = '88' + formattedPhone;
+  } else if (formattedPhone.length === 10 && !formattedPhone.startsWith('88')) {
+    formattedPhone = '880' + formattedPhone;
+  }
+
+  const message = language === "bn" 
+    ? "আসসালামু আলাইকুম, আমি আপনার প্রোডাক্ট ও সার্ভিস সম্পর্কে জানতে চাই।" 
+    : "Hello, I want to know about your products and services.";
+  
+  const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 
   return (
     <a
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 left-6 z-50 group"
+      className="fixed bottom-20 sm:bottom-6 left-6 z-50 group"
       aria-label="Contact on WhatsApp"
     >
       <div className="relative flex items-center justify-center">
