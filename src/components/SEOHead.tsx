@@ -6,9 +6,10 @@ interface SEOHeadProps {
   url?: string;
   image?: string;
   type?: string;
+  keywords?: string;
 }
 
-export function SEOHead({ title, description, url, image, type = "website" }: SEOHeadProps) {
+export function SEOHead({ title, description, url, image, type = "website", keywords }: SEOHeadProps) {
   useEffect(() => {
     if (title) document.title = title;
 
@@ -28,6 +29,9 @@ export function SEOHead({ title, description, url, image, type = "website" }: SE
       setMeta("og:description", description);
       setMeta("twitter:description", description);
     }
+    if (keywords) {
+      setMeta("keywords", keywords, true);
+    }
     if (title) {
       setMeta("og:title", title);
       setMeta("twitter:title", title);
@@ -45,11 +49,15 @@ export function SEOHead({ title, description, url, image, type = "website" }: SE
     }
     if (image) {
       setMeta("og:image", image);
+      setMeta("og:image:width", "1200");
+      setMeta("og:image:height", "630");
       setMeta("twitter:image", image);
     }
     if (type) setMeta("og:type", type);
     setMeta("twitter:card", "summary_large_image", true);
-  }, [title, description, url, image, type]);
+    // Robots
+    setMeta("robots", "index, follow, max-snippet:-1, max-image-preview:large", true);
+  }, [title, description, url, image, type, keywords]);
 
   return null;
 }
@@ -65,7 +73,7 @@ export function LocalBusinessJsonLd({ settings }: { settings: any }) {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
       name: settings.company_name || "AK IT Solution",
-      description: "CCTV Camera, Attendance Device, Networking Equipment, IT Services - Professional Installation & Support",
+      description: "AK IT Solution — Professional CCTV Installation Service, Network Setup, Attendance Device Installation & IT Support in Dhaka Bangladesh. আমরা সিসিটিভি ইনস্টলেশন, নেটওয়ার্ক সেটআপ, অ্যাটেনডেন্স ডিভাইস ইনস্টলেশন ও আইটি সাপোর্ট সার্ভিস প্রদান করি।",
       url: "https://akitsolution.store",
       telephone: settings.phone || "01919-060590",
       email: settings.email || "akitsolution77@gmail.com",
@@ -87,16 +95,26 @@ export function LocalBusinessJsonLd({ settings }: { settings: any }) {
         closes: "20:00",
       },
       priceRange: "৳৳",
-      image: settings.logo_url || "https://akitsolution.store/placeholder.svg",
-      sameAs: [],
+      currenciesAccepted: "BDT",
+      paymentAccepted: "Cash, bKash, Nagad, Bank Transfer",
+      image: settings.logo_url || "https://akitsolution.store/og-image.png",
+      sameAs: [
+        "https://www.facebook.com/profile.php?id=61573238854096",
+        "https://maps.google.com/maps?vet=10CAAQoqAOahcKEwiomuvbvvaUAxUAAAAAHQAAAAAQDw..i&pvq=Cg0vZy8xMXN2NnEyZ2pxIhAKCmljdCBiaGFiYW4QAhgD&lqi=ChhpY3QgYmhhYmFuIGVsZXBoYW50IHJvYWRIlvSE6-i4gIAIWiIQABABGAAYASIYaWN0IGJoYWJhbiBlbGVwaGFudCByb2FkkgEPc2hvcHBpbmdfY2VudGVy&fvr=1&cs=1&um=1&ie=UTF-8&fb=1&gl=bd&sa=X&ftid=0x3755b9363e67d0a7:0x29f78b6a505d1267"
+      ],
       hasOfferCatalog: {
         "@type": "OfferCatalog",
-        name: "IT Products & Services",
+        name: "IT Services & Products",
         itemListElement: [
+          { "@type": "OfferCatalog", name: "CCTV Camera Installation Service Dhaka" },
+          { "@type": "OfferCatalog", name: "Network Setup Service Bangladesh" },
+          { "@type": "OfferCatalog", name: "Attendance Device Installation" },
+          { "@type": "OfferCatalog", name: "IT Support Service Dhaka" },
+          { "@type": "OfferCatalog", name: "Server Configuration Bangladesh" },
+          { "@type": "OfferCatalog", name: "CCTV Repair & Maintenance" },
           { "@type": "OfferCatalog", name: "CCTV Cameras" },
           { "@type": "OfferCatalog", name: "Networking Equipment" },
           { "@type": "OfferCatalog", name: "Attendance Devices" },
-          { "@type": "OfferCatalog", name: "IT Services" },
         ],
       },
     };

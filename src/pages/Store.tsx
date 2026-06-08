@@ -976,10 +976,12 @@ export default function Store() {
   return (
     <div className={`min-h-screen ${bg} ${textPrimary} transition-colors duration-300 overflow-x-hidden`}>
       <SEOHead
-        title={metaTitle || "AK IT Solution - Online Store | CCTV, Networking & IT Solutions"}
-        description={metaDescription || "Shop CCTV cameras, networking equipment, attendance devices & IT solutions from AK IT Solution. Professional installation & after-sales support in Bangladesh."}
+        title={metaTitle || "AK IT Solution - CCTV Camera, Networking & IT Services | Dhaka Bangladesh"}
+        description={metaDescription || "AK IT Solution — বাংলাদেশের বিশ্বস্ত IT সলিউশন কোম্পানি। CCTV ক্যামেরা, অ্যাটেনডেন্স ডিভাইস, নেটওয়ার্কিং ইকুইপমেন্ট, কম্পিউটার ও প্রফেশনাল ইনস্টলেশন সার্ভিস। Best prices in Dhaka."}
         url="https://akitsolution.store/"
+        image="https://akitsolution.store/og-image.png"
         type="website"
+        keywords="CCTV camera price in Bangladesh, CC camera price in BD, সিসিটিভি ক্যামেরা দাম, CCTV camera Dhaka, CCTV installation service Dhaka, সিসিটিভি ইনস্টলেশন ঢাকা, Hikvision CCTV camera price BD, Dahua CC camera price Bangladesh, IP camera price in Bangladesh, WiFi CC camera price BD, wireless CCTV camera price, dome camera price Bangladesh, bullet camera price BD, DVR price in Bangladesh, NVR price BD, CCTV package price Bangladesh, সিসিটিভি প্যাকেজ দাম, networking equipment price Bangladesh, router price BD, TP-Link router price BD, attendance machine price Bangladesh, ZKTeco attendance machine price, অ্যাটেনডেন্স মেশিন দাম, IT solutions company Dhaka, server setup Bangladesh, computer accessories price BD, laptop price Bangladesh, CCTV repair service Dhaka, IT support service Dhaka, AK IT Solution, ICT Bhaban Dhaka"
       />
       {products && <ProductListJsonLd products={products} />}
       {services && <ServiceListJsonLd services={services} />}

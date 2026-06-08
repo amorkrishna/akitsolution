@@ -1,18 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- Homepage / Store -->
   <url>
     <loc>https://akitsolution.store/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <lastmod>2026-06-08</lastmod>
   </url>
-  <url>
-    <loc>https://akitsolution.store/dashboard</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
+
+  <!-- Auth -->
   <url>
     <loc>https://akitsolution.store/auth</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
+    <priority>0.2</priority>
+    <lastmod>2026-06-08</lastmod>
   </url>
+
 </urlset>
