@@ -993,12 +993,12 @@ export default function Store() {
   return (
     <div className={`min-h-screen ${bg} ${textPrimary} transition-colors duration-300 overflow-x-hidden`}>
       <SEOHead
-        title={metaTitle || "AK IT Solution - CCTV Camera, Networking & IT Services | Dhaka Bangladesh"}
-        description={metaDescription || "AK IT Solution — বাংলাদেশের বিশ্বস্ত IT সলিউশন কোম্পানি। CCTV ক্যামেরা, অ্যাটেনডেন্স ডিভাইস, নেটওয়ার্কিং ইকুইপমেন্ট, কম্পিউটার ও প্রফেশনাল ইনস্টলেশন সার্ভিস। Best prices in Dhaka."}
+        title={metaTitle || "AK IT Solution - CCTV Installation & IT Services in Bangladesh"}
+        description={metaDescription || "AK IT Solution — বাংলাদেশের অন্যতম বিশ্বস্ত IT সলিউশন কোম্পানি। ঢাকা সহ সারা বাংলাদেশে প্রফেশনাল CCTV ইনস্টলেশন, নেটওয়ার্ক সেটআপ, সার্ভার সেটআপ ও আইটি সাপোর্ট সার্ভিস।"}
         url="https://akitsolution.store/"
         image="https://akitsolution.store/og-image.png"
         type="website"
-        keywords="CCTV camera price in Bangladesh, CC camera price in BD, সিসিটিভি ক্যামেরা দাম, CCTV camera Dhaka, CCTV installation service Dhaka, সিসিটিভি ইনস্টলেশন ঢাকা, Hikvision CCTV camera price BD, Dahua CC camera price Bangladesh, IP camera price in Bangladesh, WiFi CC camera price BD, wireless CCTV camera price, dome camera price Bangladesh, bullet camera price BD, DVR price in Bangladesh, NVR price BD, CCTV package price Bangladesh, সিসিটিভি প্যাকেজ দাম, networking equipment price Bangladesh, router price BD, TP-Link router price BD, attendance machine price Bangladesh, ZKTeco attendance machine price, অ্যাটেনডেন্স মেশিন দাম, IT solutions company Dhaka, server setup Bangladesh, computer accessories price BD, laptop price Bangladesh, CCTV repair service Dhaka, IT support service Dhaka, AK IT Solution, ICT Bhaban Dhaka"
+        keywords="CCTV camera price in Bangladesh, CCTV installation service Bangladesh, সিসিটিভি ক্যামেরা ইনস্টলেশন বাংলাদেশ, network setup service Bangladesh, সিসিটিভি প্যাকেজ দাম, CCTV camera Dhaka, CCTV installation service Dhaka, Hikvision CCTV camera price BD, Dahua CC camera price Bangladesh, IP camera price in Bangladesh, WiFi CC camera price BD, DVR price in Bangladesh, NVR price BD, networking equipment price Bangladesh, router price BD, attendance machine price Bangladesh, ZKTeco attendance machine price, IT solutions company Bangladesh, server setup Bangladesh, IT support service Bangladesh, AK IT Solution, ICT Bhaban Dhaka"
       />
       {products && <ProductListJsonLd products={products} />}
       {services && <ServiceListJsonLd services={services} />}
