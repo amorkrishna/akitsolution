@@ -18,4 +18,36 @@
     <lastmod>2026-06-08</lastmod>
   </url>
 
+  <!-- Services Tab -->
+  <url>
+    <loc>https://akitsolution.store/?tab=services</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-06-08</lastmod>
+  </url>
+
+  <!-- Packages Tab -->
+  <url>
+    <loc>https://akitsolution.store/?tab=packages</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-06-08</lastmod>
+  </url>
+
+  <!-- Custom Builder Tab -->
+  <url>
+    <loc>https://akitsolution.store/?tab=builder</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-06-08</lastmod>
+  </url>
+
+  <!-- Order Tracking Tab -->
+  <url>
+    <loc>https://akitsolution.store/?tab=tracking</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <lastmod>2026-06-08</lastmod>
+  </url>
+
 </urlset>

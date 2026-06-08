@@ -29,6 +29,7 @@ import { HeroBannerCarousel } from "@/components/store/HeroBannerCarousel";
 import { TopBar } from "@/components/store/TopBar";
 import { CompareDrawer } from "@/components/store/CompareDrawer";
 import { CompareModal } from "@/components/store/CompareModal";
+import { useSearchParams } from "react-router-dom";
 
 import { openWhatsApp } from "@/lib/whatsapp";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
@@ -548,7 +549,23 @@ export default function Store() {
   const [brandFilter, setBrandFilter] = useState("all");
   const [msgDialog, setMsgDialog] = useState(false);
   const [msgForm, setMsgForm] = useState({ name: "", phone: "", message: "" });
-  const [activeTab, setActiveTab] = useState<"products" | "services" | "packages" | "builder" | "tracking">("products");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const initialTab = (tabParam === "products" || tabParam === "services" || tabParam === "packages" || tabParam === "builder" || tabParam === "tracking")
+    ? tabParam
+    : "products";
+  const [activeTab, setActiveTabState] = useState<"products" | "services" | "packages" | "builder" | "tracking">(initialTab);
+
+  const setActiveTab = useCallback((tab: "products" | "services" | "packages" | "builder" | "tracking") => {
+    setActiveTabState(tab);
+    setSearchParams({ tab });
+  }, [setSearchParams]);
+
+  useEffect(() => {
+    if (tabParam && (tabParam === "products" || tabParam === "services" || tabParam === "packages" || tabParam === "builder" || tabParam === "tracking")) {
+      setActiveTabState(tabParam);
+    }
+  }, [tabParam]);
   const [lang, setLang] = useState<"bn" | "en">("en");
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     const saved = localStorage.getItem("theme") as "dark" | "light";
