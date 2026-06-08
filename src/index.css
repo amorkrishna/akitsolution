@@ -268,3 +268,33 @@
   background-color: hsl(var(--card)) !important;
   color: hsl(var(--card-foreground)) !important;
 }
+
+/* Force Light Mode on Invoices and Quotations even in Dark Mode */
+.dark #invoice-print,
+.dark #quotation-print {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #e5e7eb !important;
+}
+
+.dark #invoice-print *,
+.dark #quotation-print * {
+  border-color: #e5e7eb !important;
+}
+
+/* Ensure background colors and gradients print correctly in browser print */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  .dark #invoice-print,
+  .dark #quotation-print,
+  #invoice-print,
+  #quotation-print {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+}
