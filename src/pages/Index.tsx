@@ -68,8 +68,8 @@ export default function Dashboard() {
           todayProfit,
           todaySalesRevenue,
           pendingOrders,
-          lowStockCount,
-          outOfStockCount,
+          lowStockCount: lowStockProducts,
+          outOfStockCount: outOfStockProducts,
           unreadMessages: storeMessages?.length || 0,
           totalClients: clients?.length || 0
         }} />
