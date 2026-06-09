@@ -1180,7 +1180,14 @@ export default function Store() {
       {/* FOOTER — Premium with gradient top border */}
       <StoreFooter isDark={isDark} logoSrc={logoSrc} settings={settings} textPrimary={textPrimary} textMuted={textMuted} customFooterText={customFooterText} t={t} socialLinks={socialLinks} setCategoryFilter={setCategoryFilter} setActiveTab={setActiveTab} lang={lang} />
 
-      <StoreSearchDialog searchOpen={searchOpen} setSearchOpen={setSearchOpen} search={search} setSearch={setSearch} searchScope={searchScope} setSearchScope={setSearchScope} activeIndex={activeIndex} setActiveIndex={setActiveIndex} lang={lang} isDark={isDark} textMuted={textMuted} inputBg={inputBg} dialogBg={dialogBg} products={products} services={services} packages={packages} settings={settings} textPrimary={textPrimary} />
+      <StoreSearchDialog
+        searchOpen={searchOpen} setSearchOpen={setSearchOpen} search={search} setSearch={setSearch} 
+        searchScope={searchScope} setSearchScope={setSearchScope} activeIndex={activeIndex} setActiveIndex={setActiveIndex} 
+        lang={lang} isDark={isDark} textMuted={textMuted} inputBg={inputBg} dialogBg={dialogBg} products={products} 
+        services={services} packages={packages} settings={settings} textPrimary={textPrimary} 
+        saveRecentSearch={saveRecentSearch} clearRecentSearches={clearRecentSearches} recentSearches={recentSearches}
+        categoryNav={categoryNav} setCategoryFilter={setCategoryFilter} setActiveTab={setActiveTab} setDetailProduct={setDetailProduct}
+      />
       {/* Message Dialog */}
       <Dialog open={msgDialog} onOpenChange={setMsgDialog}>
         <DialogContent className={`max-w-sm ${dialogBg}`}>

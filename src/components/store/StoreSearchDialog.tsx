@@ -1,11 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Search, Sparkles, Package, Wrench, Boxes, MessageCircle, Heart, FileText, MoveRight } from 'lucide-react';
+import { Search, Sparkles, Package, Wrench, Boxes, MessageCircle, Heart, FileText, MoveRight, Clock, ShieldCheck, LayoutDashboard, ArrowRight } from 'lucide-react';
 import { openWhatsApp } from '@/lib/whatsapp';
 
 export function StoreSearchDialog({
   searchOpen, setSearchOpen, search, setSearch, searchScope, setSearchScope, activeIndex, setActiveIndex,
-  lang, isDark, textMuted, inputBg, dialogBg, products, services, packages, settings, textPrimary
+  lang, isDark, textMuted, inputBg, dialogBg, products, services, packages, settings, textPrimary,
+  saveRecentSearch, clearRecentSearches, recentSearches, categoryNav, setCategoryFilter, setActiveTab, setDetailProduct
 }: any) {
   return (
     <>
