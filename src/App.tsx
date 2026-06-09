@@ -29,6 +29,7 @@ import Employees from "./pages/Employees";
 import Attendance from "./pages/Attendance";
 import StoreSettings from "./pages/StoreSettings";
 import Revenue from "./pages/Revenue";
+import Sales from "./pages/Sales";
 import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
@@ -48,6 +49,8 @@ import Tenders from "./pages/Tenders";
 import Reports from "./pages/Reports";
 import Today from "./pages/Today";
 import AIChats from "./pages/AIChats";
+import Marketing from "./pages/Marketing";
+import PromoGenerator from "./pages/PromoGenerator";
 
 const queryClient = new QueryClient();
 
@@ -169,12 +172,15 @@ const App = () => (
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/leads" element={<Leads />} />
+            <Route path="/sales" element={<Sales />} />
             <Route path="/service-requests" element={<ServiceRequests />} />
             <Route path="/tenders" element={<Tenders />} />
             <Route path="/today" element={<Today />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/ai-chats" element={<AIChats />} />
+            <Route path="/marketing" element={<Marketing />} />
+            <Route path="/promo" element={<PromoGenerator />} />
           </Route>
 
           {/* Revenue-only routes */}

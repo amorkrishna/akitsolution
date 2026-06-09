@@ -6,112 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LogOut, Bell, ShoppingCart, MessageCircle, ClipboardList, Bot } from "lucide-react";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
-import { useQuery } from "@tanstack/react-query";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { GlobalSearch } from "@/components/GlobalSearch";
-import { useEffect } from "react";
-import { toast } from "sonner";
 
 export function DashboardLayout({ children }: { children?: React.ReactNode }) {
   const navigate = useNavigate();
   const { settings } = useCompanySettings();
-
-  const { data: pendingOrders } = useQuery({
-    queryKey: ["header-pending-orders"],
-    queryFn: async () => {
-      const { data } = await supabase.from("store_orders").select("id, item_name, customer_name, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(5);
-      return data || [];
-    },
-    refetchInterval: 30000,
-  });
-
-  const { data: unreadMessages } = useQuery({
-    queryKey: ["header-unread-messages"],
-    queryFn: async () => {
-      const { count } = await supabase.from("store_messages").select("*", { count: "exact", head: true }).eq("is_read", false);
-      return count || 0;
-    },
-    refetchInterval: 30000,
-  });
-
-  const { data: pendingServiceRequests } = useQuery({
-    queryKey: ["header-pending-service-reqs"],
-    queryFn: async () => {
-      const { data } = await supabase.from("service_requests").select("id, customer_name, category, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(5);
-      return data || [];
-    },
-    refetchInterval: 30000,
-  });
-
-  const { data: activeAiChats } = useQuery({
-    queryKey: ["header-active-ai-chats"],
-    queryFn: async () => {
-      const { data } = await supabase.from("ai_chat_sessions").select("id, customer_name, summary, updated_at").eq("status", "active").order("updated_at", { ascending: false }).limit(5);
-      return data || [];
-    },
-    refetchInterval: 30000,
-  });
-
-  const totalNotifications = (pendingOrders?.length || 0) + (unreadMessages || 0) + (pendingServiceRequests?.length || 0) + (activeAiChats?.length || 0);
-
-  useEffect(() => {
-    // Listen for new store orders in real-time
-    const channel = supabase
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'store_orders',
-        },
-        (payload) => {
-          const newOrder = payload.new as any;
-          toast.success("New Store Order!", {
-            description: `${newOrder.customer_name} ordered ${newOrder.item_name} (Qty: ${newOrder.quantity})`,
-            duration: 5000,
-          });
-        }
-      )
-      .subscribe();
-
-    const aiChannel = supabase
-      .channel('ai-chat-notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'ai_chat_sessions',
-        },
-        () => {
-          toast.info("New AI Chat Started", {
-            description: "A customer is talking to the AI assistant.",
-            duration: 5000,
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'ai_chat_sessions',
-        },
-        () => {
-          toast.success("AI Chat Updated", {
-            description: "New message in store AI chat.",
-            duration: 3000,
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-      supabase.removeChannel(aiChannel);
-    };
-  }, []);
+  const { 
+    pendingOrders, 
+    unreadMessages, 
+    pendingServiceRequests, 
+    activeAiChats, 
+    totalNotifications 
+  } = useNotifications();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -209,7 +117,7 @@ export function DashboardLayout({ children }: { children?: React.ReactNode }) {
                     
                     {(unreadMessages || 0) > 0 && (
                       <button
-                        onClick={() => navigate("/orders")}
+                        onClick={() => navigate("/orders?tab=messages")}
                         className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left"
                       >
                         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">

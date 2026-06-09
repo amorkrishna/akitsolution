@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
+import { QuickActions } from "@/components/dashboard/QuickActions";
 
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -72,6 +73,9 @@ export default function Dashboard() {
           <StatCard title="Invoices" value={invoices?.length || 0} icon={FileText} />
           <StatCard title="Revenue" value={`৳${totalRevenue.toLocaleString()}`} icon={DollarSign} trend="Total paid" trendUp />
         </div>
+
+        {/* Quick Actions */}
+        <QuickActions />
 
         {/* Today's Profit + Store Revenue */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">

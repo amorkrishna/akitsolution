@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,14 @@ export default function Orders() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab") || "orders";
+  const [activeTab, setActiveTab] = useState(tabParam);
+
+  useEffect(() => {
+    setActiveTab(tabParam);
+  }, [tabParam]);
+
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [invoiceOrder, setInvoiceOrder] = useState<any | null>(null);
 
@@ -142,7 +150,7 @@ export default function Orders() {
           </p>
         </div>
 
-        <Tabs defaultValue="orders">
+        <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); setSearchParams({ tab: val }, { replace: true }); }}>
           <TabsList>
             <TabsTrigger value="orders" className="gap-2">
               <ShoppingCart className="h-4 w-4" />
