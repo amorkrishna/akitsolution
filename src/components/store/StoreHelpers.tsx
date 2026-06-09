@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowRightLeft, Camera, Cpu, Globe, HardDrive, Headphones, Keyboard, Laptop, Monitor, Printer, Router, Server, Zap, Wrench, Mail } from 'lucide-react';
+import { ArrowRightLeft, Camera, Cpu, Globe, HardDrive, Headphones, Keyboard, Laptop, Monitor, Printer, Router, Server, Zap, Wrench, Mail, Truck, Package, MapPin } from 'lucide-react';
+import { StoreCarousel } from './StoreCarousel';
 
 export function AutoSlidingTabs({
   activeTab,
