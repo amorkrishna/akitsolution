@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
+import { TopProductsChart } from "@/components/dashboard/TopProductsChart";
 import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 
@@ -188,9 +189,14 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Revenue Chart + Activity Timeline */}
+        {/* Revenue Chart + Top Products */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           <RevenueChart sales={sales || []} invoices={invoices || []} />
+          <TopProductsChart sales={sales || []} />
+        </div>
+
+        {/* Activity Timeline */}
+        <div className="grid grid-cols-1 gap-3 sm:gap-4">
           <ActivityTimeline
             orders={orders || []}
             invoices={invoices || []}

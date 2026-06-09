@@ -3,7 +3,7 @@ import { BrowserRouter, Route, Routes, Navigate, Outlet } from "react-router-dom
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -14,43 +14,43 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Clients from "./pages/Clients";
-import Projects from "./pages/Projects";
-import Products from "./pages/Products";
-import Invoices from "./pages/Invoices";
-import CreateInvoice from "./pages/CreateInvoice";
-import Services from "./pages/Services";
-import Orders from "./pages/Orders";
-import Settings from "./pages/Settings";
-import EmployeeDashboard from "./pages/EmployeeDashboard";
-import Employees from "./pages/Employees";
-import Attendance from "./pages/Attendance";
-import StoreSettings from "./pages/StoreSettings";
-import Revenue from "./pages/Revenue";
-import Sales from "./pages/Sales";
-import UserManagement from "./pages/UserManagement";
-import NotFound from "./pages/NotFound";
-import ResetPassword from "./pages/ResetPassword";
-import Quotations from "./pages/Quotations";
-import CreateQuotation from "./pages/CreateQuotation";
-import Purchases from "./pages/Purchases";
-import Store from "./pages/Store";
-import Expenses from "./pages/Expenses";
-import Servicing from "./pages/Servicing";
-import Reviews from "./pages/Reviews";
-import Portfolio from "./pages/Portfolio";
-import ProductFinder from "./pages/ProductFinder";
-import Inventory from "./pages/Inventory";
-import Leads from "./pages/Leads";
-import ServiceRequests from "./pages/ServiceRequests";
-import Tenders from "./pages/Tenders";
-import Reports from "./pages/Reports";
-import Today from "./pages/Today";
-import AIChats from "./pages/AIChats";
-import Marketing from "./pages/Marketing";
-import PromoGenerator from "./pages/PromoGenerator";
+const Index = lazy(() => import('./pages/Index'));
+const Auth = lazy(() => import('./pages/Auth'));
+const Clients = lazy(() => import('./pages/Clients'));
+const Projects = lazy(() => import('./pages/Projects'));
+const Products = lazy(() => import('./pages/Products'));
+const Invoices = lazy(() => import('./pages/Invoices'));
+const CreateInvoice = lazy(() => import('./pages/CreateInvoice'));
+const Services = lazy(() => import('./pages/Services'));
+const Orders = lazy(() => import('./pages/Orders'));
+const Settings = lazy(() => import('./pages/Settings'));
+const EmployeeDashboard = lazy(() => import('./pages/EmployeeDashboard'));
+const Employees = lazy(() => import('./pages/Employees'));
+const Attendance = lazy(() => import('./pages/Attendance'));
+const StoreSettings = lazy(() => import('./pages/StoreSettings'));
+const Revenue = lazy(() => import('./pages/Revenue'));
+const Sales = lazy(() => import('./pages/Sales'));
+const UserManagement = lazy(() => import('./pages/UserManagement'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Quotations = lazy(() => import('./pages/Quotations'));
+const CreateQuotation = lazy(() => import('./pages/CreateQuotation'));
+const Purchases = lazy(() => import('./pages/Purchases'));
+const Store = lazy(() => import('./pages/Store'));
+const Expenses = lazy(() => import('./pages/Expenses'));
+const Servicing = lazy(() => import('./pages/Servicing'));
+const Reviews = lazy(() => import('./pages/Reviews'));
+const Portfolio = lazy(() => import('./pages/Portfolio'));
+const ProductFinder = lazy(() => import('./pages/ProductFinder'));
+const Inventory = lazy(() => import('./pages/Inventory'));
+const Leads = lazy(() => import('./pages/Leads'));
+const ServiceRequests = lazy(() => import('./pages/ServiceRequests'));
+const Tenders = lazy(() => import('./pages/Tenders'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Today = lazy(() => import('./pages/Today'));
+const AIChats = lazy(() => import('./pages/AIChats'));
+const Marketing = lazy(() => import('./pages/Marketing'));
+const PromoGenerator = lazy(() => import('./pages/PromoGenerator'));
 
 const queryClient = new QueryClient();
 
@@ -144,6 +144,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>}>
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Store />} />
@@ -200,6 +201,7 @@ const App = () => (
 
           <Route path="*" element={<NotFound />} />
         </Routes>
+      </Suspense>
       </BrowserRouter>
     </TooltipProvider>
     </LanguageProvider>
