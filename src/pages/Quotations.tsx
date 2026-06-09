@@ -12,7 +12,8 @@ import { Plus, Trash2, Eye, Printer, Download, FileText, Send, CheckCircle, XCir
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { QuotationPreview } from "@/components/QuotationPreview";
-import html2canvas from "html2canvas";
+import autoTable from "jspdf-autotable";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 import jsPDF from "jspdf";
 
 const statusColors: Record<string, string> = {
@@ -27,6 +28,7 @@ export default function Quotations() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { settings } = useCompanySettings();
   const [previewQuotation, setPreviewQuotation] = useState<any>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -116,149 +118,204 @@ export default function Quotations() {
     setPreviewQuotation({ ...q, items: items || [] });
   };
 
-  const generatePdf = async (sourceEl: HTMLElement, fileName: string) => {
-    const cloneHost = document.createElement("div");
-    cloneHost.style.cssText = "position:fixed;left:-10000px;top:0;width:794px;min-width:794px;max-width:794px;opacity:1;pointer-events:none;z-index:2147483647;overflow:visible;";
-    const clone = sourceEl.cloneNode(true) as HTMLElement;
-    clone.style.width = "794px";
-    clone.style.minWidth = "794px";
-    clone.style.maxWidth = "794px";
-    cloneHost.appendChild(clone);
-    document.body.appendChild(cloneHost);
+  
+  const generateVectorPdf = async (
+    quotation: any,
+    settings: any,
+    fileName: string,
+    options: { skipDownload?: boolean } = {}
+  ): Promise<Blob | null> => {
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 20;
 
-    try {
-      if (document.fonts) try { await document.fonts.ready; } catch {}
+    // Header
+    doc.setFillColor(13, 148, 136); // #0d9488
+    doc.roundedRect(pageWidth - 50, 15, 35, 12, 2, 2, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("QUOTATION", pageWidth - 32.5, 23, { align: "center" });
 
-      // Text rendering fixes
-      (Array.from(clone.querySelectorAll("*")) as HTMLElement[]).forEach(el => {
-        el.style.wordSpacing = "0px";
-        el.style.letterSpacing = "normal";
-        el.style.fontKerning = "none";
-        el.style.textRendering = "geometricPrecision";
-      });
+    doc.setTextColor(17, 24, 39);
+    doc.setFontSize(22);
+    doc.text(settings.company_name || "AK IT Solution", 15, y);
+    y += 5;
 
-      // Quotation label fix
-      const labelWrap = clone.querySelector("[data-pdf-quotation-label]") as HTMLElement | null;
-      if (labelWrap) {
-        labelWrap.style.cssText = "overflow:visible;min-width:150px;height:42px;background-color:#0d9488;display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:8px;border:2px solid #0d9488;white-space:nowrap;box-sizing:border-box;";
-        labelWrap.innerHTML = "";
-        const span = document.createElement("span");
-        span.textContent = "QUOTATION";
-        span.style.cssText = "font-size:16px;line-height:1;font-weight:900;color:#ffffff;white-space:nowrap;font-family:Arial,Helvetica,sans-serif;letter-spacing:0.06em;-webkit-text-fill-color:#ffffff;display:inline-block;";
-        labelWrap.appendChild(span);
-      }
-
-      // Image preloading
-      await Promise.all((Array.from(clone.querySelectorAll("img")) as HTMLImageElement[]).map(async img => {
-        if (!img.complete) await new Promise<void>(r => { img.onload = () => r(); img.onerror = () => r(); });
-        const src = img.currentSrc || img.src;
-        if (!src || src.startsWith("data:")) return;
-        try {
-          const res = await fetch(src, { mode: "cors" });
-          const blob = await res.blob();
-          const dataUrl = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = () => reject();
-            reader.readAsDataURL(blob);
-          });
-          img.src = dataUrl;
-          if (!img.complete) await new Promise<void>(r => { img.onload = () => r(); img.onerror = () => r(); });
-        } catch {}
-      }));
-
-      await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-      await new Promise(r => setTimeout(r, 600));
-
-      const cloneRect = clone.getBoundingClientRect();
-      const captureWidth = 794;
-      const captureHeight = Math.max(Math.ceil(cloneRect.height), clone.scrollHeight, 1123);
-      const renderScale = 3;
-
-      const canvas = await html2canvas(clone, {
-        scale: renderScale, useCORS: true, allowTaint: true, backgroundColor: "#ffffff",
-        imageTimeout: 15000, logging: false,
-        width: captureWidth, height: captureHeight, windowWidth: captureWidth, windowHeight: captureHeight,
-        scrollX: 0, scrollY: 0,
-      });
-
-      // Paint QUOTATION label directly on canvas
-      let labelBounds: { x: number; y: number; w: number; h: number } | null = null;
-      if (labelWrap) {
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          const labelRect = labelWrap.getBoundingClientRect();
-          const rootRect = clone.getBoundingClientRect();
-          const scaleX = canvas.width / captureWidth;
-          const scaleY = canvas.height / captureHeight;
-          const x = (labelRect.left - rootRect.left) * scaleX;
-          const y = (labelRect.top - rootRect.top) * scaleY;
-          const w = labelRect.width * scaleX;
-          const h = labelRect.height * scaleY;
-          labelBounds = { x, y, w, h };
-          const r = Math.min(16 * scaleY, h / 2);
-          ctx.save();
-          ctx.beginPath();
-          ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
-          ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-          ctx.lineTo(x + w, y + h - r);
-          ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-          ctx.lineTo(x + r, y + h);
-          ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-          ctx.lineTo(x, y + r);
-          ctx.quadraticCurveTo(x, y, x + r, y);
-          ctx.closePath();
-          ctx.fillStyle = "#0d9488";
-          ctx.fill();
-          ctx.fillStyle = "#ffffff";
-          ctx.font = `900 ${Math.max(16 * scaleY, 32)}px Arial`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText("QUOTATION", x + w / 2, y + h / 2);
-          ctx.restore();
-        }
-      }
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = (canvas.height * pdfW) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
-
-      if (labelBounds) {
-        const xMm = (labelBounds.x / canvas.width) * pdfW;
-        const yMm = (labelBounds.y / canvas.height) * pdfH;
-        const wMm = (labelBounds.w / canvas.width) * pdfW;
-        const hMm = (labelBounds.h / canvas.height) * pdfH;
-        pdf.setFillColor(13, 148, 136);
-        pdf.roundedRect(xMm, yMm, wMm, hMm, 2, 2, "F");
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(Math.max(12, Math.min(16, hMm * 1.6)));
-        pdf.text("QUOTATION", xMm + wMm / 2, yMm + hMm * 0.64, { align: "center" });
-      }
-
-      const pdfBlob = pdf.output("blob");
-      const isMobileUa = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const shareNav = navigator as any;
-
-      if (isMobileUa && shareNav.share) {
-        const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
-        try { await shareNav.share({ files: [pdfFile], title: fileName }); return; } catch {}
-      }
-
-      const blobUrl = URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = fileName;
-      link.style.display = "none";
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(() => { link.parentNode?.removeChild(link); URL.revokeObjectURL(blobUrl); }, 30000);
-    } finally {
-      document.body.removeChild(cloneHost);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    if (settings.company_tagline) {
+      doc.text(settings.company_tagline, 15, y);
+      y += 5;
     }
+
+    doc.setFontSize(9);
+    if (settings.address) { doc.text(`Address: ${settings.address}`, 15, y); y += 4; }
+    if (settings.phone) { doc.text(`Phone: ${settings.phone}`, 15, y); y += 4; }
+    if (settings.email) { doc.text(`Email: ${settings.email}`, 15, y); y += 4; }
+
+    // Quotation details
+    doc.setTextColor(31, 41, 55);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(quotation.quotation_number, pageWidth - 15, 33, { align: "right" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    doc.text(`Date: ${new Date(quotation.issue_date).toLocaleDateString("en-GB")}`, pageWidth - 15, 39, { align: "right" });
+    if (quotation.valid_until) {
+      doc.text(`Valid Until: ${new Date(quotation.valid_until).toLocaleDateString("en-GB")}`, pageWidth - 15, 44, { align: "right" });
+    }
+
+    y = Math.max(y + 10, 55);
+    doc.setDrawColor(209, 213, 219);
+    doc.line(15, y, pageWidth - 15, y);
+    y += 10;
+
+    // Prepared For
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(156, 163, 175);
+    doc.text("PREPARED FOR", 15, y);
+    y += 5;
+
+    doc.setFontSize(12);
+    doc.setTextColor(17, 24, 39);
+    const clientName = (quotation as any).clients?.name || "Client";
+    doc.text(clientName, 15, y);
+    y += 5;
+
+    if ((quotation as any).clients?.address) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(75, 85, 99);
+      const splitAddress = doc.splitTextToSize((quotation as any).clients.address, 80);
+      doc.text(splitAddress, 15, y);
+      y += splitAddress.length * 5;
+    }
+    y += 5;
+
+    // Table
+    const tableData = (quotation.items || []).map((item: any, idx: number) => {
+      const isService = item.description?.startsWith("[Service]");
+      const isProduct = item.description?.startsWith("[Product]");
+      const cleanDesc = item.description?.replace(/^\[(Service|Product)\]\s*/, "").replace(/\s*\(Warranty:.*?\)$/, "").replace(/\s*\(SN:.*?\)/, "") || item.description;
+      const warranty = item.description?.match(/\(Warranty:\s*(.*?)\)/)?.[1] || "—";
+      const itemType = isService ? "Service" : isProduct ? "Product" : "Custom";
+      return [
+        (idx + 1).toString(),
+        cleanDesc,
+        itemType,
+        warranty,
+        item.quantity.toString(),
+        `Tk ${Number(item.unit_price).toLocaleString()}`,
+        `Tk ${Number(item.total).toLocaleString()}`
+      ];
+    });
+
+    autoTable(doc, {
+      startY: y,
+      head: [["#", "Description", "Type", "Warranty", "Qty", "Price", "Total"]],
+      body: tableData,
+      theme: "grid",
+      headStyles: { fillColor: [13, 148, 136], textColor: 255, fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 9, textColor: 55 },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 25, halign: 'center' },
+        4: { cellWidth: 15, halign: 'center' },
+        5: { cellWidth: 25, halign: 'right' },
+        6: { cellWidth: 25, halign: 'right' }
+      }
+    });
+
+    y = (doc as any).lastAutoTable.finalY + 10;
+    const rightMargin = pageWidth - 15;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    
+    doc.text("Subtotal:", rightMargin - 40, y);
+    doc.setTextColor(55, 65, 81);
+    doc.text(`Tk ${Number(quotation.subtotal).toLocaleString()}`, rightMargin, y, { align: "right" });
+    y += 6;
+    
+    doc.setTextColor(107, 114, 128);
+    doc.text(`Tax (${quotation.tax_rate}%):`, rightMargin - 40, y);
+    doc.setTextColor(55, 65, 81);
+    doc.text(`Tk ${Number(quotation.tax_amount).toLocaleString()}`, rightMargin, y, { align: "right" });
+    y += 6;
+    
+    doc.setDrawColor(13, 148, 136);
+    doc.line(rightMargin - 60, y, rightMargin, y);
+    y += 8;
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(17, 24, 39);
+    doc.text("Total:", rightMargin - 40, y);
+    doc.setTextColor(13, 148, 136);
+    doc.text(`Tk ${Number(quotation.total).toLocaleString()}`, rightMargin, y, { align: "right" });
+
+    let leftY = (doc as any).lastAutoTable.finalY + 10;
+    
+    if (quotation.notes) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(245, 158, 11);
+      doc.text("NOTES / TERMS", 15, leftY);
+      leftY += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(55, 65, 81);
+      const splitNotes = doc.splitTextToSize(quotation.notes, 100);
+      doc.text(splitNotes, 15, leftY);
+      leftY += splitNotes.length * 4;
+    }
+
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let sigY = Math.max(y, leftY) + 30;
+    if (sigY > pageHeight - 30) { doc.addPage(); sigY = 30; }
+
+    doc.setDrawColor(156, 163, 175);
+    doc.line(30, sigY, 80, sigY);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(75, 85, 99);
+    doc.text("Client Signature", 55, sigY + 5, { align: "center" });
+
+    doc.line(pageWidth - 80, sigY, pageWidth - 30, sigY);
+    doc.text("Authorized Signature", pageWidth - 55, sigY + 5, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(156, 163, 175);
+    doc.text(settings.company_name || "", pageWidth - 55, sigY + 9, { align: "center" });
+
+    doc.text(`${settings.footer_text || ""} | ${settings.company_name || ""} | ${settings.phone || ""}`, pageWidth / 2, pageHeight - 10, { align: "center" });
+
+    const pdfBlob = doc.output("blob");
+    if (options.skipDownload) return pdfBlob;
+
+    const shareNavigator = navigator as any;
+    const isMobileUa = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobileUa && shareNavigator.share) {
+      const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+      try { await shareNavigator.share({ files: [pdfFile], title: fileName }); return null; } catch {}
+    }
+
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => { if(link.parentNode) link.parentNode.removeChild(link); URL.revokeObjectURL(blobUrl); }, 30000);
+    return pdfBlob;
   };
+
 
   const downloadQuotationPdf = async (q: any) => {
     setDownloadingId(q.id);
@@ -270,7 +327,7 @@ export default function Quotations() {
       const el = document.getElementById("quotation-print");
       if (!el) { toast({ title: "Error generating PDF", variant: "destructive" }); return; }
       const clientName = q.clients?.name?.replace(/[^a-zA-Z0-9]/g, "_") || "Client";
-      await generatePdf(el, `Quotation_${q.quotation_number}_${clientName}.pdf`);
+      await generateVectorPdf(fullQ, settings, `Quotation_${q.quotation_number}_${clientName}.pdf`);
       toast({ title: "PDF downloaded!" });
     } catch (err: any) {
       toast({ title: "PDF Error", description: err.message, variant: "destructive" });

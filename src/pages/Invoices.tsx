@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { InvoicePreview } from "@/components/InvoicePreview";
 import { cn } from "@/lib/utils";
-import html2canvas from "html2canvas";
+import autoTable from "jspdf-autotable";
 import jsPDF from "jspdf";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { openWhatsApp } from "@/lib/whatsapp";
@@ -108,288 +108,224 @@ export default function Invoices() {
     setPreviewInvoice({ ...inv, items: invItems || [] });
   };
 
-  const generateInvoicePdfFromElement = async (
-    sourceEl: HTMLElement,
+  
+  const generateVectorPdf = async (
+    invoice: any,
+    settings: any,
     fileName: string,
     options: { skipDownload?: boolean } = {}
   ): Promise<Blob | null> => {
-    const cloneHost = document.createElement("div");
-    cloneHost.style.position = "fixed";
-    cloneHost.style.left = "-10000px";
-    cloneHost.style.top = "0";
-    cloneHost.style.width = "794px";
-    cloneHost.style.minWidth = "794px";
-    cloneHost.style.maxWidth = "794px";
-    cloneHost.style.opacity = "1";
-    cloneHost.style.pointerEvents = "none";
-    cloneHost.style.zIndex = "2147483647";
-    cloneHost.style.overflow = "visible";
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 20;
 
-    const clone = sourceEl.cloneNode(true) as HTMLElement;
-    clone.style.width = "794px";
-    clone.style.minWidth = "794px";
-    clone.style.maxWidth = "794px";
-    cloneHost.appendChild(clone);
-    document.body.appendChild(cloneHost);
+    // Header
+    doc.setFillColor(30, 58, 138);
+    doc.roundedRect(pageWidth - 50, 15, 35, 12, 2, 2, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("INVOICE", pageWidth - 32.5, 23, { align: "center" });
 
-    try {
-      if (document.fonts) {
-        try { await document.fonts.ready; } catch {}
-      }
+    doc.setTextColor(17, 24, 39);
+    doc.setFontSize(22);
+    doc.text(settings.company_name || "AK IT Solution", 15, y);
+    y += 5;
 
-      // ---- GLOBAL TEXT FIX: Apply consistent rendering to ALL text nodes ----
-      const allTextElements = Array.from(clone.querySelectorAll("*")) as HTMLElement[];
-      allTextElements.forEach((el) => {
-        el.style.wordSpacing = "0px";
-        el.style.letterSpacing = "normal";
-        el.style.fontKerning = "none";
-        el.style.textRendering = "geometricPrecision";
-        (el.style as any).webkitFontSmoothing = "antialiased";
-      });
-
-      // ---- INVOICE LABEL FIX ----
-      const invoiceLabelWrap = clone.querySelector("[data-pdf-invoice-label]") as HTMLElement | null;
-      if (invoiceLabelWrap) {
-        invoiceLabelWrap.style.overflow = "visible";
-        invoiceLabelWrap.style.minWidth = "150px";
-        invoiceLabelWrap.style.height = "42px";
-        invoiceLabelWrap.style.backgroundColor = "#1e3a8a";
-        invoiceLabelWrap.style.display = "inline-flex";
-        invoiceLabelWrap.style.alignItems = "center";
-        invoiceLabelWrap.style.justifyContent = "center";
-        invoiceLabelWrap.style.padding = "10px 16px";
-        invoiceLabelWrap.style.borderRadius = "8px";
-        invoiceLabelWrap.style.border = "2px solid #1e3a8a";
-        invoiceLabelWrap.style.opacity = "1";
-        invoiceLabelWrap.style.boxSizing = "border-box";
-        invoiceLabelWrap.style.whiteSpace = "nowrap";
-
-        invoiceLabelWrap.style.setProperty("background-color", "#1e3a8a", "important");
-        invoiceLabelWrap.style.setProperty("color", "#ffffff", "important");
-        invoiceLabelWrap.style.setProperty("-webkit-text-fill-color", "#ffffff", "important");
-
-        // Replace inner content with a fresh span to avoid rendering issues
-        invoiceLabelWrap.innerHTML = '';
-        const labelSpan = document.createElement('span');
-        labelSpan.textContent = 'INVOICE';
-        labelSpan.style.cssText = 'font-size:18px;line-height:1;font-weight:900;color:#ffffff;white-space:nowrap;font-family:Arial,Helvetica,sans-serif;letter-spacing:0.06em;-webkit-text-fill-color:#ffffff;display:inline-block;opacity:1;visibility:visible;';
-        invoiceLabelWrap.appendChild(labelSpan);
-      }
-
-      // ---- INVOICE NUMBER FIX ----
-      // The invoice number is the monospace element after the label
-      const invoiceNumberEl = clone.querySelector("[data-pdf-invoice-label]")?.parentElement?.querySelector("p[style*='monospace']") as HTMLElement | null;
-      if (invoiceNumberEl) {
-        invoiceNumberEl.style.fontFamily = "'Courier New', Courier, monospace";
-        invoiceNumberEl.style.fontSize = "13px";
-        invoiceNumberEl.style.fontWeight = "700";
-        invoiceNumberEl.style.whiteSpace = "nowrap";
-        invoiceNumberEl.style.letterSpacing = "0.02em";
-        invoiceNumberEl.style.color = "#1f2937";
-      }
-
-      // ---- TAGLINE FIX ----
-      // Find the company tagline (small text under company name)
-      const headerTextBlocks = Array.from(clone.querySelectorAll("p, span, div")) as HTMLElement[];
-      headerTextBlocks.forEach((el) => {
-        const text = el.textContent || "";
-        const fontSize = el.style.fontSize;
-        // Target tagline and address/phone/email lines
-        if (fontSize === "10px" || fontSize === "9px" || fontSize === "8px") {
-          el.style.whiteSpace = "nowrap";
-          el.style.wordSpacing = "0px";
-          el.style.letterSpacing = "normal";
-          el.style.fontKerning = "none";
-          el.style.textRendering = "geometricPrecision";
-          el.style.fontFamily = "Helvetica, Arial, sans-serif";
-        }
-      });
-
-      // ---- SERVICE/ITEM NAME FIX ----
-      const serviceNameCells = Array.from(clone.querySelectorAll("tbody tr td:nth-child(2)")) as HTMLElement[];
-      serviceNameCells.forEach((node) => {
-        node.style.whiteSpace = "normal";
-        node.style.wordBreak = "keep-all";
-        node.style.overflowWrap = "normal";
-        node.style.wordSpacing = "0px";
-        node.style.letterSpacing = "0";
-        node.style.fontKerning = "none";
-        node.style.textRendering = "geometricPrecision";
-        node.style.textAlign = "left";
-        node.style.fontFamily = "Helvetica, Arial, sans-serif";
-      });
-
-      const serviceNameTexts = Array.from(clone.querySelectorAll("tbody tr td:nth-child(2) span:first-child")) as HTMLElement[];
-      serviceNameTexts.forEach((node) => {
-        node.style.whiteSpace = "normal";
-        node.style.wordBreak = "keep-all";
-        node.style.overflowWrap = "normal";
-        node.style.wordSpacing = "0px";
-        node.style.letterSpacing = "0";
-        node.style.fontKerning = "none";
-        node.style.display = "inline";
-        node.style.fontFamily = "Helvetica, Arial, sans-serif";
-      });
-
-      // ---- IMAGE PRELOADING ----
-      const images = Array.from(clone.querySelectorAll("img")) as HTMLImageElement[];
-      await Promise.all(images.map(async (img) => {
-        if (!img.complete) await new Promise<void>((resolve) => { img.onload = () => resolve(); img.onerror = () => resolve(); });
-        const src = img.currentSrc || img.src;
-        if (!src || src.startsWith("data:")) return;
-        try {
-          const response = await fetch(src, { mode: "cors" });
-          const blob = await response.blob();
-          const dataUrl = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = () => reject();
-            reader.readAsDataURL(blob);
-          });
-          img.src = dataUrl;
-          if (!img.complete) await new Promise<void>((resolve) => { img.onload = () => resolve(); img.onerror = () => resolve(); });
-        } catch {}
-      }));
-
-      // Wait for layout to stabilize
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-      });
-      await new Promise((r) => setTimeout(r, 600));
-
-      // Force layout recalculation
-      const cloneRect = clone.getBoundingClientRect();
-      const captureWidth = 794;
-      const captureHeight = Math.max(Math.ceil(cloneRect.height), clone.scrollHeight, 1123);
-      // Use fixed scale of 3 for consistent quality across devices
-      const renderScale = 3;
-
-      const canvas = await html2canvas(clone, {
-        scale: renderScale,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        imageTimeout: 15000,
-        logging: false,
-        width: captureWidth,
-        height: captureHeight,
-        windowWidth: captureWidth,
-        windowHeight: captureHeight,
-        scrollX: 0,
-        scrollY: 0,
-      });
-
-      let labelCanvasBounds: { x: number; y: number; w: number; h: number } | null = null;
-
-      // Final fail-safe: paint INVOICE badge directly on canvas if html2canvas skips text
-      if (invoiceLabelWrap) {
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          const labelRect = invoiceLabelWrap.getBoundingClientRect();
-          const rootRect = clone.getBoundingClientRect();
-          const scaleX = canvas.width / captureWidth;
-          const scaleY = canvas.height / captureHeight;
-          const x = (labelRect.left - rootRect.left) * scaleX;
-          const y = (labelRect.top - rootRect.top) * scaleY;
-          const w = labelRect.width * scaleX;
-          const h = labelRect.height * scaleY;
-          labelCanvasBounds = { x, y, w, h };
-          const r = Math.min(16 * scaleY, h / 2);
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.moveTo(x + r, y);
-          ctx.lineTo(x + w - r, y);
-          ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-          ctx.lineTo(x + w, y + h - r);
-          ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-          ctx.lineTo(x + r, y + h);
-          ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-          ctx.lineTo(x, y + r);
-          ctx.quadraticCurveTo(x, y, x + r, y);
-          ctx.closePath();
-          ctx.fillStyle = "#1e3a8a";
-          ctx.fill();
-
-          ctx.fillStyle = "#ffffff";
-          ctx.font = `900 ${Math.max(18 * scaleY, 36)}px Arial`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText("INVOICE", x + w / 2, y + h / 2);
-          ctx.restore();
-        }
-      }
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = (canvas.height * pdfW) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
-
-      // Absolute final guard: draw the INVOICE text directly in PDF coordinates
-      if (labelCanvasBounds) {
-        const xMm = (labelCanvasBounds.x / canvas.width) * pdfW;
-        const yMm = (labelCanvasBounds.y / canvas.height) * pdfH;
-        const wMm = (labelCanvasBounds.w / canvas.width) * pdfW;
-        const hMm = (labelCanvasBounds.h / canvas.height) * pdfH;
-
-        pdf.setFillColor(30, 58, 138);
-        pdf.roundedRect(xMm, yMm, wMm, hMm, 2, 2, "F");
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(Math.max(14, Math.min(18, hMm * 1.6)));
-        pdf.text("INVOICE", xMm + wMm / 2, yMm + hMm * 0.64, { align: "center" });
-      }
-      
-      const pdfBlob = pdf.output("blob");
-      if (options.skipDownload) {
-        return pdfBlob;
-      }
-      const shareNavigator = navigator as Navigator & {
-        canShare?: (data: ShareData) => boolean;
-        share?: (data: ShareData) => Promise<void>;
-      };
-      const isMobileUa = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-
-      if (isMobileUa && shareNavigator.share) {
-        const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
-        if (!shareNavigator.canShare || shareNavigator.canShare({ files: [pdfFile] })) {
-          try {
-            await shareNavigator.share({ files: [pdfFile], title: fileName });
-            return;
-          } catch {}
-        }
-      }
-
-      const blobUrl = URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = fileName;
-      link.style.display = "none";
-      document.body.appendChild(link);
-
-      if (isIOS) {
-        const opened = window.open(blobUrl, "_blank");
-        if (!opened) {
-          link.click();
-          setFallbackPdfUrl(blobUrl);
-        }
-      } else if (isMobileUa) {
-        link.click();
-        setFallbackPdfUrl(blobUrl);
-      } else {
-        link.click();
-      }
-
-      window.setTimeout(() => {
-        if (link.parentNode) link.parentNode.removeChild(link);
-        if (!isMobileUa) URL.revokeObjectURL(blobUrl);
-      }, 30000);
-    } finally {
-      document.body.removeChild(cloneHost);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    if (settings.company_tagline) {
+      doc.text(settings.company_tagline, 15, y);
+      y += 5;
     }
+
+    doc.setFontSize(9);
+    if (settings.address) { doc.text(`Address: ${settings.address}`, 15, y); y += 4; }
+    if (settings.phone) { doc.text(`Phone: ${settings.phone}`, 15, y); y += 4; }
+    if (settings.email) { doc.text(`Email: ${settings.email}`, 15, y); y += 4; }
+
+    // Invoice details
+    doc.setTextColor(31, 41, 55);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(invoice.invoice_number, pageWidth - 15, 33, { align: "right" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    doc.text(`Date: ${new Date(invoice.issue_date).toLocaleDateString("en-GB")}`, pageWidth - 15, 39, { align: "right" });
+    if (invoice.due_date) {
+      doc.text(`Due: ${new Date(invoice.due_date).toLocaleDateString("en-GB")}`, pageWidth - 15, 44, { align: "right" });
+    }
+
+    y = Math.max(y + 10, 55);
+    doc.setDrawColor(209, 213, 219);
+    doc.line(15, y, pageWidth - 15, y);
+    y += 10;
+
+    // Bill To
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(156, 163, 175);
+    doc.text("BILL TO", 15, y);
+    y += 5;
+
+    doc.setFontSize(12);
+    doc.setTextColor(17, 24, 39);
+    const clientName = (invoice as any).clients?.name || "Paid in Cash";
+    doc.text(clientName, 15, y);
+    y += 5;
+
+    if ((invoice as any).clients?.address) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(75, 85, 99);
+      const splitAddress = doc.splitTextToSize((invoice as any).clients.address, 80);
+      doc.text(splitAddress, 15, y);
+      y += splitAddress.length * 5;
+    }
+    y += 5;
+
+    // Table
+    const tableData = (invoice.items || []).map((item: any, idx: number) => {
+      const isService = item.description?.startsWith("[Service]");
+      const isProduct = item.description?.startsWith("[Product]");
+      const cleanDesc = item.description?.replace(/^\[(Service|Product)\]\s*/, "").replace(/\s*\(Warranty:.*?\)$/, "").replace(/\s*\(SN:.*?\)/, "") || item.description;
+      const warranty = item.description?.match(/\(Warranty:\s*(.*?)\)/)?.[1] || "—";
+      const sn = item.description?.match(/\(SN:\s*(.*?)\)/)?.[1] || "";
+      const itemType = isService ? "Service" : isProduct ? "Product" : "Custom";
+      let descText = cleanDesc;
+      if (sn) descText += `\nSN: ${sn}`;
+      return [
+        (idx + 1).toString(),
+        descText,
+        itemType,
+        warranty,
+        item.quantity.toString(),
+        `Tk ${Number(item.unit_price).toLocaleString()}`,
+        `Tk ${Number(item.total).toLocaleString()}`
+      ];
+    });
+
+    autoTable(doc, {
+      startY: y,
+      head: [["#", "Description", "Type", "Warranty", "Qty", "Price", "Total"]],
+      body: tableData,
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], textColor: 255, fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 9, textColor: 55 },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 25, halign: 'center' },
+        4: { cellWidth: 15, halign: 'center' },
+        5: { cellWidth: 25, halign: 'right' },
+        6: { cellWidth: 25, halign: 'right' }
+      }
+    });
+
+    y = (doc as any).lastAutoTable.finalY + 10;
+    const rightMargin = pageWidth - 15;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    
+    doc.text("Subtotal:", rightMargin - 40, y);
+    doc.setTextColor(55, 65, 81);
+    doc.text(`Tk ${Number(invoice.subtotal).toLocaleString()}`, rightMargin, y, { align: "right" });
+    y += 6;
+    
+    doc.setTextColor(107, 114, 128);
+    doc.text(`Tax (${invoice.tax_rate}%):`, rightMargin - 40, y);
+    doc.setTextColor(55, 65, 81);
+    doc.text(`Tk ${Number(invoice.tax_amount).toLocaleString()}`, rightMargin, y, { align: "right" });
+    y += 6;
+    
+    doc.setDrawColor(30, 58, 138);
+    doc.line(rightMargin - 60, y, rightMargin, y);
+    y += 8;
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(17, 24, 39);
+    doc.text("Total Due:", rightMargin - 40, y);
+    doc.setTextColor(37, 99, 235);
+    doc.text(`Tk ${Number(invoice.total).toLocaleString()}`, rightMargin, y, { align: "right" });
+
+    let leftY = (doc as any).lastAutoTable.finalY + 10;
+    const hasBankInfo = settings.show_payment_info && (settings.bank_name || settings.bank_account_number || settings.mobile_banking);
+    if (hasBankInfo) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(96, 165, 250);
+      doc.text("PAYMENT INFORMATION", 15, leftY);
+      leftY += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(55, 65, 81);
+      if (settings.bank_name) { doc.text(`Bank: ${settings.bank_name}`, 15, leftY); leftY += 4; }
+      if (settings.bank_account_name) { doc.text(`A/C Name: ${settings.bank_account_name}`, 15, leftY); leftY += 4; }
+      if (settings.bank_account_number) { doc.text(`A/C No: ${settings.bank_account_number}`, 15, leftY); leftY += 4; }
+      if (settings.bank_branch) { doc.text(`Branch: ${settings.bank_branch}`, 15, leftY); leftY += 4; }
+      if (settings.mobile_banking) { doc.text(`Mobile Banking: ${settings.mobile_banking}`, 15, leftY); leftY += 4; }
+      leftY += 4;
+    }
+
+    if (invoice.notes) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(245, 158, 11);
+      doc.text("NOTES", 15, leftY);
+      leftY += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(55, 65, 81);
+      const splitNotes = doc.splitTextToSize(invoice.notes, 100);
+      doc.text(splitNotes, 15, leftY);
+      leftY += splitNotes.length * 4;
+    }
+
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let sigY = Math.max(y, leftY) + 30;
+    if (sigY > pageHeight - 30) { doc.addPage(); sigY = 30; }
+
+    doc.setDrawColor(156, 163, 175);
+    doc.line(30, sigY, 80, sigY);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(75, 85, 99);
+    doc.text("Customer Signature", 55, sigY + 5, { align: "center" });
+
+    doc.line(pageWidth - 80, sigY, pageWidth - 30, sigY);
+    doc.text("Authorized Signature", pageWidth - 55, sigY + 5, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(156, 163, 175);
+    doc.text(settings.company_name || "", pageWidth - 55, sigY + 9, { align: "center" });
+
+    doc.text(`${settings.footer_text || ""} | ${settings.company_name || ""} | ${settings.phone || ""}`, pageWidth / 2, pageHeight - 10, { align: "center" });
+
+    const pdfBlob = doc.output("blob");
+    if (options.skipDownload) return pdfBlob;
+
+    const shareNavigator = navigator as any;
+    const isMobileUa = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobileUa && shareNavigator.share) {
+      const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+      try { await shareNavigator.share({ files: [pdfFile], title: fileName }); return null; } catch {}
+    }
+
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => { if(link.parentNode) link.parentNode.removeChild(link); URL.revokeObjectURL(blobUrl); }, 30000);
+    return pdfBlob;
   };
+
 
   const downloadInvoicePdf = async (inv: any) => {
     setDownloadingId(inv.id);
@@ -401,7 +337,7 @@ export default function Invoices() {
       const el = document.getElementById("invoice-print");
       if (!el) { toast({ title: "Error generating PDF", variant: "destructive" }); return; }
 
-      await generateInvoicePdfFromElement(el, `${fullInvoice.invoice_number}.pdf`);
+      await generateVectorPdf(fullInvoice, settings, `${fullInvoice.invoice_number}.pdf`);
     } catch {
       toast({ title: "Error generating PDF", variant: "destructive" });
     } finally {
@@ -438,7 +374,7 @@ export default function Invoices() {
       const el = document.getElementById("invoice-print");
       if (!el) { toast({ title: "Error generating PDF", variant: "destructive" }); return; }
 
-      const blob = await generateInvoicePdfFromElement(el, `${fullInvoice.invoice_number}.pdf`, { skipDownload: true });
+      const blob = await generateVectorPdf(fullInvoice, settings, `${fullInvoice.invoice_number}.pdf`, { skipDownload: true });
       if (!blob) throw new Error("PDF generation failed");
 
       // Upload to public storage bucket
@@ -655,7 +591,7 @@ export default function Invoices() {
                     if (!el) return;
                     setDownloading(true);
                     try {
-                      await generateInvoicePdfFromElement(el, `${previewInvoice.invoice_number}.pdf`);
+                      await generateVectorPdf(previewInvoice, settings, `${previewInvoice.invoice_number}.pdf`);
                     } catch {
                       toast({ title: "Error generating PDF", variant: "destructive" });
                     } finally {
