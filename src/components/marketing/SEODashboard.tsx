@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, AlertTriangle, XCircle, Globe, Search, FileText, Image, Link2 } from "lucide-react";
+import { AISEOAutoFix } from "./AISEOAutoFix";
 
 interface SEOCheck {
   label: string;
@@ -154,6 +155,9 @@ export function SEODashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Auto-Fix Section */}
+      <AISEOAutoFix products={products || []} />
 
       {/* Detailed Checks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "postbuild": "node scripts/generate-sitemap.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
