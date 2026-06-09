@@ -10,6 +10,7 @@ import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { TopProductsChart } from "@/components/dashboard/TopProductsChart";
 import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
 import { QuickActions } from "@/components/dashboard/QuickActions";
+import { AIDashboardInsights } from "@/components/dashboard/AIDashboardInsights";
 
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -62,6 +63,16 @@ export default function Dashboard() {
       <div className="space-y-6 animate-fade-in">
         {/* Welcome Banner */}
         <WelcomeBanner />
+
+        <AIDashboardInsights data={{
+          todayProfit,
+          todaySalesRevenue,
+          pendingOrders,
+          lowStockCount,
+          outOfStockCount,
+          unreadMessages: storeMessages?.length || 0,
+          totalClients: clients?.length || 0
+        }} />
 
         {/* Top Stats Row - auto-scales from 2 cols on mobile to 8 on xl */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3">
