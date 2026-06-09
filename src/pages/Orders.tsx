@@ -19,7 +19,7 @@ export default function Orders() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab") || "orders";
+  const tabParam = searchParams.get("tab")?.toLowerCase() || "orders";
   const [activeTab, setActiveTab] = useState(tabParam);
 
   useEffect(() => {

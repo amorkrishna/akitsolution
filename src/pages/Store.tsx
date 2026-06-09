@@ -65,7 +65,7 @@ export default function Store() {
   const [msgDialog, setMsgDialog] = useState(false);
   const [msgForm, setMsgForm] = useState({ name: "", phone: "", message: "" });
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab");
+  const tabParam = searchParams.get("tab")?.toLowerCase();
   const initialTab = (tabParam === "products" || tabParam === "services" || tabParam === "packages" || tabParam === "builder" || tabParam === "tracking")
     ? tabParam
     : "products";
