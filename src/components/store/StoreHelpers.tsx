@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowRightLeft, Camera, Cpu, Globe, HardDrive, Headphones, Keyboard, Laptop, Monitor, Printer, Router, Server, Zap, Wrench, Mail, Truck, Package, MapPin } from 'lucide-react';
 import { StoreCarousel } from './StoreCarousel';
-
+import { sectionCards, categoryNav, serviceSubcategories } from './StoreConstants';
 export function AutoSlidingTabs({
   activeTab,
   setActiveTab,
