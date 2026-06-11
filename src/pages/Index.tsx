@@ -14,9 +14,11 @@ import { AIDashboardInsights } from "@/components/dashboard/AIDashboardInsights"
 
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { canAccessRevenue } = useUserRole();
   const { data: clients } = useQuery({ queryKey: ["clients"], queryFn: async () => (await supabase.from("clients").select("*")).data || [] });
   const { data: invoices } = useQuery({ queryKey: ["invoices"], queryFn: async () => (await supabase.from("invoices").select("*, clients(name)").order("created_at", { ascending: false })).data || [] });
   const { data: products } = useQuery({ queryKey: ["products"], queryFn: async () => (await supabase.from("products").select("*")).data || [] });
@@ -29,6 +31,7 @@ export default function Dashboard() {
   const { data: serviceRequests } = useQuery({ queryKey: ["service-requests-dashboard"], queryFn: async () => (await supabase.from("service_requests").select("*")).data || [] });
   const { data: aiChats } = useQuery({ queryKey: ["ai-chats-dashboard"], queryFn: async () => (await supabase.from("ai_chat_sessions").select("*").order("updated_at", { ascending: false }).limit(5)).data || [] });
   const { data: storeMessages } = useQuery({ queryKey: ["store-messages-dashboard"], queryFn: async () => (await supabase.from("store_messages").select("*").eq("is_read", false)).data || [] });
+  const { data: activeServicing } = useQuery({ queryKey: ["active-servicing-dashboard"], queryFn: async () => (await supabase.from("servicing").select("*").eq("status", "pending").order("service_date", { ascending: true })).data || [] });
 
   const totalRevenue = invoices?.filter(i => i.status === "paid").reduce((sum, i) => sum + Number(i.total), 0) || 0;
   const pendingOrders = orders?.filter(o => o.status === "pending").length || 0;
@@ -83,15 +86,16 @@ export default function Dashboard() {
           <StatCard title="Products" value={products?.length || 0} icon={Package} />
           <StatCard title="Low Stock" value={lowStockProducts} icon={AlertCircle} trend={lowStockProducts > 0 ? `${outOfStockProducts} out` : "OK"} trendUp={lowStockProducts === 0} />
           <StatCard title="Invoices" value={invoices?.length || 0} icon={FileText} />
-          <StatCard title="Revenue" value={`৳${totalRevenue.toLocaleString()}`} icon={DollarSign} trend="Total paid" trendUp />
+          {canAccessRevenue && <StatCard title="Revenue" value={`৳${totalRevenue.toLocaleString()}`} icon={DollarSign} trend="Total paid" trendUp />}
         </div>
 
         {/* Quick Actions */}
         <QuickActions />
 
         {/* Today's Profit + Store Revenue */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-          <Card className="glass-card border-primary/20 md:col-span-2">
+        {canAccessRevenue && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+            <Card className="glass-card border-primary/20 md:col-span-2">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-primary" />
@@ -199,10 +203,11 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Revenue Chart + Top Products */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-          <RevenueChart sales={sales || []} invoices={invoices || []} />
+          {canAccessRevenue && <RevenueChart sales={sales || []} invoices={invoices || []} />}
           <TopProductsChart sales={sales || []} />
         </div>
 
@@ -372,6 +377,45 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-4">All products are well stocked ✅</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Active Servicing / Warranty Reminders */}
+          <Card className="glass-card md:col-span-2">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Wrench className="h-4 w-4 text-info" /> Active Servicing & Reminders
+                  {activeServicing && activeServicing.length > 0 && (
+                    <Badge className="bg-info/10 text-info border-info/20 text-[9px] px-1.5">{activeServicing.length}</Badge>
+                  )}
+                </CardTitle>
+                <Button variant="ghost" size="sm" className="text-[10px] h-7" onClick={() => navigate("/servicing")}>View Servicing →</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {activeServicing && activeServicing.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {activeServicing.slice(0, 6).map(s => {
+                    const isOverdue = new Date(s.service_date) < new Date(todayStr);
+                    return (
+                      <div key={s.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-card/50 hover:bg-muted/30 transition-colors">
+                        <div className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isOverdue ? "bg-destructive/10" : "bg-info/10"}`}>
+                          <Wrench className={`h-4 w-4 ${isOverdue ? "text-destructive" : "text-info"}`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium truncate">{s.client_name}</p>
+                          <p className={`text-[10px] font-semibold ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}>
+                            {isOverdue ? "Overdue: " : "Date: "} {format(new Date(s.service_date), "dd MMM")}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-4">No active servicing tasks 🔧</p>
               )}
             </CardContent>
           </Card>

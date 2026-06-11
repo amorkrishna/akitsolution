@@ -51,6 +51,7 @@ const Today = lazy(() => import('./pages/Today'));
 const AIChats = lazy(() => import('./pages/AIChats'));
 const Marketing = lazy(() => import('./pages/Marketing'));
 const PromoGenerator = lazy(() => import('./pages/PromoGenerator'));
+const PublicServices = lazy(() => import('./pages/PublicServices'));
 
 const queryClient = new QueryClient();
 
@@ -148,6 +149,7 @@ const App = () => (
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Store />} />
+          <Route path="/our-services" element={<PublicServices />} />
           <Route path="/shop" element={<Navigate to="/" replace />} />
           <Route path="/store" element={<Navigate to="/" replace />} />
           <Route path="/reset-password" element={<ResetPassword />} />
@@ -164,6 +166,7 @@ const App = () => (
             <Route path="/purchases" element={<Purchases />} />
             <Route path="/servicing" element={<Servicing />} />
             <Route path="/quotations/create" element={<CreateQuotation />} />
+            <Route path="/quotations/edit/:id" element={<CreateQuotation />} />
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/invoices/create" element={<CreateInvoice />} />
             <Route path="/invoices/edit/:id" element={<CreateInvoice />} />

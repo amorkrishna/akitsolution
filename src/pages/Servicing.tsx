@@ -14,7 +14,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Wrench, DollarSign, TrendingUp, TrendingDown, Trash2, Clock, CheckCircle, Search, Filter, CalendarIcon, X, Download, Pencil } from "lucide-react";
+import { Plus, Wrench, DollarSign, TrendingUp, TrendingDown, Trash2, Clock, CheckCircle, Search, Filter, CalendarIcon, X, Download, Pencil, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { format, isWithinInterval, parseISO } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -65,6 +66,7 @@ interface ServicingRecord {
 }
 
 export default function Servicing() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -440,6 +442,9 @@ export default function Servicing() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/invoices/create", { state: { fromServicing: true, servicingRecord: rec } })} title="Create Bill">
+                          <FileText className="h-4 w-4 text-primary" />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(rec)} title="Edit">
                           <Pencil className="h-4 w-4 text-muted-foreground" />
                         </Button>

@@ -8,11 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AppRole } from "@/hooks/useUserRole";
 
 interface UserRole {
   id: string;
   user_id: string;
-  role: "admin" | "employee";
+  role: AppRole;
   created_at: string;
 }
 
@@ -33,7 +34,7 @@ export function AdminRoleManager() {
   });
 
   const updateRoleMutation = useMutation({
-    mutationFn: async ({ id, role }: { id: string; role: "admin" | "employee" }) => {
+    mutationFn: async ({ id, role }: { id: string; role: AppRole }) => {
       const { error } = await supabase
         .from("user_roles")
         .update({ role })
@@ -92,14 +93,23 @@ export function AdminRoleManager() {
                   <TableCell>
                     <Select
                       value={ur.role}
-                      onValueChange={(v) => updateRoleMutation.mutate({ id: ur.id, role: v as "admin" | "employee" })}
+                      onValueChange={(v) => updateRoleMutation.mutate({ id: ur.id, role: v as AppRole })}
                     >
                       <SelectTrigger className="w-32">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="ceo">
+                          <Badge className="bg-purple-500/10 text-purple-600">CEO</Badge>
+                        </SelectItem>
                         <SelectItem value="admin">
                           <Badge className="bg-primary/10 text-primary">Admin</Badge>
+                        </SelectItem>
+                        <SelectItem value="manager">
+                          <Badge className="bg-blue-500/10 text-blue-600">Manager</Badge>
+                        </SelectItem>
+                        <SelectItem value="sales">
+                          <Badge className="bg-orange-500/10 text-orange-600">Sales</Badge>
                         </SelectItem>
                         <SelectItem value="employee">
                           <Badge className="bg-muted text-muted-foreground">Employee</Badge>

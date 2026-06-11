@@ -588,6 +588,9 @@ export default function Store() {
               >
                 <MessageCircle className="h-3 w-3" />
               </a>
+              <a href="/our-services" className={`h-7 px-2 rounded-md flex items-center gap-1 text-[10px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/25 transition-all`}>
+                <Wrench className="h-3 w-3" />
+              </a>
               <a href="/auth" className={`text-[8px] px-1 py-0.5 ${isDark ? "text-white/20 hover:text-white/40" : "text-gray-300 hover:text-gray-400"} transition-colors`}>•</a>
             </div>
           </div>
@@ -663,6 +666,10 @@ export default function Store() {
               <a href={`https://wa.me/8801919060590?text=${encodeURIComponent(lang === "bn" ? "হ্যালো, আমি আপনার প্রোডাক্ট সম্পর্কে জানতে চাই।" : "Hello, I want to know about your products.")}`} target="_blank" rel="noopener noreferrer" className={`h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium bg-[#25D366] text-white hover:bg-[#128C7E] shadow-lg shadow-[#25D366]/25 ml-1 transition-all`}>
                 <MessageCircle className="h-4 w-4" />
                 WhatsApp
+              </a>
+              <a href="/our-services" className={`h-9 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 ml-1 transition-all`}>
+                <Wrench className="h-4 w-4" />
+                {lang === "bn" ? "সার্ভিস" : "Services"}
               </a>
             </div>
           </div>

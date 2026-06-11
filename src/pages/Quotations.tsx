@@ -8,13 +8,21 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Trash2, Eye, Printer, Download, FileText, Send, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Plus, Trash2, Eye, Printer, Download, FileText, Send, CheckCircle, XCircle, Clock, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { QuotationPreview } from "@/components/QuotationPreview";
 import autoTable from "jspdf-autotable";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import jsPDF from "jspdf";
+import { openWhatsApp } from "@/lib/whatsapp";
+
+// Inline WhatsApp glyph (lucide doesn't ship one)
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <path d="M19.05 4.91A10 10 0 0 0 4.1 18.32L3 22l3.78-1.08a10 10 0 0 0 4.78 1.22h.01A10 10 0 0 0 19.05 4.91Zm-7.49 15.4h-.01a8.3 8.3 0 0 1-4.23-1.16l-.3-.18-2.24.64.6-2.18-.2-.31a8.3 8.3 0 1 1 6.38 3.19Zm4.55-6.22c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.16.25-.64.81-.78.97-.14.17-.29.18-.53.06-.25-.13-1.05-.39-2-1.23a7.5 7.5 0 0 1-1.39-1.73c-.14-.25 0-.38.11-.5.11-.11.25-.29.37-.43.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.09 0 1.23.9 2.42 1.03 2.59.13.17 1.78 2.71 4.31 3.8.6.26 1.07.41 1.43.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.1-.23-.16-.48-.29Z"/>
+  </svg>
+);
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -32,6 +40,7 @@ export default function Quotations() {
   const [previewQuotation, setPreviewQuotation] = useState<any>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [whatsappId, setWhatsappId] = useState<string | null>(null);
 
   const { data: quotations, isLoading } = useQuery({
     queryKey: ["quotations"],
@@ -336,6 +345,67 @@ export default function Quotations() {
     }
   };
 
+  const sendQuotationWhatsApp = async (q: any) => {
+    const clientPhone = q.clients?.phone as string | undefined;
+    const phone = clientPhone || settings.whatsapp_number || settings.phone?.split(",")[0]?.trim() || "";
+    if (!phone) {
+      toast({ title: "No WhatsApp number found", description: "Add a phone to the client or company settings.", variant: "destructive" });
+      return;
+    }
+
+    setWhatsappId(q.id);
+    try {
+      const { data: items } = await supabase.from("quotation_items").select("*").eq("quotation_id", q.id);
+      const fullQ = { ...q, items: items || [] };
+      let clientRow = q.clients;
+      if (!clientRow?.phone && q.client_id) {
+        const { data: c } = await supabase.from("clients").select("name, address, phone").eq("id", q.client_id).maybeSingle();
+        if (c) clientRow = c;
+      }
+      fullQ.clients = clientRow;
+
+      setPreviewQuotation(fullQ);
+      await new Promise((r) => setTimeout(r, 800));
+      const el = document.getElementById("quotation-print");
+      if (!el) { toast({ title: "Error generating PDF", variant: "destructive" }); return; }
+
+      const clientName = clientRow?.name?.replace(/[^a-zA-Z0-9]/g, "_") || "Client";
+      const fileName = `Quotation_${fullQ.quotation_number}_${clientName}.pdf`;
+      const blob = await generateVectorPdf(fullQ, settings, fileName, { skipDownload: true });
+      if (!blob) throw new Error("PDF generation failed");
+
+      // Upload to public storage bucket
+      const path = `${fullQ.quotation_number}-${Date.now()}.pdf`;
+      const { error: upErr } = await supabase.storage.from("invoices").upload(path, blob, {
+        contentType: "application/pdf",
+        upsert: true,
+      });
+      if (upErr) throw upErr;
+
+      const { data: publicData } = supabase.storage.from("invoices").getPublicUrl(path);
+      const pdfUrl = publicData.publicUrl;
+
+      const targetPhone = clientRow?.phone || phone;
+      const cName = clientRow?.name || "Customer";
+      const message =
+        `আসসালামু আলাইকুম ${cName},\n\n` +
+        `${settings.company_name} থেকে আপনার কোটেশন পাঠানো হলো ✅\n\n` +
+        `📝 Quotation: ${fullQ.quotation_number}\n` +
+        `📅 Date: ${new Date(fullQ.issue_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}\n` +
+        `💰 Total: ৳${Number(fullQ.total).toLocaleString()}\n\n` +
+        `📎 PDF Download:\n${pdfUrl}\n\n` +
+        `কোনো প্রশ্ন থাকলে জানাবেন।\n\nধন্যবাদ\n${settings.company_name}`;
+
+      openWhatsApp(targetPhone, message);
+      toast({ title: "WhatsApp opened", description: "Quotation link copied into the chat." });
+    } catch (e: any) {
+      toast({ title: "Error sending quotation", description: e?.message, variant: "destructive" });
+    } finally {
+      setWhatsappId(null);
+      setPreviewQuotation(null);
+    }
+  };
+
   const handlePrint = () => {
     const printEl = document.getElementById("quotation-print");
     if (!printEl) return;
@@ -415,11 +485,17 @@ export default function Quotations() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-0.5">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/quotations/edit/${q.id}`)} title="Edit Quotation">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewQuotation(q)} title="Preview">
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => downloadQuotationPdf(q)} disabled={downloadingId === q.id} title="Download PDF">
                             <Download className={`h-4 w-4 ${downloadingId === q.id ? "animate-spin" : ""}`} />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Send via WhatsApp" disabled={whatsappId === q.id} onClick={() => sendQuotationWhatsApp(q)}>
+                            <WhatsAppIcon className="h-4 w-4 text-green-600" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => convertToInvoiceMutation.mutate(q)} disabled={convertToInvoiceMutation.isPending} title="Convert to Invoice">
                             <FileText className="h-4 w-4 text-primary" />
@@ -446,6 +522,9 @@ export default function Quotations() {
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={handlePrint}>
                 <Printer className="h-4 w-4 mr-1" />Print
+              </Button>
+              <Button size="sm" variant="outline" className="text-green-600 border-green-600/40 hover:bg-green-600/10" onClick={() => { setPreviewQuotation(null); sendQuotationWhatsApp(previewQuotation); }}>
+                <WhatsAppIcon className="h-4 w-4 mr-2" />WhatsApp
               </Button>
               <Button size="sm" onClick={() => previewQuotation && downloadQuotationPdf(previewQuotation)} disabled={downloading}>
                 <Download className="h-4 w-4 mr-1" />{downloading ? "Generating..." : "Download PDF"}

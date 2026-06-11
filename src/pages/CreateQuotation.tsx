@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -24,27 +23,63 @@ interface LineItem {
   quantity: number;
   unit_price: number;
   type: "product" | "service";
-  product_id: string | null;
+  warranty: string;
 }
 
 export default function CreateQuotation() {
   const navigate = useNavigate();
+  const { id: editId } = useParams<{ id: string }>();
+  const isEditMode = !!editId;
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { settings } = useCompanySettings();
-  const [form, setForm] = useState({ client_id: "", notes: "", tax_rate: "0" });
+  const [form, setForm] = useState({ client_id: "", notes: "", tax_rate: "0", quotation_number: "" });
   const [validUntil, setValidUntil] = useState<Date>(addDays(new Date(), 30));
   const [items, setItems] = useState<LineItem[]>([]);
   const [clientMode, setClientMode] = useState<"select" | "type">("select");
   const [typedClientName, setTypedClientName] = useState("");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setForm(f => ({ ...f, tax_rate: String(settings.default_tax_rate) }));
-  }, [settings.default_tax_rate]);
+    if (!isEditMode) {
+      setForm(f => ({ ...f, tax_rate: String(settings.default_tax_rate) }));
+    }
+  }, [settings.default_tax_rate, isEditMode]);
 
-  const [itemType, setItemType] = useState<"product" | "service" | "custom">("product");
-  const [selectedId, setSelectedId] = useState("");
-  const [customItem, setCustomItem] = useState({ description: "", quantity: 1, unit_price: 0 });
+  useEffect(() => {
+    if (!editId || loaded) return;
+    const loadQuotation = async () => {
+      const { data: q } = await supabase.from("quotations").select("*, clients(name)").eq("id", editId).single();
+      if (!q) { toast({ title: "Quotation not found", variant: "destructive" }); navigate("/quotations"); return; }
+      const { data: qItems } = await supabase.from("quotation_items").select("*").eq("quotation_id", editId);
+
+      setForm({
+        client_id: q.client_id || "",
+        notes: q.notes || "",
+        tax_rate: String(q.tax_rate),
+        quotation_number: q.quotation_number,
+      });
+      if (q.valid_until) setValidUntil(new Date(q.valid_until));
+      if (q.client_id) setClientMode("select");
+
+      const parsedItems: LineItem[] = (qItems || []).map((item: any) => {
+        const isService = item.description?.startsWith("[Service]");
+        const isProduct = item.description?.startsWith("[Product]");
+        const cleanDesc = item.description?.replace(/^\[(Service|Product)\]\s*/, "").replace(/\s*\(Warranty:.*?\)$/, "") || item.description;
+        const warranty = item.description?.match(/\(Warranty:\s*(.*?)\)/)?.[1] || "";
+        return {
+          description: cleanDesc,
+          quantity: item.quantity,
+          unit_price: Number(item.unit_price),
+          type: isService ? "service" as const : "product" as const,
+          warranty,
+        };
+      });
+      setItems(parsedItems);
+      setLoaded(true);
+    };
+    loadQuotation();
+  }, [editId, loaded, navigate, toast]);
 
   const { data: clients } = useQuery({ queryKey: ["clients"], queryFn: async () => (await supabase.from("clients").select("id, name")).data || [] });
   const { data: services } = useQuery({
@@ -67,11 +102,8 @@ export default function CreateQuotation() {
   const taxAmount = subtotal * (taxRate / 100);
   const total = subtotal + taxAmount;
 
-  const createMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: async () => {
-      const { data: qtNum } = await supabase.rpc("generate_quotation_number");
-      const quotationNumber = qtNum || `QT-${Date.now()}`;
-
       let clientId: string | null = form.client_id || null;
       if (clientMode === "type" && typedClientName.trim()) {
         const { data: newClient, error: clientError } = await supabase.from("clients").insert({ name: typedClientName.trim() }).select("id").single();
@@ -79,8 +111,7 @@ export default function CreateQuotation() {
         clientId = newClient.id;
       }
 
-      const { data: quotation, error } = await supabase.from("quotations").insert({
-        quotation_number: quotationNumber,
+      const quotationData = {
         client_id: clientId,
         valid_until: validUntil ? format(validUntil, "yyyy-MM-dd") : null,
         notes: form.notes || null,
@@ -88,18 +119,38 @@ export default function CreateQuotation() {
         subtotal,
         tax_amount: taxAmount,
         total,
-        status: "draft",
-      }).select().single();
-      if (error) throw error;
+      };
 
-      const lineItems = items.filter(i => i.description).map(i => ({
-        quotation_id: quotation.id,
-        product_id: i.product_id,
-        description: i.type === "product" ? `[Product] ${i.description}` : i.type === "service" ? `[Service] ${i.description}` : i.description,
-        quantity: i.quantity,
-        unit_price: i.unit_price,
-        total: i.quantity * i.unit_price,
-      }));
+      let qId = editId;
+
+      if (isEditMode) {
+        const { error } = await supabase.from("quotations").update(quotationData).eq("id", editId);
+        if (error) throw error;
+        await supabase.from("quotation_items").delete().eq("quotation_id", editId);
+      } else {
+        const { data: qtNum } = await supabase.rpc("generate_quotation_number");
+        const quotationNumber = qtNum || `QT-${Date.now()}`;
+        const { data: quotation, error } = await supabase.from("quotations").insert({
+          ...quotationData,
+          quotation_number: quotationNumber,
+          status: "draft",
+        }).select().single();
+        if (error) throw error;
+        qId = quotation.id;
+      }
+
+      const lineItems = items.filter(i => i.description).map(i => {
+        let desc = i.type === "product" ? `[Product] ${i.description}` : i.type === "service" ? `[Service] ${i.description}` : i.description;
+        if (i.warranty) desc += ` (Warranty: ${i.warranty})`;
+        return {
+          quotation_id: qId,
+          description: desc,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+          total: i.quantity * i.unit_price,
+        };
+      });
+
       if (lineItems.length > 0) {
         const { error: itemsError } = await supabase.from("quotation_items").insert(lineItems);
         if (itemsError) throw itemsError;
@@ -107,7 +158,7 @@ export default function CreateQuotation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quotations"] });
-      toast({ title: "Quotation created successfully" });
+      toast({ title: isEditMode ? "Quotation updated" : "Quotation created successfully" });
       navigate("/quotations");
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -120,41 +171,17 @@ export default function CreateQuotation() {
     setItems(updated);
   };
 
-  const addSelectedItem = () => {
-    if (itemType === "custom") {
-      if (!customItem.description) return;
-      setItems([...items, { description: customItem.description, quantity: customItem.quantity, unit_price: customItem.unit_price, type: "product", product_id: null }]);
-      setCustomItem({ description: "", quantity: 1, unit_price: 0 });
-      return;
-    }
-    if (!selectedId) return;
-    if (itemType === "product") {
-      const product = products?.find(p => p.id === selectedId);
-      if (product) {
-        setItems([...items, { description: product.name, quantity: 1, unit_price: Number(product.price), type: "product", product_id: product.id }]);
-      }
-    } else {
-      const service = services?.find(s => s.id === selectedId);
-      if (service) {
-        setItems([...items, { description: service.name, quantity: 1, unit_price: Number(service.price), type: "service", product_id: null }]);
-      }
-    }
-    setSelectedId("");
-  };
-
-  const currentList = itemType === "product" ? products : services;
-
   return (
       <div className="space-y-6 max-w-3xl mx-auto">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/quotations")}><ArrowLeft className="h-4 w-4" /></Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Create Quotation</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{isEditMode ? `Edit Quotation ${form.quotation_number}` : "Create Quotation"}</h1>
             <p className="text-muted-foreground text-sm">Prepare a quotation for CCTV, attendance devices & IT products</p>
           </div>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-6">
+        <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-6">
           <Card className="glass-card">
             <CardHeader><CardTitle className="text-lg">Quotation Details</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
@@ -197,7 +224,7 @@ export default function CreateQuotation() {
             </CardContent>
           </Card>
 
-          {/* Summary Card - Moved to Top */}
+          {/* Summary Card */}
           <Card className="glass-card">
             <CardContent className="pt-6 space-y-2 text-sm">
               <div className="flex justify-between items-center bg-primary/5 p-3 rounded-xl border border-primary/10">
@@ -216,102 +243,100 @@ export default function CreateQuotation() {
             </CardContent>
           </Card>
 
-          {/* Add Item Form */}
+          {/* Spreadsheet Line Items */}
           <Card className="glass-card relative z-20">
-            <CardHeader><CardTitle className="text-lg">Add Items from Catalog</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Item Type</Label>
-                <RadioGroup value={itemType} onValueChange={(v) => { setItemType(v as "product" | "service" | "custom"); setSelectedId(""); }} className="flex gap-4">
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="product" id="type-product" />
-                    <Label htmlFor="type-product" className="cursor-pointer font-normal">Product</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="service" id="type-service" />
-                    <Label htmlFor="type-service" className="cursor-pointer font-normal">Service</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="custom" id="type-custom" />
-                    <Label htmlFor="type-custom" className="cursor-pointer font-normal">Custom</Label>
-                  </div>
-                </RadioGroup>
+            <CardHeader className="flex flex-row items-center justify-between py-4">
+              <CardTitle className="text-lg">Line Items</CardTitle>
+              <div className="flex items-center gap-2">
+                <div className="w-64">
+                  <SearchableItemSelect
+                    items={[...(products || []), ...(services || [])].map(i => ({ ...i, price: Number(i.price) }))}
+                    value=""
+                    onSelect={(id) => {
+                      const product = products?.find(p => p.id === id);
+                      const service = services?.find(s => s.id === id);
+                      if (product) {
+                        setItems([...items, { description: product.name, quantity: 1, unit_price: Number(product.price), type: "product", warranty: "" }]);
+                      } else if (service) {
+                        setItems([...items, { description: service.name, quantity: 1, unit_price: Number(service.price), type: "service", warranty: "" }]);
+                      }
+                      toast({ title: "Item added from catalog" });
+                    }}
+                    placeholder="Quick add from catalog..."
+                  />
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={() => {
+                  setItems([...items, { description: "", quantity: 1, unit_price: 0, type: "product", warranty: "" }]);
+                }}>
+                  <Plus className="h-4 w-4 mr-1" /> Blank Row
+                </Button>
               </div>
-              {itemType === "custom" ? (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Description</Label>
-                      <Input value={customItem.description} onChange={(e) => setCustomItem({ ...customItem, description: e.target.value })} placeholder="Item description" className="h-9" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Quantity</Label>
-                      <Input type="number" value={customItem.quantity} onChange={(e) => setCustomItem({ ...customItem, quantity: Number(e.target.value) })} className="h-9" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Unit Price (৳)</Label>
-                      <Input type="number" value={customItem.unit_price} onChange={(e) => setCustomItem({ ...customItem, unit_price: Number(e.target.value) })} className="h-9" />
-                    </div>
-                  </div>
-                  <Button type="button" onClick={addSelectedItem} disabled={!customItem.description}><Plus className="h-4 w-4 mr-1" />Add</Button>
-                </div>
-              ) : (
-                <div className="flex gap-3 items-end">
-                  <div className="flex-1 space-y-2">
-                    <Label>Search & Select {itemType === "product" ? "Product" : "Service"}</Label>
-                    <SearchableItemSelect
-                      items={(currentList || []).map(i => ({ ...i, price: Number(i.price) }))}
-                      value={selectedId}
-                      onSelect={setSelectedId}
-                      placeholder={`Search ${itemType} by name, SKU, or category...`}
-                    />
-                  </div>
-                  <Button type="button" onClick={addSelectedItem} disabled={!selectedId}><Plus className="h-4 w-4 mr-1" />Add</Button>
-                </div>
-              )}
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-muted/50 text-muted-foreground uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Type</th>
+                    <th className="px-4 py-3 font-medium min-w-[200px]">Description</th>
+                    <th className="px-4 py-3 font-medium w-[80px]">Qty</th>
+                    <th className="px-4 py-3 font-medium w-[120px]">Unit Price</th>
+                    <th className="px-4 py-3 font-medium min-w-[120px]">Warranty</th>
+                    <th className="px-4 py-3 font-medium text-right">Total</th>
+                    <th className="px-4 py-3 font-medium w-[50px]"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {items.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-2">
+                        <Select value={item.type} onValueChange={(v) => updateItem(idx, "type", v)}>
+                          <SelectTrigger className="h-8 text-xs w-[90px] border-transparent bg-transparent hover:bg-muted"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="product">Product</SelectItem>
+                            <SelectItem value="service">Service</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} placeholder="Item description" className="h-8 text-sm border-transparent bg-transparent hover:bg-muted focus:bg-background" />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input type="number" value={item.quantity === 0 ? "" : item.quantity} onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))} className="h-8 text-sm border-transparent bg-transparent hover:bg-muted focus:bg-background px-2" />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input type="number" value={item.unit_price === 0 ? "" : item.unit_price} onChange={(e) => updateItem(idx, "unit_price", Number(e.target.value))} className="h-8 text-sm border-transparent bg-transparent hover:bg-muted focus:bg-background px-2" />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input value={item.warranty} onChange={(e) => updateItem(idx, "warranty", e.target.value)} placeholder="e.g. 1 Yr" className="h-8 text-sm border-transparent bg-transparent hover:bg-muted focus:bg-background disabled:opacity-50" disabled={item.type === "service"} />
+                      </td>
+                      <td className="px-4 py-2 text-right font-medium">
+                        ৳{(item.quantity * item.unit_price).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-2 text-center">
+                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => removeItem(idx)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {items.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                        No items added yet. Search the catalog or add a blank row.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <div className="p-3 border-t bg-muted/10 flex justify-center">
+                <Button type="button" variant="ghost" size="sm" className="text-primary text-xs" onClick={() => {
+                  setItems([...items, { description: "", quantity: 1, unit_price: 0, type: "product", warranty: "" }]);
+                }}>
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add Blank Row
+                </Button>
+              </div>
             </CardContent>
           </Card>
-
-          {/* Added Items */}
-          {items.length > 0 && (
-            <Card className="glass-card">
-              <CardHeader><CardTitle className="text-lg">Quotation Items ({items.length})</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                {items.map((item, idx) => (
-                  <div key={idx} className="border border-border/50 rounded-lg p-3 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={item.type === "product" ? "default" : "secondary"} className="text-[10px]">{item.type}</Badge>
-                        <span className="font-medium text-sm">{item.description}</span>
-                      </div>
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeItem(idx)}>
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Description</Label>
-                        <Input value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} className="h-8 text-sm" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Quantity</Label>
-                        <Input type="number" value={item.quantity} onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))} className="h-8 text-sm" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Unit Price (৳)</Label>
-                        <Input type="number" value={item.unit_price} onChange={(e) => updateItem(idx, "unit_price", Number(e.target.value))} className="h-8 text-sm" />
-                      </div>
-                    </div>
-                    <div className="text-right text-xs text-muted-foreground">
-                      Line Total: <span className="font-medium text-foreground">৳{(item.quantity * item.unit_price).toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-
 
           <div className="space-y-2">
             <Label>Notes / Terms & Conditions</Label>
@@ -320,11 +345,11 @@ export default function CreateQuotation() {
 
           <div className="flex gap-3 justify-end">
             <Button type="button" variant="outline" onClick={() => navigate("/quotations")}>Cancel</Button>
-            <Button type="submit" disabled={createMutation.isPending || items.length === 0}>
-              {createMutation.isPending ? "Creating..." : "Create Quotation"}
+            <Button type="submit" disabled={saveMutation.isPending || items.length === 0}>
+              {saveMutation.isPending ? "Saving..." : isEditMode ? "Update Quotation" : "Create Quotation"}
             </Button>
           </div>
         </form>
       </div>
-);
+  );
 }

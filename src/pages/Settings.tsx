@@ -13,8 +13,12 @@ import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 import { supabase } from "@/integrations/supabase/client";
 import akLogoDefault from "@/assets/ak-logo.png";
 
+import { AdminRoleManager } from "@/components/AdminRoleManager";
+import { useUserRole } from "@/hooks/useUserRole";
+
 export default function Settings() {
   const { settings, isLoading, save } = useCompanySettings();
+  const { isAdmin } = useUserRole();
   const { toast } = useToast();
   const [form, setForm] = useState<CompanySettings>(settings);
   const [uploading, setUploading] = useState(false);
@@ -54,8 +58,7 @@ export default function Settings() {
 
   const update = (field: keyof CompanySettings, value: any) => setForm({ ...form, [field]: value });
 
-  if (isLoading) return <div className="flex items-center justify-center py-20"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>
-;
+  if (isLoading) return <div className="flex items-center justify-center py-20"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>;
 
   return (
       <div className="space-y-6 max-w-3xl mx-auto">
@@ -68,6 +71,9 @@ export default function Settings() {
             <Save className="h-4 w-4 mr-2" />{save.isPending ? "Saving..." : "Save Settings"}
           </Button>
         </div>
+
+        {/* User Roles Management (Admins Only) */}
+        {isAdmin && <AdminRoleManager />}
 
         {/* Company Logo */}
         <Card className="glass-card">
@@ -148,18 +154,86 @@ export default function Settings() {
         <Card className="glass-card">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2"><FileText className="h-5 w-5 text-primary" />Invoice Defaults</CardTitle>
-            <CardDescription>Default values for new invoices</CardDescription>
+            <CardDescription>Default values and appearance for new invoices</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Default Tax Rate (%)</Label>
                 <Input type="number" value={form.default_tax_rate} onChange={e => update("default_tax_rate", Number(e.target.value))} />
               </div>
+              <div className="space-y-2">
+                <Label>Invoice Footer Text</Label>
+                <Input value={form.footer_text} onChange={e => update("footer_text", e.target.value)} />
+              </div>
             </div>
+            
             <div className="space-y-2">
-              <Label>Invoice Footer Text</Label>
-              <Input value={form.footer_text} onChange={e => update("footer_text", e.target.value)} />
+              <Label>Terms and Conditions</Label>
+              <Textarea 
+                value={form.terms_conditions || ""} 
+                onChange={e => update("terms_conditions", e.target.value)} 
+                rows={3} 
+                placeholder="Goods once sold cannot be returned..."
+              />
+              <p className="text-xs text-muted-foreground">This will be printed at the bottom of the invoice.</p>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <Label>Authorized Signature</Label>
+              <div className="flex items-center gap-6">
+                <div className="w-40 h-20 rounded-lg border border-border bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <img
+                    src={form.signature_url || "/signature.png"}
+                    alt="Signature"
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/placeholder.svg";
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    id="signature-upload"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploading(true);
+                      try {
+                        const ext = file.name.split('.').pop();
+                        const fileName = `signature-${Date.now()}.${ext}`;
+                        const { error: uploadError } = await supabase.storage
+                          .from('company-assets')
+                          .upload(fileName, file, { upsert: true });
+                        if (uploadError) throw uploadError;
+                        const { data: { publicUrl } } = supabase.storage
+                          .from('company-assets')
+                          .getPublicUrl(fileName);
+                        update("signature_url", publicUrl);
+                        toast({ title: "Signature uploaded successfully" });
+                      } catch (err: any) {
+                        toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                      } finally {
+                        setUploading(false);
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => document.getElementById("signature-upload")?.click()}
+                    disabled={uploading}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {uploading ? "Uploading..." : "Upload Signature"}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">PNG with transparent background recommended.</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -199,14 +273,13 @@ export default function Settings() {
             </div>
             <Separator />
             <div className="space-y-2">
-              <Label>Mobile Banking (bKash/Nagad/Rocket)</Label>
-              <Input value={form.mobile_banking} onChange={e => update("mobile_banking", e.target.value)} placeholder="e.g. bKash: 01919-060590" />
+              <Label>Mobile Banking / Payment Link</Label>
+              <Input value={form.mobile_banking} onChange={e => update("mobile_banking", e.target.value)} placeholder="e.g. bKash: 01919-060590 or SSLCommerz Link" />
             </div>
           </CardContent>
         </Card>
 
-        {/* Change Password */}
         <ChangePasswordCard />
       </div>
-);
+  );
 }

@@ -18,6 +18,8 @@ export interface CompanySettings {
   show_payment_info: boolean;
   logo_url: string;
   whatsapp_number: string;
+  signature_url: string;
+  terms_conditions: string;
 }
 
 const defaults: CompanySettings = {
@@ -36,6 +38,8 @@ const defaults: CompanySettings = {
   show_payment_info: true,
   logo_url: "",
   whatsapp_number: "",
+  signature_url: "",
+  terms_conditions: "Goods once sold cannot be returned.\n1 Year Warranty on specified items.",
 };
 
 export function useCompanySettings() {

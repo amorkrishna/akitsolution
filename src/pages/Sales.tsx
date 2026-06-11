@@ -17,6 +17,7 @@ import {
   CheckCircle, Clock, XCircle,
 } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 
 type PaymentStatus = "paid" | "pending" | "partial";
 
@@ -167,6 +168,16 @@ export default function Sales() {
   const handleProductChange = (productId: string) => {
     const product = products.find((p: any) => p.id === productId);
     setForm(f => ({ ...f, product_id: productId, unit_price: product ? Number(product.price) : f.unit_price }));
+  };
+
+  const handleBarcodeDetected = (sku: string) => {
+    const product = products?.find((p: any) => p.sku === sku);
+    if (product) {
+      setForm(f => ({ ...f, product_id: product.id, unit_price: Number(product.price) }));
+      toast.success(`Product found: ${product.name}`);
+    } else {
+      toast.error(`No product found with SKU: ${sku}`);
+    }
   };
 
   const handleSubmit = () => {
@@ -369,6 +380,7 @@ export default function Sales() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            <BarcodeScanner onBarcodeDetected={handleBarcodeDetected} />
             {/* Product */}
             <div className="space-y-1.5">
               <Label>Product</Label>

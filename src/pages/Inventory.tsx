@@ -124,15 +124,93 @@ export default function Inventory() {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4 pb-3 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-yellow-500/10"><AlertTriangle className="h-5 w-5 text-yellow-600" /></div>
-              <div><p className="text-xs text-muted-foreground">লো স্টক</p><p className="text-xl font-bold">{lowStock}</p></div>
+            <CardContent className="pt-4 pb-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-yellow-500/10"><AlertTriangle className="h-5 w-5 text-yellow-600" /></div>
+                <div><p className="text-xs text-muted-foreground">লো স্টক</p><p className="text-xl font-bold">{lowStock}</p></div>
+              </div>
+              {lowStock > 0 && (
+                <Button variant="outline" size="sm" onClick={async () => {
+                  const { default: jsPDF } = await import("jspdf");
+                  const { default: autoTable } = await import("jspdf-autotable");
+                  const doc = new jsPDF();
+                  const lowStockItems = products.filter((p: any) => p.stock_quantity > 0 && p.stock_quantity < LOW_STOCK_THRESHOLD);
+                  
+                  doc.setFontSize(20);
+                  doc.text("Purchase Order (Auto-Generated)", 14, 22);
+                  doc.setFontSize(11);
+                  doc.setTextColor(100);
+                  doc.text(`Date: ${format(new Date(), "dd MMM yyyy")}`, 14, 30);
+                  doc.text(`Total Items to Restock: ${lowStockItems.length}`, 14, 36);
+
+                  const tableData = lowStockItems.map((p: any) => [
+                    p.name,
+                    p.sku || "N/A",
+                    p.category,
+                    p.stock_quantity.toString(),
+                    "10" // Default suggested order quantity
+                  ]);
+
+                  autoTable(doc, {
+                    startY: 45,
+                    head: [["Product Name", "SKU", "Category", "Current Stock", "Suggested Order Qty"]],
+                    body: tableData,
+                    theme: "grid",
+                    styles: { fontSize: 10 },
+                    headStyles: { fillColor: [41, 128, 185] }
+                  });
+
+                  doc.save(`PO-LowStock-${format(new Date(), "yyyyMMdd")}.pdf`);
+                  toast({ title: "Purchase Order generated" });
+                }}>
+                  <Package className="h-3 w-3 mr-1" /> Auto PO
+                </Button>
+              )}
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4 pb-3 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-destructive/10"><PackageX className="h-5 w-5 text-destructive" /></div>
-              <div><p className="text-xs text-muted-foreground">আউট অফ স্টক</p><p className="text-xl font-bold">{outOfStock}</p></div>
+            <CardContent className="pt-4 pb-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-destructive/10"><PackageX className="h-5 w-5 text-destructive" /></div>
+                <div><p className="text-xs text-muted-foreground">আউট অফ স্টক</p><p className="text-xl font-bold">{outOfStock}</p></div>
+              </div>
+              {outOfStock > 0 && (
+                <Button variant="outline" size="sm" onClick={async () => {
+                  const { default: jsPDF } = await import("jspdf");
+                  const { default: autoTable } = await import("jspdf-autotable");
+                  const doc = new jsPDF();
+                  const outOfStockItems = products.filter((p: any) => p.stock_quantity === 0);
+                  
+                  doc.setFontSize(20);
+                  doc.text("Restock Urgent (Out of Stock)", 14, 22);
+                  doc.setFontSize(11);
+                  doc.setTextColor(100);
+                  doc.text(`Date: ${format(new Date(), "dd MMM yyyy")}`, 14, 30);
+                  doc.text(`Total Items to Restock: ${outOfStockItems.length}`, 14, 36);
+
+                  const tableData = outOfStockItems.map((p: any) => [
+                    p.name,
+                    p.sku || "N/A",
+                    p.category,
+                    "0",
+                    "20" // Default suggested order quantity
+                  ]);
+
+                  autoTable(doc, {
+                    startY: 45,
+                    head: [["Product Name", "SKU", "Category", "Current Stock", "Suggested Order Qty"]],
+                    body: tableData,
+                    theme: "grid",
+                    styles: { fontSize: 10 },
+                    headStyles: { fillColor: [231, 76, 60] }
+                  });
+
+                  doc.save(`Restock-Urgent-${format(new Date(), "yyyyMMdd")}.pdf`);
+                  toast({ title: "Urgent Restock PDF generated" });
+                }}>
+                  <PackageX className="h-3 w-3 mr-1" /> Restock
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>

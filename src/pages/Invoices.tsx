@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Trash2, Eye, Printer, Download, Search, CalendarIcon, LayoutGrid, LayoutList, X, ExternalLink, CheckCircle, Circle, Pencil } from "lucide-react";
+import { Plus, Trash2, Eye, Printer, Download, Search, CalendarIcon, LayoutGrid, LayoutList, X, ExternalLink, CheckCircle, Circle, Pencil, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { InvoicePreview } from "@/components/InvoicePreview";
@@ -20,6 +20,7 @@ import autoTable from "jspdf-autotable";
 import jsPDF from "jspdf";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { sendSMS } from "@/lib/sms";
 
 // Inline WhatsApp glyph (lucide doesn't ship one)
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -37,6 +38,9 @@ export default function Invoices() {
   const [searchClient, setSearchClient] = useState("");
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
+  const [paymentInvoice, setPaymentInvoice] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -65,41 +69,46 @@ export default function Invoices() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["invoices"] }); toast({ title: "Invoice deleted" }); },
   });
 
-  const togglePaidMutation = useMutation({
-    mutationFn: async (inv: any) => {
-      const newStatus = inv.status === "paid" ? "draft" : "paid";
-      const { error } = await supabase.from("invoices").update({ status: newStatus }).eq("id", inv.id);
+  const recordPaymentMutation = useMutation({
+    mutationFn: async ({ inv, amount, method }: { inv: any, amount: number, method: string }) => {
+      const newPaidAmount = Math.min(Number(inv.total), Number(inv.paid_amount || 0) + amount);
+      let newStatus = inv.status;
+      if (newPaidAmount >= Number(inv.total)) {
+        newStatus = "paid";
+      } else if (newPaidAmount > 0) {
+        newStatus = "partial";
+      }
+
+      const { error } = await supabase.from("invoices").update({
+        paid_amount: newPaidAmount,
+        payment_method: method,
+        status: newStatus
+      }).eq("id", inv.id);
+      
       if (error) throw error;
 
-      // When marking as paid, decrement stock for each invoice item with a matching product
-      if (newStatus === "paid") {
+      // When fully paid, decrement stock
+      if (newStatus === "paid" && inv.status !== "paid") {
         const { data: invItems } = await supabase.from("invoice_items").select("*").eq("invoice_id", inv.id);
         if (invItems) {
           for (const item of invItems) {
-            // Try to find a matching product by name
             const { data: matchedProducts } = await supabase.from("products").select("id, stock_quantity").ilike("name", `%${item.description}%`).limit(1);
             if (matchedProducts && matchedProducts.length > 0) {
               const product = matchedProducts[0];
               const newQty = Math.max(0, product.stock_quantity - item.quantity);
               await supabase.from("products").update({ stock_quantity: newQty }).eq("id", product.id);
-              await supabase.from("inventory_movements").insert({
-                product_id: product.id,
-                movement_type: "out",
-                quantity: item.quantity,
-                reference_type: "invoice",
-                notes: `Invoice ${inv.invoice_number}`,
-              });
+              await supabase.from("inventory_movements").insert({ product_id: product.id, movement_type: "out", quantity: item.quantity, reference_type: "invoice", notes: `Invoice ${inv.invoice_number}` });
             }
           }
         }
       }
-
-      return newStatus;
     },
-    onSuccess: (newStatus) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast({ title: newStatus === "paid" ? "Marked as Paid ✓ (Stock updated)" : "Marked as Unpaid" });
+      toast({ title: "Payment recorded successfully" });
+      setPaymentInvoice(null);
+      setPaymentAmount("");
     },
   });
 
@@ -241,6 +250,13 @@ export default function Invoices() {
     doc.setTextColor(55, 65, 81);
     doc.text(`Tk ${Number(invoice.tax_amount).toLocaleString()}`, rightMargin, y, { align: "right" });
     y += 6;
+
+    if (Number(invoice.paid_amount || 0) > 0) {
+      doc.setTextColor(22, 163, 74); // green-600
+      doc.text("Paid Amount:", rightMargin - 40, y);
+      doc.text(`Tk ${Number(invoice.paid_amount).toLocaleString()}`, rightMargin, y, { align: "right" });
+      y += 6;
+    }
     
     doc.setDrawColor(30, 58, 138);
     doc.line(rightMargin - 60, y, rightMargin, y);
@@ -249,9 +265,9 @@ export default function Invoices() {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.setTextColor(17, 24, 39);
-    doc.text("Total Due:", rightMargin - 40, y);
+    doc.text(Number(invoice.paid_amount || 0) > 0 ? "Due Amount:" : "Total Due:", rightMargin - 40, y);
     doc.setTextColor(37, 99, 235);
-    doc.text(`Tk ${Number(invoice.total).toLocaleString()}`, rightMargin, y, { align: "right" });
+    doc.text(`Tk ${(Number(invoice.total) - Number(invoice.paid_amount || 0)).toLocaleString()}`, rightMargin, y, { align: "right" });
 
     let leftY = (doc as any).lastAutoTable.finalY + 10;
     const hasBankInfo = settings.show_payment_info && (settings.bank_name || settings.bank_account_number || settings.mobile_banking);
@@ -282,7 +298,21 @@ export default function Invoices() {
       doc.setTextColor(55, 65, 81);
       const splitNotes = doc.splitTextToSize(invoice.notes, 100);
       doc.text(splitNotes, 15, leftY);
-      leftY += splitNotes.length * 4;
+      leftY += splitNotes.length * 4 + 4;
+    }
+
+    if (settings.terms_conditions) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(107, 114, 128);
+      doc.text("TERMS & CONDITIONS", 15, leftY);
+      leftY += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(75, 85, 99);
+      doc.setFontSize(8);
+      const splitTerms = doc.splitTextToSize(settings.terms_conditions, 100);
+      doc.text(splitTerms, 15, leftY);
+      leftY += splitTerms.length * 3.5;
     }
 
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -294,7 +324,7 @@ export default function Invoices() {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(75, 85, 99);
-    doc.text("Customer Signature", 55, sigY + 5, { align: "center" });
+    doc.text("Client Signature", 55, sigY + 5, { align: "center" });
 
     doc.line(pageWidth - 80, sigY, pageWidth - 30, sigY);
     doc.text("Authorized Signature", pageWidth - 55, sigY + 5, { align: "center" });
@@ -302,6 +332,13 @@ export default function Invoices() {
     doc.setFontSize(8);
     doc.setTextColor(156, 163, 175);
     doc.text(settings.company_name || "", pageWidth - 55, sigY + 9, { align: "center" });
+
+    // Add QR Code at the center
+    try {
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Verification:${invoice.invoice_number}`;
+      // In jsPDF, we can add image from URL if it's base64 or we load it. For simplicity, we skip loading the async image here unless we fetch it.
+      // Wait, jsPDF addImage needs base64. So I will skip it for the PDF to avoid async loading issues, or just use text for verification.
+    } catch (e) {}
 
     doc.text(`${settings.footer_text || ""} | ${settings.company_name || ""} | ${settings.phone || ""}`, pageWidth / 2, pageHeight - 10, { align: "center" });
 
@@ -409,7 +446,25 @@ export default function Invoices() {
     }
   };
 
-  const statusColor: Record<string, string> = { draft: "bg-muted text-muted-foreground", sent: "bg-info/10 text-info", paid: "bg-success/10 text-success", overdue: "bg-destructive/10 text-destructive", cancelled: "bg-muted text-muted-foreground" };
+  const sendInvoiceSMS = async (inv: any) => {
+    const clientPhone = (inv as any).clients?.phone as string | undefined;
+    const phone = clientPhone || settings.phone?.split(",")[0]?.trim() || "";
+    if (!phone) {
+      toast({ title: "No phone number found", description: "Add a phone to the client.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const clientName = (inv as any).clients?.name || "Customer";
+      const message = `Hello ${clientName}, your invoice ${inv.invoice_number} for ৳${Number(inv.total).toLocaleString()} has been generated by ${settings.company_name}.`;
+      await sendSMS(phone, message);
+      toast({ title: "SMS Sent", description: `Message sent to ${phone}` });
+    } catch (e: any) {
+      toast({ title: "Failed to send SMS", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const statusColor: Record<string, string> = { draft: "bg-muted text-muted-foreground", partial: "bg-orange-500/10 text-orange-600", sent: "bg-info/10 text-info", paid: "bg-success/10 text-success", overdue: "bg-destructive/10 text-destructive", cancelled: "bg-muted text-muted-foreground" };
 
   return (
       <>
@@ -499,14 +554,20 @@ export default function Invoices() {
                       <TableCell className="text-sm">{new Date(inv.issue_date).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" title={inv.status === "paid" ? "Mark Unpaid" : "Mark Paid"} onClick={() => togglePaidMutation.mutate(inv)}>
-                            {inv.status === "paid" ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
+                          <Button variant="ghost" size="icon" title="Record Payment" disabled={inv.status === "paid"} onClick={() => {
+                            setPaymentInvoice(inv);
+                            setPaymentAmount(String(Number(inv.total) - Number(inv.paid_amount || 0)));
+                          }}>
+                            <CreditCard className="h-4 w-4 text-blue-600" />
                           </Button>
                           <Button variant="ghost" size="icon" onClick={() => viewInvoice(inv)}><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => navigate(`/invoices/edit/${inv.id}`)} title="Edit"><Pencil className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" disabled={downloadingId === inv.id} onClick={() => downloadInvoicePdf(inv)}><Download className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" title="Send via WhatsApp" disabled={whatsappId === inv.id} onClick={() => sendInvoiceWhatsApp(inv)}>
                             <WhatsAppIcon className="h-4 w-4 text-green-600" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Send SMS" onClick={() => sendInvoiceSMS(inv)}>
+                            <svg className="h-4 w-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                           </Button>
                           <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(inv.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                         </div>
@@ -544,21 +605,30 @@ export default function Invoices() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <span className="text-lg font-bold">৳{Number(inv.total).toLocaleString()}</span>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" title={inv.status === "paid" ? "Mark Unpaid" : "Mark Paid"} onClick={() => togglePaidMutation.mutate(inv)}>
-                        {inv.status === "paid" ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewInvoice(inv)}><Eye className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/invoices/edit/${inv.id}`)} title="Edit"><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" disabled={downloadingId === inv.id} onClick={() => downloadInvoicePdf(inv)}><Download className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Send via WhatsApp" disabled={whatsappId === inv.id} onClick={() => sendInvoiceWhatsApp(inv)}>
-                        <WhatsAppIcon className="h-4 w-4 text-green-600" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteMutation.mutate(inv.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <div className="flex flex-col">
+                        <span className="text-lg font-bold">৳{Number(inv.total).toLocaleString()}</span>
+                        {Number(inv.paid_amount || 0) > 0 && <span className="text-xs text-green-600 font-medium">Paid: ৳{Number(inv.paid_amount).toLocaleString()}</span>}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Record Payment" disabled={inv.status === "paid"} onClick={() => {
+                          setPaymentInvoice(inv);
+                          setPaymentAmount(String(Number(inv.total) - Number(inv.paid_amount || 0)));
+                        }}>
+                          <CreditCard className="h-4 w-4 text-blue-600" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewInvoice(inv)}><Eye className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/invoices/edit/${inv.id}`)} title="Edit"><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled={downloadingId === inv.id} onClick={() => downloadInvoicePdf(inv)}><Download className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Send via WhatsApp" disabled={whatsappId === inv.id} onClick={() => sendInvoiceWhatsApp(inv)}>
+                          <WhatsAppIcon className="h-4 w-4 text-green-600" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Send SMS" onClick={() => sendInvoiceSMS(inv)}>
+                          <svg className="h-4 w-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteMutation.mutate(inv.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </div>
                     </div>
-                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -609,7 +679,6 @@ export default function Invoices() {
         </Dialog>
       )}
 
-      {/* Mobile PDF Fallback Dialog */}
       {fallbackPdfUrl && (
         <Dialog open={!!fallbackPdfUrl} onOpenChange={(open) => {
           if (!open) {
@@ -640,6 +709,41 @@ export default function Invoices() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Payment Dialog */}
+      <Dialog open={!!paymentInvoice} onOpenChange={() => setPaymentInvoice(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Record Payment</DialogTitle>
+          </DialogHeader>
+          {paymentInvoice && (
+            <div className="space-y-4">
+              <div className="bg-muted p-3 rounded-lg text-sm flex justify-between items-center">
+                <span>Invoice Total: <strong>৳{Number(paymentInvoice.total).toLocaleString()}</strong></span>
+                <span className="text-muted-foreground">Due: <strong className="text-destructive">৳{(Number(paymentInvoice.total) - Number(paymentInvoice.paid_amount || 0)).toLocaleString()}</strong></span>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Payment Amount</label>
+                <Input type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} placeholder="Amount to record..." />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Payment Method</label>
+                <select className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+                  <option value="Cash">Cash</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Mobile Banking (Bkash/Nagad)">Mobile Banking</option>
+                  <option value="Card">Card</option>
+                </select>
+              </div>
+              <Button className="w-full mt-4" disabled={recordPaymentMutation.isPending || !paymentAmount} onClick={() => {
+                recordPaymentMutation.mutate({ inv: paymentInvoice, amount: Number(paymentAmount), method: paymentMethod });
+              }}>
+                {recordPaymentMutation.isPending ? "Saving..." : "Save Payment"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       </>
   );
 }

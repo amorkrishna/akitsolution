@@ -117,11 +117,14 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
           <div style={{ fontSize: "12px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", color: "#6b7280", marginBottom: "4px" }}><span>Subtotal</span><span style={{ color: "#374151" }}>৳{Number(invoice.subtotal).toLocaleString()}</span></div>
             <div style={{ display: "flex", justifyContent: "space-between", color: "#6b7280", marginBottom: "4px" }}><span>Tax ({invoice.tax_rate}%)</span><span style={{ color: "#374151" }}>৳{Number(invoice.tax_amount).toLocaleString()}</span></div>
+            {Number(invoice.paid_amount || 0) > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#16a34a", marginBottom: "4px" }}><span>Paid Amount</span><span style={{ fontWeight: 600 }}>৳{Number(invoice.paid_amount).toLocaleString()}</span></div>
+            )}
           </div>
           <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "2px solid #1e40af" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontWeight: 700, color: "#111827", fontSize: "15px" }}>Total Due</span>
-              <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "17px" }}>৳{Number(invoice.total).toLocaleString()}</span>
+              <span style={{ fontWeight: 700, color: "#111827", fontSize: "15px" }}>{Number(invoice.paid_amount || 0) > 0 ? "Due Amount" : "Total Due"}</span>
+              <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "17px" }}>৳{(Number(invoice.total) - Number(invoice.paid_amount || 0)).toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -136,7 +139,20 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
             {settings.bank_account_name && <p style={{ margin: 0 }}><span style={{ color: "#6b7280" }}>A/C Name:</span> <span style={{ fontWeight: 500, color: "#1f2937" }}>{settings.bank_account_name}</span></p>}
             {settings.bank_account_number && <p style={{ margin: 0 }}><span style={{ color: "#6b7280" }}>A/C No:</span> <span style={{ fontWeight: 500, color: "#1f2937" }}>{settings.bank_account_number}</span></p>}
             {settings.bank_branch && <p style={{ margin: 0 }}><span style={{ color: "#6b7280" }}>Branch:</span> <span style={{ fontWeight: 500, color: "#1f2937" }}>{settings.bank_branch}</span></p>}
-            {settings.mobile_banking && <p style={{ margin: 0, gridColumn: "1 / -1" }}><span style={{ color: "#6b7280" }}>Mobile Banking:</span> <span style={{ fontWeight: 500, color: "#1f2937" }}>{settings.mobile_banking}</span></p>}
+            {settings.mobile_banking && (
+              <p style={{ margin: 0, gridColumn: "1 / -1" }}>
+                <span style={{ color: "#6b7280" }}>Mobile Banking:</span>{" "}
+                <span style={{ fontWeight: 500, color: "#1f2937" }}>
+                  {settings.mobile_banking.includes("http") ? (
+                    <a href={settings.mobile_banking.match(/https?:\/\/[^\s]+/)?.[0] || "#"} target="_blank" rel="noreferrer" style={{ color: "#2563eb", textDecoration: "underline" }}>
+                      {settings.mobile_banking}
+                    </a>
+                  ) : (
+                    settings.mobile_banking
+                  )}
+                </span>
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -146,6 +162,16 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
         <div style={{ marginBottom: "16px", padding: "10px 12px", backgroundColor: "#ffffff", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
           <p style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", color: "#f59e0b", letterSpacing: "0.1em", marginBottom: "3px" }}>Notes</p>
           <p style={{ fontSize: "12px", color: "#374151", margin: 0 }}>{invoice.notes}</p>
+        </div>
+      )}
+
+      {/* Terms and Conditions */}
+      {settings.terms_conditions && (
+        <div style={{ marginBottom: "16px", padding: "10px 12px", backgroundColor: "#ffffff", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
+          <p style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", color: "#6b7280", letterSpacing: "0.1em", marginBottom: "3px" }}>Terms & Conditions</p>
+          <div style={{ fontSize: "10px", color: "#4b5563", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
+            {settings.terms_conditions}
+          </div>
         </div>
       )}
 
@@ -160,7 +186,7 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
           <div style={{ textAlign: "center", position: "relative" }}>
             <div style={{ height: "40px", display: "flex", justifyContent: "center", alignItems: "flex-end", marginBottom: "-5px", zIndex: 10 }}>
               <img 
-                src="/signature.png" 
+                src={settings.signature_url || "/signature.png"}
                 alt="Signature" 
                 crossOrigin="anonymous"
                 style={{ maxHeight: "50px", objectFit: "contain" }} 
@@ -169,6 +195,15 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
             <div style={{ borderTop: "2px solid #9ca3af", paddingTop: "6px" }} />
             <p style={{ fontSize: "10px", fontWeight: 600, color: "#4b5563", margin: "2px 0" }}>Authorized Signature</p>
             <p style={{ fontSize: "8px", color: "#9ca3af", margin: 0 }}>{settings.company_name}</p>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <img 
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Verification:${invoice.invoice_number}`} 
+              alt="QR Code" 
+              crossOrigin="anonymous"
+              style={{ width: "60px", height: "60px", margin: "0 auto" }} 
+            />
+            <p style={{ fontSize: "8px", color: "#9ca3af", marginTop: "4px" }}>Scan to Verify</p>
           </div>
         </div>
 

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Search, Trash2, Edit2, CheckCircle, Wrench, Clock, AlertTriangle, MessageSquare } from "lucide-react";
 import { openWhatsApp, serviceRequestMessage } from "@/lib/whatsapp";
+import { sendSMS } from "@/lib/sms";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -114,6 +115,20 @@ export default function ServiceRequests() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  const handleSendSMS = async (r: any) => {
+    if (!r.phone) {
+      toast({ title: "No phone number", description: "This customer does not have a phone number.", variant: "destructive" });
+      return;
+    }
+    const message = `Hello ${r.customer_name}, your service request for ${r.category} is currently marked as ${r.status}. Thank you!`;
+    try {
+      await sendSMS(r.phone, message);
+      toast({ title: "SMS Sent", description: "Message delivered successfully." });
+    } catch (e: any) {
+      toast({ title: "SMS Failed", description: e.message, variant: "destructive" });
+    }
+  };
+
   const closeDialog = () => {
     setOpen(false); setEditId(null);
     setForm({ customer_name: "", phone: "", email: "", category: "Other", description: "", preferred_date: "", urgency: "normal", status: "pending", notes: "" });
@@ -207,9 +222,14 @@ export default function ServiceRequests() {
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
                         {r.phone && (
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openWhatsApp(r.phone, serviceRequestMessage(r))} title="WhatsApp">
-                            <MessageSquare className="h-3.5 w-3.5 text-green-600" />
-                          </Button>
+                          <>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openWhatsApp(r.phone, serviceRequestMessage(r))} title="WhatsApp">
+                              <MessageSquare className="h-3.5 w-3.5 text-green-600" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleSendSMS(r)} title="Send SMS">
+                              <svg className="h-3.5 w-3.5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            </Button>
+                          </>
                         )}
                         {r.status === "pending" && (
                           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => acceptToServicing.mutate(r)} title="Accept & Servicing-এ যোগ">
