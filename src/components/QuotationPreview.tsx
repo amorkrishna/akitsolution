@@ -39,8 +39,8 @@ export function QuotationPreview({ quotation }: QuotationPreviewProps) {
             </div>
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ backgroundColor: "#0d9488", borderRadius: "8px", padding: "10px 16px", textAlign: "center", minWidth: "140px" }}>
-              <span style={{ fontSize: "18px", fontWeight: "bold", color: "#ffffff", fontFamily: "Arial, sans-serif" }}>QUOTATION</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minWidth: "140px", height: "44px", backgroundColor: "#0d9488", borderRadius: "8px" }}>
+              <span style={{ fontSize: "18px", fontWeight: "bold", color: "#ffffff", fontFamily: "Arial, sans-serif", lineHeight: "1", margin: 0, padding: 0 }}>QUOTATION</span>
             </div>
             <p style={{ fontFamily: "monospace", fontSize: "13px", fontWeight: 700, marginTop: "6px", color: "#1f2937" }}>{quotation.quotation_number}</p>
             <div style={{ marginTop: "4px", fontSize: "10px", color: "#6b7280" }}>
