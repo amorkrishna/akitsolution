@@ -83,7 +83,7 @@ function AnimatedBackground({ config, time }: { config: PromoConfig; time: numbe
         ctx.beginPath();
         for (let x = 0; x <= canvas.width; x += 5) {
           const y = canvas.height * 0.6 + Math.sin(x * 0.005 + phase) * 80 + Math.sin(x * 0.01 + phase * 1.5) * 40;
-          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          if (x === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
         }
         ctx.lineTo(canvas.width, canvas.height);
         ctx.lineTo(0, canvas.height);

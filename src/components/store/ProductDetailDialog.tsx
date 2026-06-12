@@ -145,7 +145,7 @@ export function ProductDetailDialog({ product, onClose, onOrder, isDark, lang }:
   const inStock = effectiveStock > 0;
 
   // Group variants by variant_group
-  const variantGroups: Record<string, any[]> = {};
+  const variantGroups: Record<string, any[]> = {/* no-op */};
   variants?.forEach((v: any) => {
     const group = v.variant_group || "Option";
     if (!variantGroups[group]) variantGroups[group] = [];
@@ -312,7 +312,7 @@ export function ProductDetailDialog({ product, onClose, onOrder, isDark, lang }:
                       parsedSpecs = obj.specs || [];
                     }
                   }
-                } catch (e) {}
+                } catch (e) {/* no-op */}
 
                 return (
                   <div className="space-y-4">

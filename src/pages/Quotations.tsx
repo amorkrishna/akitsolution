@@ -132,7 +132,7 @@ export default function Quotations() {
     quotation: any,
     settings: any,
     fileName: string,
-    options: { skipDownload?: boolean } = {}
+    options: { skipDownload?: boolean } = {/* no-op */}
   ): Promise<Blob | null> => {
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -311,7 +311,7 @@ export default function Quotations() {
     const isMobileUa = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isMobileUa && shareNavigator.share) {
       const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
-      try { await shareNavigator.share({ files: [pdfFile], title: fileName }); return null; } catch {}
+      try { await shareNavigator.share({ files: [pdfFile], title: fileName }); return null; } catch {/* no-op */}
     }
 
     const blobUrl = URL.createObjectURL(pdfBlob);

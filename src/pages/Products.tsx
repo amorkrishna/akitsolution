@@ -71,7 +71,7 @@ export default function Products() {
     queryKey: ["variant-counts"],
     queryFn: async () => {
       const { data } = await supabase.from("product_variants").select("product_id");
-      const counts: Record<string, number> = {};
+      const counts: Record<string, number> = {/* no-op */};
       data?.forEach((v: any) => { counts[v.product_id] = (counts[v.product_id] || 0) + 1; });
       return counts;
     },
@@ -113,7 +113,7 @@ export default function Products() {
               toast({ title: "Barcode scanned", description: `SKU: ${decodedText}` });
               setCameraOpen(false);
             },
-            () => {}
+            () => {/* no-op */}
           );
         } catch (err: any) {
           toast({ title: "Camera error", description: err?.message || "Could not access camera", variant: "destructive" });
@@ -123,7 +123,7 @@ export default function Products() {
       return () => clearTimeout(timerId);
     } else {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
+        scannerRef.current.stop().catch(() => {/* no-op */});
         scannerRef.current.clear();
         scannerRef.current = null;
       }
@@ -451,12 +451,12 @@ export default function Products() {
     let parsedDesc = p.description || "";
     let parsedSpecs = [];
     try {
-      const obj = JSON.parse(p.description || "{}");
+      const obj = JSON.parse(p.description || "{/* no-op */}");
       if (obj && typeof obj === 'object' && obj.text !== undefined) {
         parsedDesc = obj.text;
         parsedSpecs = obj.specs || [];
       }
-    } catch (e) {}
+    } catch (e) {/* no-op */}
 
     setForm({
       name: p.name, category: p.category, brand: p.brand || "Other", description: parsedDesc,

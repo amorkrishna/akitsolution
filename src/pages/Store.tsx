@@ -103,13 +103,13 @@ export default function Store() {
     if (!trimmed) return;
     setRecentSearches(prev => {
       const next = [trimmed, ...prev.filter(s => s.toLowerCase() !== trimmed.toLowerCase())].slice(0, 6);
-      try { localStorage.setItem("store-recent-searches", JSON.stringify(next)); } catch { }
+      try { localStorage.setItem("store-recent-searches", JSON.stringify(next)); } catch {/* no-op */}
       return next;
     });
   }, []);
   const clearRecentSearches = useCallback(() => {
     setRecentSearches([]);
-    try { localStorage.removeItem("store-recent-searches"); } catch { }
+    try { localStorage.removeItem("store-recent-searches"); } catch {/* no-op */}
   }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -1059,8 +1059,8 @@ export default function Store() {
         <PackageBuilder
           isDark={isDark}
           lang={lang}
-          onAddToCart={() => { }}
-          cartAddMultiple={() => { }}
+          onAddToCart={() => {/* no-op */}}
+          cartAddMultiple={() => {/* no-op */}}
         />
       )}
 

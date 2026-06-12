@@ -5,7 +5,7 @@ export function WhatsAppButton({ phone }: { phone?: string }) {
   const { language } = useTranslation();
   
   // Normalize the phone number for WhatsApp
-  let rawPhone = phone || "+8801919060590";
+  const rawPhone = phone || "+8801919060590";
   // If number starts with 0 and doesn't have country code, prepend 88
   let formattedPhone = rawPhone.replace(/[^0-9]/g, '');
   if (formattedPhone.length === 11 && formattedPhone.startsWith('0')) {

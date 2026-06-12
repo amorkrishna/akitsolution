@@ -32,7 +32,7 @@ export function BarcodeScanner({ onBarcodeDetected }: BarcodeScannerProps) {
           onBarcodeDetected(decodedText);
           toast({ title: "Barcode scanned", description: `SKU: ${decodedText}` });
         },
-        () => {}
+        () => {/* no-op */}
       );
     } catch (err: any) {
       toast({ title: "Camera error", description: err?.message || "Could not access camera", variant: "destructive" });
@@ -46,7 +46,7 @@ export function BarcodeScanner({ onBarcodeDetected }: BarcodeScannerProps) {
       try {
         await scannerRef.current.stop();
         scannerRef.current.clear();
-      } catch {}
+      } catch {/* no-op */}
     }
     scannerRef.current = null;
     setCameraActive(false);
@@ -56,7 +56,7 @@ export function BarcodeScanner({ onBarcodeDetected }: BarcodeScannerProps) {
   useEffect(() => {
     return () => {
       if (scannerRef.current && scanning) {
-        scannerRef.current.stop().catch(() => {});
+        scannerRef.current.stop().catch(() => {/* no-op */});
       }
     };
   }, [scanning]);

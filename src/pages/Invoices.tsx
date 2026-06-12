@@ -122,7 +122,7 @@ export default function Invoices() {
     invoice: any,
     settings: any,
     fileName: string,
-    options: { skipDownload?: boolean } = {}
+    options: { skipDownload?: boolean } = {/* no-op */}
   ): Promise<Blob | null> => {
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -338,7 +338,7 @@ export default function Invoices() {
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Verification:${invoice.invoice_number}`;
       // In jsPDF, we can add image from URL if it's base64 or we load it. For simplicity, we skip loading the async image here unless we fetch it.
       // Wait, jsPDF addImage needs base64. So I will skip it for the PDF to avoid async loading issues, or just use text for verification.
-    } catch (e) {}
+    } catch (e) {/* no-op */}
 
     doc.text(`${settings.footer_text || ""} | ${settings.company_name || ""} | ${settings.phone || ""}`, pageWidth / 2, pageHeight - 10, { align: "center" });
 
@@ -349,7 +349,7 @@ export default function Invoices() {
     const isMobileUa = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isMobileUa && shareNavigator.share) {
       const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
-      try { await shareNavigator.share({ files: [pdfFile], title: fileName }); return null; } catch {}
+      try { await shareNavigator.share({ files: [pdfFile], title: fileName }); return null; } catch {/* no-op */}
     }
 
     const blobUrl = URL.createObjectURL(pdfBlob);

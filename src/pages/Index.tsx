@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StatCard } from "@/components/StatCard";
-import { Users, FolderKanban, FileText, Package, DollarSign, ShoppingCart, TrendingUp, Clock, AlertCircle, CalendarDays, ArrowUpRight, ArrowDownRight, Wallet, UserPlus, ClipboardList, MessageCircle, Bot, Boxes, BarChart3 } from "lucide-react";
+import { Users, FolderKanban, FileText, Package, DollarSign, ShoppingCart, TrendingUp, Clock, AlertCircle, CalendarDays, ArrowUpRight, ArrowDownRight, Wallet, UserPlus, ClipboardList, MessageCircle, Bot, Boxes, BarChart3, Wrench } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

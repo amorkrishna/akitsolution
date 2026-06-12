@@ -102,7 +102,7 @@ export default function ProductFinder() {
 
     let responseData = data;
     if (typeof data === "string") {
-      try { responseData = JSON.parse(data); } catch (_) {}
+      try { responseData = JSON.parse(data); } catch (_) {/* no-op */}
     }
 
     // API-level error returned in body

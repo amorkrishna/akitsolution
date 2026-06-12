@@ -82,7 +82,7 @@ serve(async (req) => {
            console.log("Scraping blocked or failed, falling back to URL slug parsing.");
            
            // Extract the last part of the URL as a keyword (strip query parameters first)
-           let cleanUrl = url.split('?')[0];
+           const cleanUrl = url.split('?')[0];
            let slug = cleanUrl.split('/').filter(Boolean).pop() || "";
            slug = slug.replace(/[-_]/g, ' ').replace(/\.html?/g, '').trim();
            
@@ -141,7 +141,7 @@ ${cleaned}`;
       } catch (e) {
         console.error("Error fetching URL content:", e);
         // Fallback to URL slug parsing instead of erroring out (strip query parameters first)
-        let cleanUrl = url.split('?')[0];
+        const cleanUrl = url.split('?')[0];
         let slug = cleanUrl.split('/').filter(Boolean).pop() || "";
         slug = slug.replace(/[-_]/g, ' ').replace(/\.html?/g, '').trim();
         promptText = `You are a product suggestion AI. Generate 5 to 10 real products matching the query "${slug}" with current market prices in BDT. 
