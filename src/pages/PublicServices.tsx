@@ -121,8 +121,9 @@ export default function PublicServices() {
   return (
     <div className="min-h-screen bg-[#080510] text-white overflow-hidden relative">
       <SEOHead 
-        title="Our Services | Premium IT & Security Solutions"
-        description="Explore our premium IT, networking, and security solutions. Professional CCTV installation, server setups, and network support."
+        title="Our Services | Best IT & CCTV Installation Service in Dhaka, Bangladesh"
+        description="AK IT Solution provides professional CCTV camera installation, LAN/WAN network setup, Server configuration, and Attendance device installation services in Dhaka and across Bangladesh."
+        keywords="CCTV installation service in Dhaka, CC camera setup in Bangladesh, CCTV installer near me, office network setup service Dhaka, LAN WAN configuration Bangladesh, router configuration service, fingerprint attendance machine installation Dhaka, ZKTeco attendance device setup BD, IT support service company in Dhaka, server configuration service Bangladesh, computer repair service Dhaka, best IT solutions provider in Dhaka, CCTV repair and maintenance BD, IP camera installation Dhaka"
       />
       {/* Premium Ambient Background */}
       <div className="absolute top-0 left-0 right-0 h-[600px] w-full overflow-hidden pointer-events-none -z-10">
