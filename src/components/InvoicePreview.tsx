@@ -185,12 +185,7 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
           </div>
           <div style={{ textAlign: "center", position: "relative" }}>
             <div style={{ height: "40px", display: "flex", justifyContent: "center", alignItems: "flex-end", marginBottom: "-5px", zIndex: 10 }}>
-              <img 
-                src={settings.signature_url || "/signature.png"}
-                alt="Signature" 
-                crossOrigin="anonymous"
-                style={{ maxHeight: "50px", objectFit: "contain" }} 
-              />
+              {/* Signature image removed as per user request */}
             </div>
             <div style={{ borderTop: "2px solid #9ca3af", paddingTop: "6px" }} />
             <p style={{ fontSize: "10px", fontWeight: 600, color: "#4b5563", margin: "2px 0" }}>Authorized Signature</p>

@@ -138,21 +138,42 @@ export default function Invoices() {
 
     doc.setTextColor(17, 24, 39);
     doc.setFontSize(22);
-    doc.text(settings.company_name || "AK IT Solution", 15, y);
-    y += 5;
+    
+    let textX = 15;
+    if (settings.logo_url) {
+      try {
+        const res = await fetch(settings.logo_url);
+        const blob = await res.blob();
+        const base64data = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        // We use JPEG or PNG depending on the image, usually PNG works fine for transparent logos
+        // In jsPDF, drawing image needs base64 without the prefix data:image/... base64,
+        // Actually jsPDF handles data URLs automatically.
+        doc.addImage(base64data, "PNG", 15, y - 5, 18, 18);
+        textX = 38;
+      } catch (e) {
+        console.warn("Could not load logo for PDF", e);
+      }
+    }
+
+    doc.text(settings.company_name || "AK IT Solution", textX, y + 2);
+    y += 8;
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(107, 114, 128);
     if (settings.company_tagline) {
-      doc.text(settings.company_tagline, 15, y);
+      doc.text(settings.company_tagline, textX, y);
       y += 5;
     }
 
     doc.setFontSize(9);
-    if (settings.address) { doc.text(`Address: ${settings.address}`, 15, y); y += 4; }
-    if (settings.phone) { doc.text(`Phone: ${settings.phone}`, 15, y); y += 4; }
-    if (settings.email) { doc.text(`Email: ${settings.email}`, 15, y); y += 4; }
+    if (settings.address) { doc.text(`Address: ${settings.address}`, textX, y); y += 4; }
+    if (settings.phone) { doc.text(`Phone: ${settings.phone}`, textX, y); y += 4; }
+    if (settings.email) { doc.text(`Email: ${settings.email}`, textX, y); y += 4; }
 
     // Invoice details
     doc.setTextColor(31, 41, 55);
