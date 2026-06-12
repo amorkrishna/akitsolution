@@ -152,11 +152,20 @@ export function QuotationPreview({ quotation }: QuotationPreviewProps) {
 
       {/* Signature & Footer */}
       <div style={{ marginTop: "auto", paddingTop: "24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "48px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "24px", alignItems: "end" }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ borderTop: "2px solid #9ca3af", paddingTop: "6px", marginTop: "40px" }} />
             <p style={{ fontSize: "10px", fontWeight: 600, color: "#4b5563", margin: "2px 0" }}>Customer Signature</p>
             <p style={{ fontSize: "8px", color: "#9ca3af", margin: 0 }}>Name & Date</p>
+          </div>
+          <div style={{ textAlign: "center", paddingBottom: "4px" }}>
+            <img 
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Verification:${quotation.quotation_number}`} 
+              alt="QR Code" 
+              crossOrigin="anonymous"
+              style={{ width: "50px", height: "50px", margin: "0 auto" }} 
+            />
+            <p style={{ fontSize: "8px", color: "#9ca3af", marginTop: "4px", marginBottom: 0 }}>Scan to Verify</p>
           </div>
           <div style={{ textAlign: "center" }}>
             <div style={{ borderTop: "2px solid #9ca3af", paddingTop: "6px", marginTop: "40px" }} />

@@ -138,7 +138,7 @@ export default function Invoices() {
       await new Promise(r => setTimeout(r, 100));
 
       const canvas = await html2canvas(el, {
-        scale: 2,
+        scale: 4, // Increased scale for high-quality, crisp text
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
