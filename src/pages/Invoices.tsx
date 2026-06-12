@@ -504,7 +504,9 @@ export default function Invoices() {
                 </div>
               </DialogTitle>
             </DialogHeader>
-            <InvoicePreview invoice={previewInvoice} />
+            <div className="flex justify-center bg-gray-50 py-4 overflow-x-auto">
+              <InvoicePreview invoice={previewInvoice} />
+            </div>
           </DialogContent>
         </Dialog>
       )}

@@ -12,7 +12,7 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
 
   return (
     <div
-      className="bg-white text-black mx-auto rounded-lg border print:border-0 print:shadow-none flex flex-col"
+      className="bg-white text-black flex flex-col relative"
       id="invoice-print"
       style={{
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",

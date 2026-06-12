@@ -409,7 +409,7 @@ export default function Quotations() {
               </Button>
             </div>
           </DialogHeader>
-          <div className="p-4 overflow-x-auto">
+          <div className="p-4 overflow-x-auto flex justify-center bg-gray-50">
             {previewQuotation && <QuotationPreview quotation={previewQuotation} />}
           </div>
         </DialogContent>
