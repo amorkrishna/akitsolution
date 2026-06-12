@@ -127,12 +127,20 @@ export default function PublicServices() {
       </div>
 
       {/* Premium Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 text-center relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 text-center relative z-10">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 text-gray-900 dark:text-white leading-[1.1]">
+            Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Services</span>
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10 font-medium">
+            Explore our premium range of IT, networking, and security solutions.
+          </p>
+        </motion.div>
         
         <motion.div 
           initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className="max-w-2xl mx-auto relative group"
         >
           <div className="absolute -inset-2 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition duration-700 pointer-events-none"></div>
@@ -141,7 +149,7 @@ export default function PublicServices() {
               <Search className="h-5 w-5 text-gray-400" />
             </div>
             <Input 
-              placeholder="Search services (e.g. CCTV, Networking)..." 
+              placeholder="Search for a service..." 
               className="flex-1 h-12 text-base border-0 focus-visible:ring-0 bg-transparent px-2 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -154,7 +162,7 @@ export default function PublicServices() {
       </div>
 
       {/* Trust & Features Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { title: "Fast Response", desc: "Quick support when you need it most", icon: Clock, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/20" },
