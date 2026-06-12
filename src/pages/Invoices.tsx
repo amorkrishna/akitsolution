@@ -122,266 +122,75 @@ export default function Invoices() {
     invoice: any,
     settings: any,
     fileName: string,
-    options: { skipDownload?: boolean } = {/* no-op */}
+    options: { skipDownload?: boolean } = {}
   ): Promise<Blob | null> => {
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let y = 20;
-
-    // Header
-    doc.setFillColor(30, 58, 138);
-    doc.roundedRect(pageWidth - 50, 15, 35, 12, 2, 2, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("INVOICE", pageWidth - 32.5, 23, { align: "center" });
-
-    doc.setTextColor(17, 24, 39);
-    doc.setFontSize(22);
-    
-    let textX = 15;
-    if (settings.logo_url) {
-      try {
-        const res = await fetch(settings.logo_url);
-        const blob = await res.blob();
-        const base64data = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-        // We use JPEG or PNG depending on the image, usually PNG works fine for transparent logos
-        // In jsPDF, drawing image needs base64 without the prefix data:image/... base64,
-        // Actually jsPDF handles data URLs automatically.
-        doc.addImage(base64data, "PNG", 15, y - 5, 18, 18);
-        textX = 38;
-      } catch (e) {
-        console.warn("Could not load logo for PDF", e);
-      }
-    }
-
-    doc.text(settings.company_name || "AK IT Solution", textX, y + 2);
-    y += 8;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(107, 114, 128);
-    if (settings.company_tagline) {
-      doc.text(settings.company_tagline, textX, y);
-      y += 5;
-    }
-
-    doc.setFontSize(9);
-    if (settings.address) { doc.text(`Address: ${settings.address}`, textX, y); y += 4; }
-    if (settings.phone) { doc.text(`Phone: ${settings.phone}`, textX, y); y += 4; }
-    if (settings.email) { doc.text(`Email: ${settings.email}`, textX, y); y += 4; }
-
-    // Invoice details
-    doc.setTextColor(31, 41, 55);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text(invoice.invoice_number, pageWidth - 15, 33, { align: "right" });
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(107, 114, 128);
-    doc.text(`Date: ${new Date(invoice.issue_date).toLocaleDateString("en-GB")}`, pageWidth - 15, 39, { align: "right" });
-    if (invoice.due_date) {
-      doc.text(`Due: ${new Date(invoice.due_date).toLocaleDateString("en-GB")}`, pageWidth - 15, 44, { align: "right" });
-    }
-
-    y = Math.max(y + 10, 55);
-    doc.setDrawColor(209, 213, 219);
-    doc.line(15, y, pageWidth - 15, y);
-    y += 10;
-
-    // Bill To
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(156, 163, 175);
-    doc.text("BILL TO", 15, y);
-    y += 5;
-
-    doc.setFontSize(12);
-    doc.setTextColor(17, 24, 39);
-    const clientName = (invoice as any).clients?.name || "Paid in Cash";
-    doc.text(clientName, 15, y);
-    y += 5;
-
-    if ((invoice as any).clients?.address) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(75, 85, 99);
-      const splitAddress = doc.splitTextToSize((invoice as any).clients.address, 80);
-      doc.text(splitAddress, 15, y);
-      y += splitAddress.length * 5;
-    }
-    y += 5;
-
-    // Table
-    const tableData = (invoice.items || []).map((item: any, idx: number) => {
-      const isService = item.description?.startsWith("[Service]");
-      const isProduct = item.description?.startsWith("[Product]");
-      const cleanDesc = item.description?.replace(/^\[(Service|Product)\]\s*/, "").replace(/\s*\(Warranty:.*?\)$/, "").replace(/\s*\(SN:.*?\)/, "") || item.description;
-      const warranty = item.description?.match(/\(Warranty:\s*(.*?)\)/)?.[1] || "—";
-      const sn = item.description?.match(/\(SN:\s*(.*?)\)/)?.[1] || "";
-      const itemType = isService ? "Service" : isProduct ? "Product" : "Custom";
-      let descText = cleanDesc;
-      if (sn) descText += `\nSN: ${sn}`;
-      return [
-        (idx + 1).toString(),
-        descText,
-        itemType,
-        warranty,
-        item.quantity.toString(),
-        `Tk ${Number(item.unit_price).toLocaleString()}`,
-        `Tk ${Number(item.total).toLocaleString()}`
-      ];
-    });
-
-    autoTable(doc, {
-      startY: y,
-      head: [["#", "Description", "Type", "Warranty", "Qty", "Price", "Total"]],
-      body: tableData,
-      theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], textColor: 255, fontSize: 9, fontStyle: "bold" },
-      bodyStyles: { fontSize: 9, textColor: 55 },
-      columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        2: { cellWidth: 20, halign: 'center' },
-        3: { cellWidth: 25, halign: 'center' },
-        4: { cellWidth: 15, halign: 'center' },
-        5: { cellWidth: 25, halign: 'right' },
-        6: { cellWidth: 25, halign: 'right' }
-      }
-    });
-
-    y = (doc as any).lastAutoTable.finalY + 10;
-    const rightMargin = pageWidth - 15;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(107, 114, 128);
-    
-    doc.text("Subtotal:", rightMargin - 40, y);
-    doc.setTextColor(55, 65, 81);
-    doc.text(`Tk ${Number(invoice.subtotal).toLocaleString()}`, rightMargin, y, { align: "right" });
-    y += 6;
-    
-    doc.setTextColor(107, 114, 128);
-    doc.text(`Tax (${invoice.tax_rate}%):`, rightMargin - 40, y);
-    doc.setTextColor(55, 65, 81);
-    doc.text(`Tk ${Number(invoice.tax_amount).toLocaleString()}`, rightMargin, y, { align: "right" });
-    y += 6;
-
-    if (Number(invoice.paid_amount || 0) > 0) {
-      doc.setTextColor(22, 163, 74); // green-600
-      doc.text("Paid Amount:", rightMargin - 40, y);
-      doc.text(`Tk ${Number(invoice.paid_amount).toLocaleString()}`, rightMargin, y, { align: "right" });
-      y += 6;
-    }
-    
-    doc.setDrawColor(30, 58, 138);
-    doc.line(rightMargin - 60, y, rightMargin, y);
-    y += 8;
-    
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(17, 24, 39);
-    doc.text(Number(invoice.paid_amount || 0) > 0 ? "Due Amount:" : "Total Due:", rightMargin - 40, y);
-    doc.setTextColor(37, 99, 235);
-    doc.text(`Tk ${(Number(invoice.total) - Number(invoice.paid_amount || 0)).toLocaleString()}`, rightMargin, y, { align: "right" });
-
-    let leftY = (doc as any).lastAutoTable.finalY + 10;
-    const hasBankInfo = settings.show_payment_info && (settings.bank_name || settings.bank_account_number || settings.mobile_banking);
-    if (hasBankInfo) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(96, 165, 250);
-      doc.text("PAYMENT INFORMATION", 15, leftY);
-      leftY += 5;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(55, 65, 81);
-      if (settings.bank_name) { doc.text(`Bank: ${settings.bank_name}`, 15, leftY); leftY += 4; }
-      if (settings.bank_account_name) { doc.text(`A/C Name: ${settings.bank_account_name}`, 15, leftY); leftY += 4; }
-      if (settings.bank_account_number) { doc.text(`A/C No: ${settings.bank_account_number}`, 15, leftY); leftY += 4; }
-      if (settings.bank_branch) { doc.text(`Branch: ${settings.bank_branch}`, 15, leftY); leftY += 4; }
-      if (settings.mobile_banking) { doc.text(`Mobile Banking: ${settings.mobile_banking}`, 15, leftY); leftY += 4; }
-      leftY += 4;
-    }
-
-    if (invoice.notes) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(245, 158, 11);
-      doc.text("NOTES", 15, leftY);
-      leftY += 5;
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(55, 65, 81);
-      const splitNotes = doc.splitTextToSize(invoice.notes, 100);
-      doc.text(splitNotes, 15, leftY);
-      leftY += splitNotes.length * 4 + 4;
-    }
-
-    if (settings.terms_conditions) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(107, 114, 128);
-      doc.text("TERMS & CONDITIONS", 15, leftY);
-      leftY += 5;
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(75, 85, 99);
-      doc.setFontSize(8);
-      const splitTerms = doc.splitTextToSize(settings.terms_conditions, 100);
-      doc.text(splitTerms, 15, leftY);
-      leftY += splitTerms.length * 3.5;
-    }
-
-    const pageHeight = doc.internal.pageSize.getHeight();
-    let sigY = Math.max(y, leftY) + 30;
-    if (sigY > pageHeight - 30) { doc.addPage(); sigY = 30; }
-
-    doc.setDrawColor(156, 163, 175);
-    doc.line(30, sigY, 80, sigY);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(75, 85, 99);
-    doc.text("Client Signature", 55, sigY + 5, { align: "center" });
-
-    doc.line(pageWidth - 80, sigY, pageWidth - 30, sigY);
-    doc.text("Authorized Signature", pageWidth - 55, sigY + 5, { align: "center" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(156, 163, 175);
-    doc.text(settings.company_name || "", pageWidth - 55, sigY + 9, { align: "center" });
-
-    // Add QR Code at the center
     try {
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Verification:${invoice.invoice_number}`;
-      // In jsPDF, we can add image from URL if it's base64 or we load it. For simplicity, we skip loading the async image here unless we fetch it.
-      // Wait, jsPDF addImage needs base64. So I will skip it for the PDF to avoid async loading issues, or just use text for verification.
-    } catch (e) {/* no-op */}
+      const html2canvas = (await import("html2canvas")).default;
+      const el = document.getElementById("invoice-print");
+      if (!el) throw new Error("Invoice element not found");
 
-    doc.text(`${settings.footer_text || ""} | ${settings.company_name || ""} | ${settings.phone || ""}`, pageWidth / 2, pageHeight - 10, { align: "center" });
+      // Temporarily ensure it is visible and not affected by wrapper opacity
+      const wrapper = el.parentElement;
+      const originalOpacity = wrapper?.style.opacity;
+      if (wrapper) wrapper.style.opacity = "1";
 
-    const pdfBlob = doc.output("blob");
-    if (options.skipDownload) return pdfBlob;
+      // Small delay to ensure images/fonts are rendered
+      await new Promise(r => setTimeout(r, 100));
 
-    const shareNavigator = navigator as any;
-    const isMobileUa = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobileUa && shareNavigator.share) {
-      const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
-      try { await shareNavigator.share({ files: [pdfFile], title: fileName }); return null; } catch {/* no-op */}
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+
+      if (wrapper && originalOpacity !== undefined) {
+        wrapper.style.opacity = originalOpacity;
+      }
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const pdfBlob = pdf.output("blob");
+      if (options.skipDownload) return pdfBlob;
+
+      const shareNavigator = navigator as any;
+      const isMobileUa = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobileUa && shareNavigator.share) {
+        const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+        try { await shareNavigator.share({ files: [pdfFile], title: fileName }); return null; } catch {/* no-op */}
+      }
+
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => { if(link.parentNode) link.parentNode.removeChild(link); URL.revokeObjectURL(blobUrl); }, 30000);
+      
+      return pdfBlob;
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+      return null;
     }
-
-    const blobUrl = URL.createObjectURL(pdfBlob);
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = fileName;
-    link.style.display = "none";
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => { if(link.parentNode) link.parentNode.removeChild(link); URL.revokeObjectURL(blobUrl); }, 30000);
-    return pdfBlob;
   };
 
 
