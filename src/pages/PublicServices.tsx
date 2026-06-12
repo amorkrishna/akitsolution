@@ -138,10 +138,6 @@ export default function PublicServices() {
   const whatsappNumber = settings?.whatsapp_number || "8801919060590";
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello, I need an urgent IT/CCTV service.")}`;
 
-import { TopBar } from "@/components/store/TopBar";
-
-// ... existing code in PublicServices ...
-
   return (
     <div className={`min-h-screen transition-colors duration-300 overflow-hidden relative ${isDark ? 'bg-[#080510] text-white' : 'bg-gray-50 text-gray-900'}`}>
       <SEOHead 
