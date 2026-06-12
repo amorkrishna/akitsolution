@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Wrench, Clock, ShieldCheck, ArrowRight, Loader2, Server, Monitor, Network, Fingerprint, Search, Zap, CheckCircle2, Phone, MessageCircle } from "lucide-react";
+import { Wrench, Clock, ShieldCheck, ArrowRight, Loader2, Server, Monitor, Network, Fingerprint, Search, Zap, CheckCircle2, Phone, MessageCircle, Moon, Sun, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { SEOHead } from "@/components/SEOHead";
+import { TopBar } from "@/components/store/TopBar";
+import { LiveSalesPopup } from "@/components/marketing/LiveSalesPopup";
+import { LeadCapturePopup } from "@/components/marketing/LeadCapturePopup";
 
 // Fallback icons for categories
 const CategoryIcon = ({ category, className }: { category: string, className?: string }) => {
@@ -34,6 +37,23 @@ export default function PublicServices() {
   const [openDialog, setOpenDialog] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
+  
+  const [lang, setLang] = useState<"bn" | "en">("en");
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    const saved = localStorage.getItem("theme") as "dark" | "light";
+    return saved || "dark";
+  });
+
+  const isDark = theme === "dark";
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [isDark, theme]);
   
   const [form, setForm] = useState({
     customer_name: "",
@@ -118,13 +138,31 @@ export default function PublicServices() {
   const whatsappNumber = settings?.whatsapp_number || "8801919060590";
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello, I need an urgent IT/CCTV service.")}`;
 
+import { TopBar } from "@/components/store/TopBar";
+
+// ... existing code in PublicServices ...
+
   return (
-    <div className="min-h-screen bg-[#080510] text-white overflow-hidden relative">
+    <div className={`min-h-screen transition-colors duration-300 overflow-hidden relative ${isDark ? 'bg-[#080510] text-white' : 'bg-gray-50 text-gray-900'}`}>
       <SEOHead 
-        title="Our Services | Best IT & CCTV Installation Service in Dhaka, Bangladesh"
+        title={lang === "bn" ? "আমাদের সার্ভিস | AK IT Solution" : "Our Services | AK IT Solution"}
         description="AK IT Solution provides professional CCTV camera installation, LAN/WAN network setup, Server configuration, and Attendance device installation services in Dhaka and across Bangladesh. সিসিটিভি ক্যামেরা ও নেটওয়ার্ক সার্ভিস।"
         keywords="CCTV installation service in Dhaka, CC camera setup in Bangladesh, CCTV installer near me, office network setup service Dhaka, LAN WAN configuration Bangladesh, router configuration service, fingerprint attendance machine installation Dhaka, ZKTeco attendance device setup BD, IT support service company in Dhaka, server configuration service Bangladesh, computer repair service Dhaka, best IT solutions provider in Dhaka, CCTV repair and maintenance BD, IP camera installation Dhaka, সিসিটিভি ক্যামেরা ইনস্টলেশন ঢাকা, সিসি ক্যামেরা লাগানো, সিসি ক্যামেরা সার্ভিসিং, নেটওয়ার্ক সেটআপ, আইটি সাপোর্ট, ফিঙ্গারপ্রিন্ট এটেন্ডেন্স মেশিন, cc camera lagano, cctv lagate koto khoroch, cc cemera, cc camra dhaka, netwok setup, attendence mechine, finger print mechine, router configure kora, rutar setup, compoter repair, leptop thik kora, it sopport, cctv pakaege dhaka, cc camera dam koto bd, basa barite cctv lagabo, dokane cctv lagano, mikrotik setup dhaka, lan cable tanano, pabx setup dhaka, intercom lagano, cctv banani, mirpur cctv repair, uttara cctv setup, motijheel network setup, wifi range extender setup, router password reset, server rack wiring, সিসি ক্যামেরায় রেকর্ডিং হচ্ছে না, cc camera recording problem, dvr nosto, nvr setup, ptz camera price bd, 360 camera lagano, sosti cc camera, v380 wifi camera dhaka"
       />
+      
+      {/* Top Navigation Bar with Theme & Lang Toggles */}
+      <div className="relative z-50">
+        <TopBar lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} isDark={isDark} />
+        <div className={`border-b ${isDark ? 'border-white/5 bg-[#0f0a1f]/80' : 'border-gray-200 bg-white/80'} backdrop-blur-md`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={() => window.location.href = '/'} className={isDark ? "text-gray-300 hover:text-white" : "text-gray-600 hover:text-gray-900"}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {lang === "bn" ? "হোমপেজে ফিরে যান" : "Back to Store"}
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Premium Ambient Background */}
       <div className="absolute top-0 left-0 right-0 h-[600px] w-full overflow-hidden pointer-events-none -z-10">
         <div className="absolute -top-40 -right-40 w-[800px] h-[800px] bg-gradient-to-br from-violet-500/10 via-indigo-500/5 to-transparent rounded-full blur-[100px]" />
@@ -133,13 +171,13 @@ export default function PublicServices() {
       </div>
 
       {/* Premium Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 text-center relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 text-center relative z-10">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 text-gray-900 dark:text-white leading-[1.1]">
-            Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Services</span>
+          <h1 className={`text-4xl md:text-6xl font-extrabold tracking-tight mb-6 leading-[1.1] ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            {lang === "bn" ? "আমাদের" : "Our"} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">{lang === "bn" ? "সার্ভিসসমূহ" : "Services"}</span>
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10 font-medium">
-            Explore our premium range of IT, networking, and security solutions.
+          <p className={`text-lg max-w-2xl mx-auto mb-10 font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            {lang === "bn" ? "আমাদের সেরা আইটি, নেটওয়ার্কিং এবং সিকিউরিটি সলিউশন এক্সপ্লোর করুন।" : "Explore our premium range of IT, networking, and security solutions."}
           </p>
         </motion.div>
         
@@ -150,18 +188,18 @@ export default function PublicServices() {
           className="max-w-2xl mx-auto relative group"
         >
           <div className="absolute -inset-2 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition duration-700 pointer-events-none"></div>
-          <div className="relative flex items-center bg-white dark:bg-[#111118] p-2 rounded-full border border-gray-200 dark:border-gray-800 shadow-lg shadow-black/5 dark:shadow-black/20">
+          <div className={`relative flex items-center p-2 rounded-full border shadow-lg ${isDark ? 'bg-[#111118] border-gray-800 shadow-black/20' : 'bg-white border-gray-200 shadow-black/5'}`}>
             <div className="pl-4 pr-2">
-              <Search className="h-5 w-5 text-gray-400" />
+              <Search className={`h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
             </div>
             <Input 
-              placeholder="Search for a service..." 
-              className="flex-1 h-12 text-base border-0 focus-visible:ring-0 bg-transparent px-2 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              placeholder={lang === "bn" ? "যেকোনো সার্ভিস খুঁজুন..." : "Search for a service..."}
+              className={`flex-1 h-12 text-base border-0 focus-visible:ring-0 bg-transparent px-2 ${isDark ? 'placeholder:text-gray-500 text-white' : 'placeholder:text-gray-400 text-gray-900'}`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
             <Button className="h-12 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">
-              Search
+              {lang === "bn" ? "খুঁজুন" : "Search"}
             </Button>
           </div>
         </motion.div>
@@ -171,9 +209,21 @@ export default function PublicServices() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            { title: "Fast Response", desc: "Quick support when you need it most", icon: Clock, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/20" },
-            { title: "Certified Experts", desc: "Highly trained IT & Security professionals", icon: ShieldCheck, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
-            { title: "Quality Guarantee", desc: "100% satisfaction on all our services", icon: CheckCircle2, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-900/20" }
+            { 
+              title: lang === "bn" ? "দ্রুত রেসপন্স" : "Fast Response", 
+              desc: lang === "bn" ? "প্রয়োজনের সময় দ্রুত সাপোর্ট" : "Quick support when you need it most", 
+              icon: Clock, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/20" 
+            },
+            { 
+              title: lang === "bn" ? "সার্টিফাইড এক্সপার্ট" : "Certified Experts", 
+              desc: lang === "bn" ? "উচ্চ প্রশিক্ষিত আইটি প্রফেশনাল" : "Highly trained IT & Security professionals", 
+              icon: ShieldCheck, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20" 
+            },
+            { 
+              title: lang === "bn" ? "কোয়ালিটি গ্যারান্টি" : "Quality Guarantee", 
+              desc: lang === "bn" ? "সার্ভিসে ১০০% সন্তুষ্টি" : "100% satisfaction on all our services", 
+              icon: CheckCircle2, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-900/20" 
+            }
           ].map((feature, i) => (
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
@@ -181,14 +231,18 @@ export default function PublicServices() {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
               key={i} 
-              className="flex items-center gap-5 p-5 rounded-3xl bg-white/60 dark:bg-[#111118]/60 backdrop-blur-xl border border-gray-100 dark:border-gray-800/60 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 transition-all duration-300"
+              className={`flex items-center gap-5 p-5 rounded-3xl backdrop-blur-xl border hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${
+                isDark 
+                  ? 'bg-[#111118]/60 border-gray-800/60 shadow-black/5 hover:shadow-black/20' 
+                  : 'bg-white border-gray-200 shadow-gray-200/50 hover:shadow-gray-200'
+              }`}
             >
               <div className={`h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 ${feature.bg}`}>
                 <feature.icon className={`h-7 w-7 ${feature.color}`} />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 dark:text-white text-lg">{feature.title}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{feature.desc}</p>
+                <h3 className={`font-bold text-lg ${isDark ? 'text-white' : 'text-gray-900'}`}>{feature.title}</h3>
+                <p className={`text-sm mt-0.5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{feature.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -429,10 +483,13 @@ export default function PublicServices() {
         className="fixed bottom-6 right-6 z-50 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1DA851] text-white px-5 py-4 rounded-full shadow-2xl hover:shadow-[#25D366]/30 transition-all duration-300 hover:-translate-y-1 group border border-[#25D366]/50"
       >
         <MessageCircle className="h-6 w-6" />
-        <span className="font-bold hidden md:block">Chat on WhatsApp</span>
+        <span className="font-bold hidden md:block">{lang === "bn" ? "হোয়াটসঅ্যাপে চ্যাট করুন" : "Chat on WhatsApp"}</span>
         <span className="absolute -inset-2 rounded-full border-2 border-[#25D366] opacity-0 group-hover:animate-ping" />
       </motion.a>
 
+      {/* Marketing & CRO Components */}
+      <LiveSalesPopup />
+      <LeadCapturePopup />
     </div>
   );
 }

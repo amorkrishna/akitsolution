@@ -1,4 +1,4 @@
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Phone } from "lucide-react";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 export function WhatsAppButton({ phone }: { phone?: string }) {
@@ -21,28 +21,49 @@ export function WhatsAppButton({ phone }: { phone?: string }) {
   const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 
   return (
-    <a
-      href={whatsappUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="fixed bottom-20 sm:bottom-6 left-6 z-50 group"
-      aria-label="Contact on WhatsApp"
-    >
-      <div className="relative flex items-center justify-center">
-        {/* Pulse Ring */}
-        <div className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-25 group-hover:animate-none"></div>
-        
-        {/* Main Button */}
-        <div className="relative h-14 w-14 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30 transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-12">
-          <MessageCircle className="h-7 w-7 text-white fill-white" />
+    <div className="fixed bottom-20 sm:bottom-6 left-6 z-50 flex flex-col sm:flex-row gap-3">
+      {/* Call Now Button - Especially visible on mobile */}
+      <a
+        href={`tel:${formattedPhone}`}
+        className="group relative"
+        aria-label="Call Now"
+      >
+        <div className="relative flex items-center justify-center">
+          <div className="absolute inset-0 rounded-full bg-blue-500 animate-ping opacity-20 group-hover:animate-none"></div>
+          <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30 transform transition-all duration-300 group-hover:scale-110 group-hover:-rotate-12">
+            <Phone className="h-5 w-5 sm:h-6 sm:w-6 text-white fill-white" />
+          </div>
+          <div className="absolute left-full ml-3 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 whitespace-nowrap shadow-xl border border-white/10">
+            {language === "bn" ? "সরাসরি কল করুন" : "Call Now"}
+            <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
+          </div>
         </div>
-        
-        {/* Tooltip/Label */}
-        <div className="absolute left-full ml-3 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 whitespace-nowrap shadow-xl border border-white/10">
-          {language === "bn" ? "আমাদের সাথে কথা বলুন" : "Chat with us"}
-          <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
+      </a>
+
+      {/* WhatsApp Button */}
+      <a
+        href={whatsappUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group relative"
+        aria-label="Contact on WhatsApp"
+      >
+        <div className="relative flex items-center justify-center">
+          {/* Pulse Ring */}
+          <div className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-25 group-hover:animate-none"></div>
+          
+          {/* Main Button */}
+          <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30 transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-12">
+            <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7 text-white fill-white" />
+          </div>
+          
+          {/* Tooltip/Label */}
+          <div className="absolute left-full ml-3 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 whitespace-nowrap shadow-xl border border-white/10">
+            {language === "bn" ? "আমাদের সাথে চ্যাট করুন" : "Chat with us"}
+            <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
+          </div>
         </div>
-      </div>
-    </a>
+      </a>
+    </div>
   );
 }

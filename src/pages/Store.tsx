@@ -1350,6 +1350,9 @@ export default function Store() {
         addToCart={handleAddToCart}
       />
 
+      {/* Marketing & CRO Components */}
+      <LiveSalesPopup />
+      <LeadCapturePopup />
     </div>
   );
 }
