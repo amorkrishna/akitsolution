@@ -204,7 +204,7 @@
     z-index: 999999 !important;
     background: white !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 15mm 18mm !important;
     box-shadow: none !important;
     border: none !important;
   }
@@ -261,12 +261,12 @@
 .dark .text-zinc-900, .dark .text-zinc-800, .dark .text-zinc-700,
 .dark .text-neutral-900, .dark .text-neutral-800, .dark .text-neutral-700,
 .dark .text-black {
-  color: hsl(var(--foreground)) !important;
+  color: hsl(var(--foreground));
 }
 
 .dark .bg-white, .dark .bg-gray-50, .dark .bg-slate-50, .dark .bg-zinc-50 {
-  background-color: hsl(var(--card)) !important;
-  color: hsl(var(--card-foreground)) !important;
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
 }
 
 /* Force Light Mode on Invoices and Quotations even in Dark Mode */
@@ -274,8 +274,21 @@
 .dark #quotation-print {
   background-color: #ffffff !important;
   color: #000000 !important;
-  border-color: #e5e7eb !important;
 }
+
+/* Reset text colors inside printable areas */
+.dark #invoice-print .text-gray-900, .dark #quotation-print .text-gray-900 { color: #111827 !important; }
+.dark #invoice-print .text-gray-800, .dark #quotation-print .text-gray-800 { color: #1f2937 !important; }
+.dark #invoice-print .text-gray-700, .dark #quotation-print .text-gray-700 { color: #374151 !important; }
+.dark #invoice-print .text-gray-600, .dark #quotation-print .text-gray-600 { color: #4b5563 !important; }
+.dark #invoice-print .text-gray-500, .dark #quotation-print .text-gray-500 { color: #6b7280 !important; }
+.dark #invoice-print .text-gray-400, .dark #quotation-print .text-gray-400 { color: #9ca3af !important; }
+.dark #invoice-print .text-black, .dark #quotation-print .text-black { color: #000000 !important; }
+
+/* Reset background colors inside printable areas */
+.dark #invoice-print .bg-white, .dark #quotation-print .bg-white { background-color: #ffffff !important; }
+.dark #invoice-print .bg-gray-50, .dark #quotation-print .bg-gray-50 { background-color: #f9fafb !important; }
+.dark #invoice-print .bg-gray-100, .dark #quotation-print .bg-gray-100 { background-color: #f3f4f6 !important; }
 
 .dark #invoice-print *,
 .dark #quotation-print * {

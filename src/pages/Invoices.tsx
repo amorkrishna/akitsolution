@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Trash2, Eye, Printer, Download, Search, CalendarIcon, LayoutGrid, LayoutList, X, ExternalLink, CheckCircle, Circle, Pencil, CreditCard } from "lucide-react";
+import { Plus, Trash2, Eye, Printer, Download, Search, CalendarIcon, LayoutGrid, LayoutList, X, ExternalLink, CheckCircle, Circle, Pencil, CreditCard, MoreHorizontal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { InvoicePreview } from "@/components/InvoicePreview";
@@ -435,28 +435,45 @@ export default function Invoices() {
                     </div>
                   </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <div className="flex items-center justify-between pt-3 border-t border-border">
                       <div className="flex flex-col">
                         <span className="text-lg font-bold">৳{Number(inv.total).toLocaleString()}</span>
                         {Number(inv.paid_amount || 0) > 0 && <span className="text-xs text-green-600 font-medium">Paid: ৳{Number(inv.paid_amount).toLocaleString()}</span>}
                       </div>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Record Payment" disabled={inv.status === "paid"} onClick={() => {
-                          setPaymentInvoice(inv);
-                          setPaymentAmount(String(Number(inv.total) - Number(inv.paid_amount || 0)));
-                        }}>
-                          <CreditCard className="h-4 w-4 text-blue-600" />
+                      <div className="flex gap-1.5 items-center">
+                        <Button variant="outline" size="sm" className="h-8 px-2 text-blue-600" onClick={() => viewInvoice(inv)}>
+                          <Eye className="h-4 w-4 mr-1" /> View
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewInvoice(inv)}><Eye className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/invoices/edit/${inv.id}`)} title="Edit"><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled={downloadingId === inv.id} onClick={() => downloadInvoicePdf(inv)}><Download className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Send via WhatsApp" disabled={whatsappId === inv.id} onClick={() => sendInvoiceWhatsApp(inv)}>
-                          <WhatsAppIcon className="h-4 w-4 text-green-600" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Send SMS" onClick={() => sendInvoiceSMS(inv)}>
-                          <svg className="h-4 w-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteMutation.mutate(inv.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent align="end" className="w-48 p-1">
+                            <Button variant="ghost" size="sm" className="w-full justify-start text-blue-600" disabled={inv.status === "paid"} onClick={() => {
+                              setPaymentInvoice(inv);
+                              setPaymentAmount(String(Number(inv.total) - Number(inv.paid_amount || 0)));
+                            }}>
+                              <CreditCard className="h-4 w-4 mr-2" /> Record Payment
+                            </Button>
+                            <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => navigate(`/invoices/edit/${inv.id}`)}>
+                              <Pencil className="h-4 w-4 mr-2" /> Edit Invoice
+                            </Button>
+                            <Button variant="ghost" size="sm" className="w-full justify-start" disabled={downloadingId === inv.id} onClick={() => downloadInvoicePdf(inv)}>
+                              <Download className="h-4 w-4 mr-2" /> Download PDF
+                            </Button>
+                            <Button variant="ghost" size="sm" className="w-full justify-start text-green-600" disabled={whatsappId === inv.id} onClick={() => sendInvoiceWhatsApp(inv)}>
+                              <WhatsAppIcon className="h-4 w-4 mr-2" /> WhatsApp
+                            </Button>
+                            <Button variant="ghost" size="sm" className="w-full justify-start text-blue-500" onClick={() => sendInvoiceSMS(inv)}>
+                              <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> SMS
+                            </Button>
+                            <Button variant="ghost" size="sm" className="w-full justify-start text-destructive" onClick={() => deleteMutation.mutate(inv.id)}>
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete
+                            </Button>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                 </CardContent>
