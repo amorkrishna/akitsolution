@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 
 interface SEOHeadProps {
   title?: string;
@@ -10,56 +11,32 @@ interface SEOHeadProps {
 }
 
 export function SEOHead({ title, description, url, image, type = "website", keywords }: SEOHeadProps) {
-  useEffect(() => {
-    if (title) document.title = title;
-
-    const setMeta = (property: string, content: string, isName = false) => {
-      const attr = isName ? "name" : "property";
-      let el = document.querySelector(`meta[${attr}="${property}"]`) as HTMLMetaElement | null;
-      if (!el) {
-        el = document.createElement("meta");
-        el.setAttribute(attr, property);
-        document.head.appendChild(el);
-      }
-      el.content = content;
-    };
-
-    if (description) {
-      setMeta("description", description, true);
-      setMeta("og:description", description);
-      setMeta("twitter:description", description);
-    }
-    if (keywords) {
-      setMeta("keywords", keywords, true);
-    }
-    if (title) {
-      setMeta("og:title", title);
-      setMeta("twitter:title", title);
-    }
-    if (url) {
-      setMeta("og:url", url);
-      // Canonical link
-      let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-      if (!canonical) {
-        canonical = document.createElement("link");
-        canonical.rel = "canonical";
-        document.head.appendChild(canonical);
-      }
-      canonical.href = url;
-    }
-    if (image) {
-      setMeta("og:image", image);
-      setMeta("og:image:width", "1200");
-      setMeta("og:image:height", "630");
-      setMeta("twitter:image", image);
-    }
-    if (type) setMeta("og:type", type);
-    setMeta("twitter:card", "summary_large_image", true);
-    // Robots
-    setMeta("robots", "index, follow, max-snippet:-1, max-image-preview:large", true);
-  }, [title, description, url, image, type, keywords]);
-
-  return null;
+  return (
+    <Helmet>
+      {title && <title>{title}</title>}
+      {description && <meta name="description" content={description} />}
+      {keywords && <meta name="keywords" content={keywords} />}
+      
+      {/* Open Graph */}
+      {title && <meta property="og:title" content={title} />}
+      {description && <meta property="og:description" content={description} />}
+      {url && <meta property="og:url" content={url} />}
+      {url && <link rel="canonical" href={url} />}
+      {image && <meta property="og:image" content={image} />}
+      {image && <meta property="og:image:width" content="1200" />}
+      {image && <meta property="og:image:height" content="630" />}
+      {type && <meta property="og:type" content={type} />}
+      
+      {/* Twitter */}
+      <meta name="twitter:card" content="summary_large_image" />
+      {title && <meta name="twitter:title" content={title} />}
+      {description && <meta name="twitter:description" content={description} />}
+      {image && <meta name="twitter:image" content={image} />}
+      
+      {/* Robots */}
+      <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+    </Helmet>
+  );
 }
 
 // LocalBusiness JSON-LD for Google My Business / Maps

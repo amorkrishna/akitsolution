@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail, Lock, UserPlus, LogIn, Phone, ArrowLeft, ShieldCheck, Sparkles } from "lucide-react";
 import akLogo from "@/assets/ak-logo.png";
 import { useToast } from "@/hooks/use-toast";
+import { SEOHead } from "@/components/SEOHead";
 
 type AuthMode = "login" | "signup" | "forgot";
 
@@ -78,6 +79,10 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
+      <SEOHead 
+        title={`${title} | AK IT Solution`}
+        description="Login to your AK IT Solution account."
+      />
       {/* Left Panel - Branding */}
       <div className="relative lg:w-[55%] bg-gradient-to-br from-[#0a1628] via-[#0d1f3c] to-[#0a1628] flex flex-col items-center justify-center p-8 lg:p-16 overflow-hidden">
         {/* Animated background effects */}

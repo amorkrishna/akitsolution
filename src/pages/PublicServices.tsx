@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Wrench, Clock, ShieldCheck, ArrowRight, Loader2, Server, Monitor, Network, Fingerprint, Search, Zap, CheckCircle2, Phone, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { SEOHead } from "@/components/SEOHead";
 
 // Fallback icons for categories
 const CategoryIcon = ({ category, className }: { category: string, className?: string }) => {
@@ -118,7 +119,11 @@ export default function PublicServices() {
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello, I need an urgent IT/CCTV service.")}`;
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0f] text-foreground font-sans selection:bg-primary/30 relative overflow-hidden">
+    <div className="min-h-screen bg-[#080510] text-white overflow-hidden relative">
+      <SEOHead 
+        title="Our Services | Premium IT & Security Solutions"
+        description="Explore our premium IT, networking, and security solutions. Professional CCTV installation, server setups, and network support."
+      />
       {/* Premium Ambient Background */}
       <div className="absolute top-0 left-0 right-0 h-[600px] w-full overflow-hidden pointer-events-none -z-10">
         <div className="absolute -top-40 -right-40 w-[800px] h-[800px] bg-gradient-to-br from-violet-500/10 via-indigo-500/5 to-transparent rounded-full blur-[100px]" />
