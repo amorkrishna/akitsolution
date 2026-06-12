@@ -118,202 +118,222 @@ export default function PublicServices() {
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello, I need an urgent IT/CCTV service.")}`;
 
   return (
-    <div className="min-h-screen bg-gray-50/30 dark:bg-[#05020d] text-foreground font-sans selection:bg-primary/30">
+    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0f] text-foreground font-sans selection:bg-primary/30 relative overflow-hidden">
+      {/* Premium Ambient Background */}
+      <div className="absolute top-0 left-0 right-0 h-[600px] w-full overflow-hidden pointer-events-none -z-10">
+        <div className="absolute -top-40 -right-40 w-[800px] h-[800px] bg-gradient-to-br from-violet-500/10 via-indigo-500/5 to-transparent rounded-full blur-[100px]" />
+        <div className="absolute -top-20 -left-20 w-[600px] h-[600px] bg-gradient-to-tr from-cyan-500/10 via-blue-500/5 to-transparent rounded-full blur-[80px]" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-[0.05] mix-blend-overlay" />
+      </div>
+
       {/* Premium Hero Section */}
-      <div className="relative overflow-hidden border-b border-primary/10">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 via-background to-blue-600/5 -z-10" />
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/20 blur-3xl rounded-full opacity-50 -z-10" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-500/10 blur-3xl rounded-full opacity-50 -z-10" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 text-center relative z-10">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 dark:bg-white/5 border border-black/5 dark:border-white/10 backdrop-blur-xl mb-8 shadow-sm">
+            <span className="flex h-2 w-2 rounded-full bg-blue-600 animate-pulse"></span>
+            <span className="text-xs font-semibold tracking-wide uppercase text-gray-800 dark:text-gray-200">Premium IT & Security Solutions</span>
+          </div>
+        </motion.div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center relative z-10">
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <Badge className="mb-6 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 backdrop-blur-sm px-4 py-1.5 text-sm" variant="secondary">
-              <Zap className="h-4 w-4 mr-2 text-amber-500" /> Premium IT & Security Solutions
-            </Badge>
-          </motion.div>
-          
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400"
-          >
-            Empowering Your Business <br/> With Smart Tech
-          </motion.h1>
-          
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10"
-          >
-            From professional CCTV installation to advanced server setups, our certified technicians deliver fast, reliable, and cutting-edge services.
-          </motion.p>
-          
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }} 
-            animate={{ opacity: 1, scale: 1 }} 
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="max-w-xl mx-auto relative group"
-          >
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary to-blue-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
-            <div className="relative flex items-center">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input 
-                placeholder="Search services (e.g. CCTV, Networking)..." 
-                className="pl-12 h-14 text-base rounded-full shadow-lg bg-background/80 backdrop-blur-xl border-primary/20 focus-visible:ring-primary/50"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 text-gray-900 dark:text-white leading-[1.1]"
+        >
+          Empowering Your Business <br className="hidden md:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
+            With Smart Tech
+          </span>
+        </motion.h1>
+        
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-12 font-medium"
+        >
+          From professional CCTV installation to advanced server setups, our certified technicians deliver fast, reliable, and cutting-edge services.
+        </motion.p>
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-2xl mx-auto relative group"
+        >
+          <div className="absolute -inset-2 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition duration-700 pointer-events-none"></div>
+          <div className="relative flex items-center bg-white dark:bg-[#111118] p-2 rounded-full border border-gray-200 dark:border-gray-800 shadow-lg shadow-black/5 dark:shadow-black/20">
+            <div className="pl-4 pr-2">
+              <Search className="h-5 w-5 text-gray-400" />
             </div>
-          </motion.div>
-        </div>
+            <Input 
+              placeholder="Search services (e.g. CCTV, Networking)..." 
+              className="flex-1 h-12 text-base border-0 focus-visible:ring-0 bg-transparent px-2 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Button className="h-12 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">
+              Search
+            </Button>
+          </div>
+        </motion.div>
       </div>
 
       {/* Trust & Features Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            { title: "Fast Response", desc: "Quick support when you need it most", icon: Clock, color: "text-blue-500", bg: "bg-blue-500/10" },
-            { title: "Certified Experts", desc: "Highly trained IT & Security professionals", icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-            { title: "Quality Guarantee", desc: "100% satisfaction on all our services", icon: CheckCircle2, color: "text-primary", bg: "bg-primary/10" }
+            { title: "Fast Response", desc: "Quick support when you need it most", icon: Clock, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/20" },
+            { title: "Certified Experts", desc: "Highly trained IT & Security professionals", icon: ShieldCheck, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+            { title: "Quality Guarantee", desc: "100% satisfaction on all our services", icon: CheckCircle2, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-900/20" }
           ].map((feature, i) => (
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
               whileInView={{ opacity: 1, y: 0 }} 
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
               key={i} 
-              className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-white/[0.02] border border-border/50 hover:shadow-md transition-shadow"
+              className="flex items-center gap-5 p-5 rounded-3xl bg-white/60 dark:bg-[#111118]/60 backdrop-blur-xl border border-gray-100 dark:border-gray-800/60 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 transition-all duration-300"
             >
-              <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${feature.bg}`}>
-                <feature.icon className={`h-6 w-6 ${feature.color}`} />
+              <div className={`h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 ${feature.bg}`}>
+                <feature.icon className={`h-7 w-7 ${feature.color}`} />
               </div>
               <div>
-                <h3 className="font-bold">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                <h3 className="font-bold text-gray-900 dark:text-white text-lg">{feature.title}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{feature.desc}</p>
               </div>
             </motion.div>
           ))}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 pt-8">
         
         {/* Category Filter Pills */}
-        <div className="flex flex-wrap gap-2 justify-center mb-10">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                activeCategory === cat 
-                ? "bg-primary text-white shadow-md shadow-primary/20 scale-105" 
-                : "bg-white dark:bg-white/5 border border-border hover:border-primary/50 text-foreground hover:text-primary"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-3 justify-center mb-12">
+          {CATEGORIES.map((cat) => {
+            const isActive = activeCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
+                  isActive 
+                  ? "text-white shadow-lg shadow-blue-600/20 scale-105" 
+                  : "bg-white dark:bg-[#111118] border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                {isActive && <div className="absolute inset-0 bg-blue-600 z-0" />}
+                <span className="relative z-10">{cat}</span>
+              </button>
+            )
+          })}
         </div>
 
         {/* Services Grid */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary" />
-            <p className="text-lg font-medium">Loading premium services...</p>
+          <div className="flex flex-col items-center justify-center py-32">
+            <Loader2 className="h-10 w-10 animate-spin mb-4 text-blue-600" />
+            <p className="text-lg font-medium text-gray-500">Loading premium services...</p>
           </div>
         ) : filteredServices.length === 0 ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 bg-white dark:bg-white/[0.02] rounded-3xl border border-dashed border-border shadow-sm">
-            <Wrench className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-2xl font-bold mb-2">No services found</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">We couldn't find any services matching your filters. Please try another category or search term.</p>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-24 bg-white/50 dark:bg-[#111118]/50 backdrop-blur-sm rounded-[3rem] border border-dashed border-gray-300 dark:border-gray-800">
+            <Wrench className="h-16 w-16 mx-auto text-gray-300 dark:text-gray-700 mb-6" />
+            <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">No services found</h3>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">We couldn't find any services matching your filters. Please try another category or search term.</p>
             {(search || activeCategory !== "All") && (
-              <Button onClick={() => { setSearch(""); setActiveCategory("All"); }} className="mt-6 rounded-full">
+              <Button onClick={() => { setSearch(""); setActiveCategory("All"); }} className="mt-8 rounded-full h-11 px-6">
                 Clear Filters
               </Button>
             )}
           </motion.div>
         ) : (
           <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <AnimatePresence>
-              {filteredServices.map((service) => (
+            <AnimatePresence mode="popLayout">
+              {filteredServices.map((service, i) => (
                 <motion.div
                   layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  transition={{ duration: 0.4, delay: i * 0.05 }}
                   key={service.id}
+                  className="h-full"
                 >
-                  <Card className="flex flex-col h-full overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 bg-white/80 dark:bg-[#0a0616]/80 backdrop-blur-xl border-border/60 hover:border-primary/40 group">
+                  <Card className="flex flex-col h-full overflow-hidden border-0 bg-white dark:bg-[#111118] shadow-sm hover:shadow-2xl hover:shadow-blue-900/5 dark:hover:shadow-blue-900/20 transition-all duration-500 group rounded-[2rem] ring-1 ring-gray-100 dark:ring-gray-800/60">
                     {service.image_url ? (
-                      <div className="h-52 w-full overflow-hidden bg-muted relative">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+                      <div className="h-56 w-full overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent z-10" />
                         <img 
                           src={service.image_url} 
                           alt={service.name} 
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
-                        <Badge className="absolute bottom-3 left-3 z-20 bg-primary/90 hover:bg-primary text-white border-none shadow-lg backdrop-blur-md">
-                          {service.category || "General"}
-                        </Badge>
+                        <div className="absolute bottom-4 left-4 z-20">
+                          <Badge className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-md border border-white/20 font-medium px-3 py-1 text-xs">
+                            {service.category || "General"}
+                          </Badge>
+                        </div>
                       </div>
                     ) : (
-                      <div className="h-52 w-full bg-gradient-to-br from-primary/5 to-primary/10 flex flex-col items-center justify-center text-primary relative overflow-hidden">
-                        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:16px_16px]" />
-                        <CategoryIcon category={service.category} className="h-20 w-20 mb-3 opacity-40 group-hover:scale-110 transition-transform duration-500 group-hover:opacity-60" />
-                        <Badge className="absolute bottom-3 left-3 z-20 bg-background/80 text-foreground border-border/50 backdrop-blur-md">
-                          {service.category || "Service"}
-                        </Badge>
+                      <div className="h-56 w-full bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 flex flex-col items-center justify-center relative overflow-hidden group-hover:from-blue-100 group-hover:to-indigo-100 dark:group-hover:from-blue-900/40 dark:group-hover:to-indigo-900/40 transition-colors duration-500">
+                        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1'/%3E%3Ccircle cx='13' cy='13' r='1'/%3E%3C/g%3E%3C/svg%3E\")" }} />
+                        <div className="relative z-10 bg-white dark:bg-[#111118] p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+                          <CategoryIcon category={service.category} className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="absolute bottom-4 left-4 z-20">
+                          <Badge className="bg-white/80 dark:bg-black/50 text-gray-900 dark:text-white backdrop-blur-md border border-gray-200 dark:border-gray-700 font-medium px-3 py-1 text-xs">
+                            {service.category || "Service"}
+                          </Badge>
+                        </div>
                       </div>
                     )}
                     
-                    <CardHeader className="flex-none pt-5 pb-2">
-                      <div className="flex justify-between items-start mb-2">
-                        <CardTitle className="text-xl font-bold leading-tight group-hover:text-primary transition-colors">{service.name}</CardTitle>
+                    <div className="flex-grow p-6">
+                      <div className="flex flex-col h-full">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{service.name}</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed line-clamp-3 mb-6 flex-grow">
+                          {service.description || "Top-tier professional service tailored to your business needs. Designed for reliability and performance."}
+                        </p>
+                        <div className="pt-4 border-t border-gray-100 dark:border-gray-800/60 mt-auto flex items-center justify-between">
+                          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Starting at</span>
+                          <span className="font-extrabold text-xl text-gray-900 dark:text-white">
+                            {service.price > 0 ? `৳${service.price.toLocaleString()}` : "Ask Price"}
+                          </span>
+                        </div>
                       </div>
-                      <div className="font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 dark:from-primary dark:to-blue-400">
-                        {service.price > 0 ? `৳${service.price.toLocaleString()}` : "Ask for Price"}
-                      </div>
-                    </CardHeader>
+                    </div>
                     
-                    <CardContent className="flex-grow">
-                      <p className="text-muted-foreground text-sm line-clamp-3 leading-relaxed">
-                        {service.description || "Top-tier professional service tailored to your business needs."}
-                      </p>
-                    </CardContent>
-                    
-                    <CardFooter className="pt-4 pb-5 border-t border-border/30 bg-muted/10">
+                    <div className="p-4 pt-0">
                       <Dialog open={openDialog === service.id} onOpenChange={(open) => setOpenDialog(open ? service.id : null)}>
                         <DialogTrigger asChild>
-                          <Button className="w-full rounded-xl h-11 font-semibold group/btn overflow-hidden relative">
-                            <span className="relative z-10 flex items-center">
-                              Request Service
-                              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                            </span>
-                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300 ease-in-out" />
+                          <Button className="w-full rounded-xl h-12 font-semibold bg-gray-50 hover:bg-blue-600 text-gray-900 hover:text-white dark:bg-gray-800 dark:text-white dark:hover:bg-blue-600 transition-all duration-300 group/btn">
+                            Request Service
+                            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                           </Button>
                         </DialogTrigger>
                         
-                        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl border-border/50 backdrop-blur-3xl bg-background/95">
-                          <DialogHeader>
-                            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                              <Zap className="h-5 w-5 text-amber-500" />
-                              Request {service.name}
-                            </DialogTitle>
-                            <DialogDescription className="text-base">
-                              Fill out the form below and our certified team will contact you to confirm the service details.
-                            </DialogDescription>
-                          </DialogHeader>
+                        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-[2rem] border-0 shadow-2xl p-0 overflow-hidden bg-white dark:bg-[#111118]">
+                          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-6 text-white relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                              <CategoryIcon category={service.category} className="h-32 w-32 -mt-10 -mr-10" />
+                            </div>
+                            <DialogHeader className="relative z-10 text-left">
+                              <DialogTitle className="text-2xl font-bold text-white mb-2">Request {service.name}</DialogTitle>
+                              <DialogDescription className="text-blue-100 text-sm">
+                                Fill out the details below. Our technical experts will get back to you shortly to discuss requirements.
+                              </DialogDescription>
+                            </DialogHeader>
+                          </div>
                           
-                          <form onSubmit={(e) => handleSubmit(e, service)} className="space-y-4 mt-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="name" className="font-semibold">Your Name <span className="text-destructive">*</span></Label>
+                          <form onSubmit={(e) => handleSubmit(e, service)} className="p-6 space-y-5">
+                            <div className="space-y-1.5">
+                              <Label htmlFor="name" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Full Name <span className="text-red-500">*</span></Label>
                               <Input 
                                 id="name" 
-                                placeholder="John Doe" 
-                                className="h-11 rounded-xl bg-muted/50 border-transparent focus-visible:bg-background"
+                                placeholder="e.g. John Doe" 
+                                className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600"
                                 value={form.customer_name}
                                 onChange={(e) => setForm({...form, customer_name: e.target.value})}
                                 required
@@ -321,63 +341,63 @@ export default function PublicServices() {
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="phone" className="font-semibold">Phone Number <span className="text-destructive">*</span></Label>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Phone <span className="text-red-500">*</span></Label>
                                 <Input 
                                   id="phone" 
                                   placeholder="017xxxxxxxx" 
-                                  className="h-11 rounded-xl bg-muted/50 border-transparent focus-visible:bg-background"
+                                  className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600"
                                   value={form.phone}
                                   onChange={(e) => setForm({...form, phone: e.target.value})}
                                   required
                                 />
                               </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="email" className="font-semibold">Email (Optional)</Label>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Email <span className="text-gray-400 font-normal">(Optional)</span></Label>
                                 <Input 
                                   id="email" 
                                   type="email" 
-                                  placeholder="john@example.com" 
-                                  className="h-11 rounded-xl bg-muted/50 border-transparent focus-visible:bg-background"
+                                  placeholder="john@email.com" 
+                                  className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600"
                                   value={form.email}
                                   onChange={(e) => setForm({...form, email: e.target.value})}
                                 />
                               </div>
                             </div>
 
-                            <div className="space-y-2">
-                              <Label htmlFor="desc" className="font-semibold">Additional Details</Label>
+                            <div className="space-y-1.5">
+                              <Label htmlFor="desc" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Additional Context</Label>
                               <Textarea 
                                 id="desc" 
-                                placeholder="Please tell us about your requirement..." 
+                                placeholder="Any specific requirements or details..." 
                                 rows={3}
-                                className="rounded-xl bg-muted/50 border-transparent focus-visible:bg-background resize-none"
+                                className="rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600 resize-none py-3"
                                 value={form.description}
                                 onChange={(e) => setForm({...form, description: e.target.value})}
                               />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="date" className="font-semibold">Preferred Date (Optional)</Label>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="date" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Preferred Date</Label>
                                 <Input 
                                   id="date" 
                                   type="date" 
-                                  className="h-11 rounded-xl bg-muted/50 border-transparent focus-visible:bg-background"
+                                  className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600"
                                   value={form.preferred_date}
                                   onChange={(e) => setForm({...form, preferred_date: e.target.value})}
                                 />
                               </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="urgency" className="font-semibold">Urgency</Label>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="urgency" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Priority</Label>
                                 <Select 
                                   value={form.urgency} 
                                   onValueChange={(val) => setForm({...form, urgency: val})}
                                 >
-                                  <SelectTrigger id="urgency" className="h-11 rounded-xl bg-muted/50 border-transparent focus-visible:bg-background">
+                                  <SelectTrigger id="urgency" className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600">
                                     <SelectValue />
                                   </SelectTrigger>
-                                  <SelectContent className="rounded-xl">
+                                  <SelectContent className="rounded-xl border-gray-200 dark:border-gray-800 shadow-xl">
                                     <SelectItem value="normal">Normal</SelectItem>
                                     <SelectItem value="urgent">Urgent</SelectItem>
                                     <SelectItem value="emergency">Emergency</SelectItem>
@@ -386,21 +406,14 @@ export default function PublicServices() {
                               </div>
                             </div>
 
-                            <div className="bg-primary/5 p-4 rounded-xl flex items-start gap-3 mt-4 border border-primary/10">
-                              <Clock className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                              <p className="text-sm text-muted-foreground">
-                                Our support team typically responds within <strong className="text-foreground">2 hours</strong>. For emergencies, please use the WhatsApp button on the bottom right.
-                              </p>
-                            </div>
-
                             <Button 
                               type="submit" 
-                              className="w-full h-12 rounded-xl text-base font-bold mt-4 shadow-lg shadow-primary/20" 
+                              className="w-full h-12 rounded-xl text-base font-bold mt-6 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20" 
                               disabled={submitRequest.isPending}
                             >
                               {submitRequest.isPending ? (
                                 <>
-                                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Submitting Request...
+                                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
                                 </>
                               ) : (
                                 "Submit Request"
@@ -409,7 +422,7 @@ export default function PublicServices() {
                           </form>
                         </DialogContent>
                       </Dialog>
-                    </CardFooter>
+                    </div>
                   </Card>
                 </motion.div>
               ))}
@@ -425,13 +438,11 @@ export default function PublicServices() {
         rel="noopener noreferrer"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 1, type: "spring" }}
-        className="fixed bottom-6 right-6 z-50 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white px-5 py-3.5 rounded-full shadow-2xl hover:shadow-[#25D366]/40 transition-all duration-300 hover:-translate-y-1 group"
+        transition={{ delay: 0.5, type: "spring", stiffness: 200, damping: 20 }}
+        className="fixed bottom-6 right-6 z-50 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1DA851] text-white px-5 py-4 rounded-full shadow-2xl hover:shadow-[#25D366]/30 transition-all duration-300 hover:-translate-y-1 group border border-[#25D366]/50"
       >
         <MessageCircle className="h-6 w-6" />
-        <span className="font-bold hidden md:block">WhatsApp Support</span>
-        
-        {/* Pulse effect */}
+        <span className="font-bold hidden md:block">Chat on WhatsApp</span>
         <span className="absolute -inset-2 rounded-full border-2 border-[#25D366] opacity-0 group-hover:animate-ping" />
       </motion.a>
 
