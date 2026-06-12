@@ -39,8 +39,8 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
             </div>
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "150px", backgroundColor: "#1e3a8a", borderRadius: "8px", padding: "10px 16px" }}>
-              <span style={{ fontSize: "18px", lineHeight: 1, fontWeight: 900, color: "#ffffff", whiteSpace: "nowrap", fontFamily: "Helvetica, Arial, sans-serif", letterSpacing: "0.06em", display: "inline-block" }}>INVOICE</span>
+            <div style={{ backgroundColor: "#1e3a8a", borderRadius: "8px", padding: "10px 16px", textAlign: "center", minWidth: "140px" }}>
+              <span style={{ fontSize: "18px", fontWeight: "bold", color: "#ffffff", fontFamily: "Arial, sans-serif" }}>INVOICE</span>
             </div>
             <p style={{ fontFamily: "monospace", fontSize: "13px", fontWeight: 700, marginTop: "6px", color: "#1f2937" }}>{invoice.invoice_number}</p>
             <div style={{ marginTop: "4px", fontSize: "10px", color: "#6b7280" }}>
