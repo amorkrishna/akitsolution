@@ -54,11 +54,11 @@ export function LiveSalesPopup() {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, y: 50, scale: 0.9 }}
+          initial={{ opacity: 0, y: -50, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.9 }}
+          exit={{ opacity: 0, y: -20, scale: 0.9 }}
           transition={{ duration: 0.4, type: "spring" }}
-          className="fixed bottom-24 sm:bottom-8 right-4 sm:right-6 z-[60] max-w-xs w-full bg-white dark:bg-[#111118] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-2xl shadow-black/10 dark:shadow-black/40 flex gap-3 items-start cursor-pointer"
+          className="fixed top-20 sm:top-24 right-4 sm:right-6 z-[60] w-[calc(100%-2rem)] sm:max-w-xs bg-white dark:bg-[#111118] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-2xl shadow-black/10 dark:shadow-black/40 flex gap-3 items-start cursor-pointer"
           onClick={() => setIsVisible(false)}
         >
           <div className="bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-full shrink-0 mt-1">

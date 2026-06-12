@@ -27,6 +27,7 @@ import { AIChatWidget } from "@/components/store/AIChatWidget";
 import { ParticleGlobe } from "@/components/store/ParticleGlobe";
 import { HeroBannerCarousel } from "@/components/store/HeroBannerCarousel";
 import { TopBar } from "@/components/store/TopBar";
+import { MobileMenu } from "@/components/store/MobileMenu";
 import { CompareDrawer } from "@/components/store/CompareDrawer";
 import { CompareModal } from "@/components/store/CompareModal";
 import { useSearchParams } from "react-router-dom";
@@ -514,88 +515,52 @@ export default function Store() {
       {/* Navigation */}
       <header className={`sticky top-0 z-50 border-b backdrop-blur-xl ${headerBg}`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          {/* Mobile Layout */}
-          <div className="flex sm:hidden items-center justify-between h-14">
+          {/* Mobile & Tablet Layout */}
+          <div className="flex md:hidden items-center justify-between h-16">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="relative flex-shrink-0">
+              <div className="relative flex-shrink-0 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500 to-indigo-400 rounded-xl opacity-50 blur-sm" />
-                <img src={logoSrc} alt={settings.company_name} className="relative h-9 w-9 rounded-xl object-contain bg-white/10 p-0.5 ring-1.5 ring-violet-500/30" />
+                <img src={logoSrc} alt={settings.company_name} className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl object-contain bg-white/10 p-0.5 ring-1.5 ring-violet-500/30" />
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className={`text-[13px] font-bold tracking-tight truncate leading-tight ${textPrimary}`}>{settings.company_name}</h1>
-                <p className={`text-[8px] ${textAccent} font-medium truncate leading-tight mt-0.5`}>{settings.company_tagline}</p>
+              <div className="min-w-0 flex-1 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
+                <h1 className={`text-[14px] sm:text-base font-bold tracking-tight truncate leading-tight ${textPrimary}`}>{settings.company_name}</h1>
+                <p className={`text-[9px] sm:text-[10px] ${textAccent} font-medium truncate leading-tight mt-0.5`}>{settings.company_tagline}</p>
               </div>
             </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              {/* Language Selector */}
-              <div className={`flex items-center rounded-full p-0.5 border ${
-                isDark ? "bg-white/5 border-white/10" : "bg-gray-200/50 border-gray-300"
-              }`}>
-                <button
-                  onClick={() => setLang("bn")}
-                  className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold transition-all ${
-                    lang === "bn" 
-                    ? "bg-primary text-white shadow-sm" 
-                    : isDark ? "text-white/40 hover:text-white/60" : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  BN
-                </button>
-                <button
-                  onClick={() => setLang("en")}
-                  className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold transition-all ${
-                    lang === "en" 
-                    ? "bg-primary text-white shadow-sm" 
-                    : isDark ? "text-white/40 hover:text-white/60" : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  EN
-                </button>
-              </div>
-
-              {/* Theme Selector */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`h-7 w-7 rounded-full ${
-                  isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200"
-                }`}
-                onClick={() => setTheme(isDark ? "light" : "dark")}
-              >
-                {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-              </Button>
-
+            
+            {/* Clean Mobile Controls (Only Search, Cart, Menu) */}
+            <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => { setActiveTab("products"); setSearchOpen(true); }}
-                className={`h-7 w-7 rounded-md flex items-center justify-center transition-all ${isDark ? "bg-white/5 hover:bg-white/10 text-white/70" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
+                className={`h-9 w-9 sm:h-10 sm:w-10 rounded-md flex items-center justify-center transition-all ${isDark ? "bg-white/5 hover:bg-white/10 text-white/70" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
               >
-                <Search className="h-3 w-3" />
+                <Search className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
+              
               <button
                 onClick={() => setCartOpen(true)}
-                className={`h-7 w-7 rounded-md flex items-center justify-center relative transition-all ${isDark ? "bg-white/5 hover:bg-white/10 text-white/70" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
+                className={`h-9 w-9 sm:h-10 sm:w-10 rounded-md flex items-center justify-center relative transition-all ${isDark ? "bg-white/5 hover:bg-white/10 text-white/70" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
               >
-                <ShoppingCart className="h-3 w-3" />
+                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                 {totalItems() > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[8px] font-bold text-white flex items-center justify-center">{totalItems()}</span>
+                  <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center border-2 border-[#080510] dark:border-[#080510]">{totalItems()}</span>
                 )}
               </button>
-              <a 
-                href={`https://wa.me/${settings?.whatsapp_number || "8801919060590"}?text=${encodeURIComponent(lang === "bn" ? "আসসালামু আলাইকুম, আমি আপনার প্রোডাক্ট সম্পর্কে জানতে চাই।" : "Hello, I want to know about your products.")}`}
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="h-7 w-7 rounded-md flex items-center justify-center bg-[#25D366] text-white shadow-md shadow-[#25D366]/25 hover:bg-[#128C7E] transition-all"
-              >
-                <MessageCircle className="h-3 w-3" />
-              </a>
-              <a href="/our-services" className={`h-7 px-2 rounded-md flex items-center gap-1 text-[10px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/25 transition-all`}>
-                <Wrench className="h-3 w-3" />
-              </a>
-              <a href="/auth" className={`text-[8px] px-1 py-0.5 ${isDark ? "text-white/20 hover:text-white/40" : "text-gray-300 hover:text-gray-400"} transition-colors`}>•</a>
+
+              <div className="ml-1">
+                <MobileMenu 
+                  lang={lang} 
+                  setLang={setLang} 
+                  theme={theme} 
+                  setTheme={setTheme} 
+                  isDark={isDark} 
+                  settings={settings} 
+                />
+              </div>
             </div>
           </div>
           {/* Desktop Layout */}
-          <div className="hidden sm:flex items-center justify-between h-20">
+          <div className="hidden md:flex items-center justify-between h-20">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="relative flex-shrink-0">
                 <div className="absolute -inset-1.5 bg-gradient-to-r from-violet-500 to-indigo-400 rounded-2xl opacity-60 blur-md" />

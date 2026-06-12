@@ -167,12 +167,12 @@ export default function PublicServices() {
       </div>
 
       {/* Premium Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 text-center relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-6 sm:pb-12 text-center relative z-10">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
-          <h1 className={`text-4xl md:text-6xl font-extrabold tracking-tight mb-6 leading-[1.1] ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          <h1 className={`text-3xl sm:text-4xl md:text-6xl font-extrabold tracking-tight mb-4 sm:mb-6 leading-[1.2] sm:leading-[1.1] ${isDark ? 'text-white' : 'text-gray-900'}`}>
             {lang === "bn" ? "আমাদের" : "Our"} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">{lang === "bn" ? "সার্ভিসসমূহ" : "Services"}</span>
           </h1>
-          <p className={`text-lg max-w-2xl mx-auto mb-10 font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+          <p className={`text-sm sm:text-lg max-w-2xl mx-auto mb-6 sm:mb-10 font-medium px-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             {lang === "bn" ? "আমাদের সেরা আইটি, নেটওয়ার্কিং এবং সিকিউরিটি সলিউশন এক্সপ্লোর করুন।" : "Explore our premium range of IT, networking, and security solutions."}
           </p>
         </motion.div>
@@ -181,20 +181,20 @@ export default function PublicServices() {
           initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-2xl mx-auto relative group"
+          className="max-w-2xl mx-auto relative group px-2 sm:px-0"
         >
           <div className="absolute -inset-2 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition duration-700 pointer-events-none"></div>
-          <div className={`relative flex items-center p-2 rounded-full border shadow-lg ${isDark ? 'bg-[#111118] border-gray-800 shadow-black/20' : 'bg-white border-gray-200 shadow-black/5'}`}>
-            <div className="pl-4 pr-2">
-              <Search className={`h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+          <div className={`relative flex items-center p-1.5 sm:p-2 rounded-full border shadow-lg ${isDark ? 'bg-[#111118] border-gray-800 shadow-black/20' : 'bg-white border-gray-200 shadow-black/5'}`}>
+            <div className="pl-3 sm:pl-4 pr-1 sm:pr-2">
+              <Search className={`h-4 w-4 sm:h-5 sm:w-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
             </div>
             <Input 
-              placeholder={lang === "bn" ? "যেকোনো সার্ভিস খুঁজুন..." : "Search for a service..."}
-              className={`flex-1 h-12 text-base border-0 focus-visible:ring-0 bg-transparent px-2 ${isDark ? 'placeholder:text-gray-500 text-white' : 'placeholder:text-gray-400 text-gray-900'}`}
+              placeholder={lang === "bn" ? "সার্ভিস খুঁজুন..." : "Search for a service..."}
+              className={`flex-1 h-10 sm:h-12 text-sm sm:text-base border-0 focus-visible:ring-0 bg-transparent px-2 ${isDark ? 'placeholder:text-gray-500 text-white' : 'placeholder:text-gray-400 text-gray-900'}`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <Button className="h-12 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">
+            <Button className="h-10 sm:h-12 px-4 sm:px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm sm:text-base transition-colors">
               {lang === "bn" ? "খুঁজুন" : "Search"}
             </Button>
           </div>
@@ -248,14 +248,14 @@ export default function PublicServices() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 pt-8">
         
         {/* Category Filter Pills */}
-        <div className="flex flex-wrap gap-3 justify-center mb-12">
+        <div className="flex overflow-x-auto sm:flex-wrap gap-2 sm:gap-3 sm:justify-center mb-8 sm:mb-12 pb-2 sm:pb-0 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {CATEGORIES.map((cat) => {
             const isActive = activeCategory === cat;
             return (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
+                className={`snap-center flex-shrink-0 whitespace-nowrap px-5 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
                   isActive 
                   ? "text-white shadow-lg shadow-blue-600/20 scale-105" 
                   : "bg-white dark:bg-[#111118] border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700 hover:text-gray-900 dark:hover:text-white"
@@ -476,7 +476,7 @@ export default function PublicServices() {
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.5, type: "spring", stiffness: 200, damping: 20 }}
-        className="fixed bottom-6 right-6 z-50 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1DA851] text-white px-5 py-4 rounded-full shadow-2xl hover:shadow-[#25D366]/30 transition-all duration-300 hover:-translate-y-1 group border border-[#25D366]/50"
+        className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1DA851] text-white px-4 sm:px-5 py-3 sm:py-4 rounded-full shadow-2xl hover:shadow-[#25D366]/30 transition-all duration-300 hover:-translate-y-1 group border border-[#25D366]/50"
       >
         <MessageCircle className="h-6 w-6" />
         <span className="font-bold hidden md:block">{lang === "bn" ? "হোয়াটসঅ্যাপে চ্যাট করুন" : "Chat on WhatsApp"}</span>
