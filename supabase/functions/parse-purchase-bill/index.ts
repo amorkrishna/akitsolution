@@ -33,25 +33,25 @@ Respond ONLY with a valid JSON object without markdown formatting.
 Expected JSON schema:
 {
   "supplier_name": "Name of the supplier or distributor (String, leave empty if not found)",
-  "total_cost": 0, // Total amount in the bill
-  "purchase_date": "YYYY-MM-DD", // Date of the bill
+  "total_cost": 0,
+  "purchase_date": "YYYY-MM-DD",
   "items": [
     {
       "product_name": "Full name of the product",
-      "quantity": 1, // Number
-      "unit_price": 0, // Number
-      "total_price": 0 // Number
+      "quantity": 1,
+      "unit_price": 0,
+      "total_price": 0
     }
   ]
 }`;
 
     const body = {
-      system_instruction: { parts: [{ text: systemPrompt }] },
+      systemInstruction: { parts: [{ text: systemPrompt }] },
       contents: [{
         role: "user",
         parts: [
           { text: "Extract the data from this bill." },
-          { inline_data: { mime_type: mimeType, data: imageBase64 } }
+          { inlineData: { mimeType: mimeType, data: imageBase64 } }
         ]
       }],
       generationConfig: {
@@ -74,7 +74,6 @@ Expected JSON schema:
     const json = await res.json();
     const content = json?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
     
-    // Parse the JSON string from Gemini
     const parsedData = JSON.parse(content);
 
     return new Response(JSON.stringify({ data: parsedData }), {
