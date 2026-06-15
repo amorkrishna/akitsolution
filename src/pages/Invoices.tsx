@@ -138,7 +138,7 @@ export default function Invoices() {
       await new Promise(r => setTimeout(r, 100));
 
       const canvas = await html2canvas(el, {
-        scale: 4, // Increased scale for high-quality, crisp text
+        scale: window.innerWidth < 768 ? 2 : 3, // Reduced scale for mobile to prevent memory limits and slow generation
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
@@ -148,22 +148,35 @@ export default function Invoices() {
         wrapper.style.opacity = originalOpacity;
       }
 
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/jpeg", 0.90);
       const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const imgHeight = (canvas.height * pdfWidth) / canvas.width;
       
-      let heightLeft = imgHeight;
+      let finalImgHeight = imgHeight;
+      let finalPdfWidth = pdfWidth;
+      let xOffset = 0;
+
+      // Auto-scaling: If the bill is taller than a single page, but not extremely long
+      // (up to 1.8x the page height), shrink it so it fits on exactly 1 page.
+      if (imgHeight > pageHeight && imgHeight <= pageHeight * 1.8) {
+        const scaleFactor = pageHeight / imgHeight;
+        finalImgHeight = pageHeight;
+        finalPdfWidth = pdfWidth * scaleFactor;
+        xOffset = (pdfWidth - finalPdfWidth) / 2; // Center horizontally
+      }
+
+      let heightLeft = finalImgHeight;
       let position = 0;
 
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      pdf.addImage(imgData, "JPEG", xOffset, position, finalPdfWidth, finalImgHeight);
       heightLeft -= pageHeight;
 
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
+        position = heightLeft - finalImgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        pdf.addImage(imgData, "JPEG", xOffset, position, finalPdfWidth, finalImgHeight);
         heightLeft -= pageHeight;
       }
 
@@ -200,7 +213,7 @@ export default function Invoices() {
       const { data: invItems } = await supabase.from("invoice_items").select("*").eq("invoice_id", inv.id);
       const fullInvoice = { ...inv, items: invItems || [] };
       setPreviewInvoice(fullInvoice);
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 300));
       const el = document.getElementById("invoice-print");
       if (!el) { toast({ title: "Error generating PDF", variant: "destructive" }); return; }
 
@@ -237,7 +250,7 @@ export default function Invoices() {
       fullInvoice.clients = clientRow;
 
       setPreviewInvoice(fullInvoice);
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 300));
       const el = document.getElementById("invoice-print");
       if (!el) { toast({ title: "Error generating PDF", variant: "destructive" }); return; }
 

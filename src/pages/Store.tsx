@@ -59,8 +59,8 @@ import { StoreFeatures } from '@/components/store/StoreFeatures';
 import { StoreSearchDialog } from '@/components/store/StoreSearchDialog';
 import { StoreCartDrawer } from '@/components/store/StoreCartDrawer';
 import { StoreCheckoutDialog } from '@/components/store/StoreCheckoutDialog';
-import { LiveSalesPopup } from "@/components/marketing/LiveSalesPopup";
-import { LeadCapturePopup } from "@/components/marketing/LeadCapturePopup";
+// import { LiveSalesPopup } from "@/components/marketing/LiveSalesPopup";
+// import { LeadCapturePopup } from "@/components/marketing/LeadCapturePopup";
 
 export default function Store() {
   const [search, setSearch] = useState("");
@@ -1317,9 +1317,9 @@ export default function Store() {
         addToCart={handleAddToCart}
       />
 
-      {/* Marketing & CRO Components */}
-      <LiveSalesPopup />
-      <LeadCapturePopup />
+      {/* Marketing & CRO Components Disabled by user request */}
+      {/* <LiveSalesPopup /> */}
+      {/* <LeadCapturePopup /> */}
     </div>
   );
 }

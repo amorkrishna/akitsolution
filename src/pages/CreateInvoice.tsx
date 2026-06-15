@@ -36,7 +36,7 @@ export default function CreateInvoice() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { settings } = useCompanySettings();
-  const [form, setForm] = useState({ client_id: "", status: "draft", notes: "", tax_rate: "0", invoice_number: "" });
+  const [form, setForm] = useState({ client_id: "", status: "draft", notes: "", tax_rate: "0", invoice_number: "", paid_amount: "0" });
   const [dueDate, setDueDate] = useState<Date>(new Date());
   const [items, setItems] = useState<LineItem[]>([]);
   const [clientMode, setClientMode] = useState<"select" | "type">("select");
@@ -82,6 +82,7 @@ export default function CreateInvoice() {
         notes: inv.notes || "",
         tax_rate: String(inv.tax_rate),
         invoice_number: inv.invoice_number,
+        paid_amount: String(inv.paid_amount || 0),
       });
       if (inv.due_date) setDueDate(new Date(inv.due_date));
       if (inv.client_id) setClientMode("select");
@@ -130,6 +131,8 @@ export default function CreateInvoice() {
   const taxRate = Number(form.tax_rate) || 0;
   const taxAmount = subtotal * (taxRate / 100);
   const total = subtotal + taxAmount;
+  const paidAmount = Number(form.paid_amount) || 0;
+  const dueAmount = Math.max(0, total - paidAmount);
 
   const handleBarcodeDetected = (sku: string) => {
     const product = products?.find(p => p.sku?.toLowerCase() === sku.toLowerCase() || p.name.toLowerCase() === sku.toLowerCase());
@@ -178,6 +181,7 @@ export default function CreateInvoice() {
           subtotal,
           tax_amount: taxAmount,
           total,
+          paid_amount: paidAmount,
         }).eq("id", editId);
         if (error) throw error;
 
@@ -213,6 +217,7 @@ export default function CreateInvoice() {
           subtotal,
           tax_amount: taxAmount,
           total,
+          paid_amount: paidAmount,
         }).select().single();
         if (error) throw error;
 
@@ -305,10 +310,14 @@ export default function CreateInvoice() {
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold text-muted-foreground">Tax Rate (%)</Label>
                     <Input type="number" value={form.tax_rate} onChange={(e) => setForm({ ...form, tax_rate: e.target.value })} className="bg-background" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-muted-foreground">Advance Paid (৳)</Label>
+                    <Input type="number" value={form.paid_amount} onChange={(e) => setForm({ ...form, paid_amount: e.target.value })} className="bg-background" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold text-muted-foreground">Status</Label>
@@ -346,6 +355,16 @@ export default function CreateInvoice() {
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground font-medium">Tax ({taxRate}%)</span>
                   <span className="font-bold text-accent">৳{taxAmount.toLocaleString()}</span>
+                </div>
+                {paidAmount > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground font-medium">Advance Paid</span>
+                    <span className="font-bold text-emerald-600">- ৳{paidAmount.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-base pt-2 border-t border-primary/10">
+                  <span className="text-muted-foreground font-semibold">Due Amount</span>
+                  <span className="font-bold text-destructive">৳{dueAmount.toLocaleString()}</span>
                 </div>
               </div>
             </CardContent>

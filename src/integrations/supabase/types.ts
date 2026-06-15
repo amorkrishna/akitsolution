@@ -713,6 +713,8 @@ export type Database = {
           tax_amount: number
           tax_rate: number
           total: number
+          paid_amount: number
+          payment_method: string | null
           updated_at: string
         }
         Insert: {
@@ -729,6 +731,8 @@ export type Database = {
           tax_amount?: number
           tax_rate?: number
           total?: number
+          paid_amount?: number
+          payment_method?: string | null
           updated_at?: string
         }
         Update: {
@@ -745,6 +749,8 @@ export type Database = {
           tax_amount?: number
           tax_rate?: number
           total?: number
+          paid_amount?: number
+          payment_method?: string | null
           updated_at?: string
         }
         Relationships: [

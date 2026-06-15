@@ -26,6 +26,7 @@ export function GenerateInvoiceDialog({ order, open, onOpenChange }: GenerateInv
   const [taxRate, setTaxRate] = useState<number>(0);
   const [taxLabel, setTaxLabel] = useState<string>("VAT");
   const [dueInDays, setDueInDays] = useState<number>(7);
+  const [paidAmount, setPaidAmount] = useState<number>(0);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export function GenerateInvoiceDialog({ order, open, onOpenChange }: GenerateInv
       setTaxRate(Number(settings?.default_tax_rate ?? 0));
       setTaxLabel("VAT");
       setDueInDays(7);
+      setPaidAmount(0);
     }
   }, [open, settings?.default_tax_rate]);
 
@@ -100,6 +102,7 @@ export function GenerateInvoiceDialog({ order, open, onOpenChange }: GenerateInv
           tax_rate: taxRate,
           tax_amount: taxAmount,
           total,
+          paid_amount: paidAmount,
           notes: `Generated from store order #${order.id.slice(0, 8)}${taxRate > 0 ? ` · ${taxLabel} ${taxRate}%` : ""}`,
         })
         .select("id, invoice_number")
@@ -201,7 +204,7 @@ export function GenerateInvoiceDialog({ order, open, onOpenChange }: GenerateInv
           </div>
 
           {/* Tax & due controls */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="tax-label" className="text-xs">Tax label</Label>
               <Input
@@ -236,6 +239,17 @@ export function GenerateInvoiceDialog({ order, open, onOpenChange }: GenerateInv
                 className="h-9"
               />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="paid-amount" className="text-xs">Advance Paid (৳)</Label>
+              <Input
+                id="paid-amount"
+                type="number"
+                min={0}
+                value={paidAmount}
+                onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
+                className="h-9"
+              />
+            </div>
           </div>
 
           {/* Totals */}
@@ -251,6 +265,16 @@ export function GenerateInvoiceDialog({ order, open, onOpenChange }: GenerateInv
             <div className="border-t pt-1.5 mt-1.5 flex items-center justify-between">
               <span className="font-semibold">Total</span>
               <span className="text-lg font-bold text-primary">৳{total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+            </div>
+            {paidAmount > 0 && (
+              <div className="flex items-center justify-between text-sm text-emerald-600">
+                <span className="font-medium">Advance Paid</span>
+                <span className="font-bold">- ৳{paidAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              </div>
+            )}
+            <div className="border-t pt-1.5 mt-1.5 flex items-center justify-between">
+              <span className="font-semibold text-destructive">Due Amount</span>
+              <span className="text-lg font-bold text-destructive">৳{Math.max(0, total - paidAmount).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
             </div>
           </div>
 
