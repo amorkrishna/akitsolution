@@ -11,7 +11,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { imageBase64, mimeType } = await req.json();
+    const { imageBase64, mimeType, existingProducts } = await req.json();
 
     if (!imageBase64 || !mimeType) {
       return new Response(JSON.stringify({ error: "imageBase64 and mimeType are required" }), {
@@ -26,6 +26,11 @@ serve(async (req) => {
       });
     }
 
+    let productsContext = "";
+    if (existingProducts && Array.isArray(existingProducts) && existingProducts.length > 0) {
+      productsContext = `\n\nHere is the list of existing products in the database:\n${JSON.stringify(existingProducts)}\n\nFor each item in the bill, try your best to find a matching product from this list. If you find a strong match (even if the bill name is a shorter or variant version of the database name), include its "id" as "product_id" in the output item. If no good match exists, set "product_id" to null. Also, guess a suitable "category" for every item (e.g., CCTV, Networking, Access Control, Accessories, Cables, Router, DVR, NVR, etc.).`;
+    }
+
     const systemPrompt = `You are an expert data extraction assistant for an IT hardware store.
 Your task is to analyze the provided purchase bill/invoice image and extract structured data.
 Respond ONLY with a valid JSON object without markdown formatting.
@@ -37,13 +42,15 @@ Expected JSON schema:
   "purchase_date": "YYYY-MM-DD",
   "items": [
     {
-      "product_name": "Full name of the product",
+      "product_name": "Full name of the product as written on the bill",
       "quantity": 1,
       "unit_price": 0,
-      "total_price": 0
+      "total_price": 0,
+      "product_id": "UUID from existing products list if matched, else null",
+      "category": "Guessed category for this item (e.g. CCTV, Networking, Router, Accessories)"
     }
   ]
-}`;
+}${productsContext}`;
 
     const body = {
       systemInstruction: { parts: [{ text: systemPrompt }] },

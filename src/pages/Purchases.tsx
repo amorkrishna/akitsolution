@@ -123,8 +123,10 @@ export default function Purchases() {
         
         toast({ title: "Analyzing bill with AI...", description: "This might take a few seconds." });
         
+        const existingProductsList = products?.map(p => ({ id: p.id, name: p.name, category: p.category })) || [];
+        
         const { data, error } = await supabase.functions.invoke("parse-purchase-bill", {
-          body: { imageBase64: base64Str, mimeType: file.type }
+          body: { imageBase64: base64Str, mimeType: file.type, existingProducts: existingProductsList }
         });
         
         if (error) throw error;
@@ -135,11 +137,18 @@ export default function Purchases() {
         if (aiData.purchase_date) setPurchaseDate(aiData.purchase_date);
         
         const newCartItems = aiData.items.map((item: any) => {
-          // Attempt fuzzy match on product name
-          const matchedProduct = products?.find((p: any) => p.name.toLowerCase().includes(item.product_name.toLowerCase()));
+          let matchedProduct;
+          if (item.product_id) {
+            matchedProduct = products?.find((p: any) => p.id === item.product_id);
+          } else {
+            // Fallback fuzzy match
+            matchedProduct = products?.find((p: any) => p.name.toLowerCase().includes(item.product_name.toLowerCase()));
+          }
+          
           return {
             product_id: matchedProduct?.id || "", // Empty if not found, forces user to link
             product_name: matchedProduct?.name || item.product_name + " (Needs linking)",
+            ai_guessed_category: item.category || "Uncategorized",
             has_serial: matchedProduct?.has_serial || false,
             quantity: item.quantity || 1,
             unit_price: item.unit_price || 0,
@@ -162,9 +171,11 @@ export default function Purchases() {
   const handleCreateNewProduct = async (idx: number, name: string, price: number) => {
     try {
       const cleanName = name.replace(" (Needs linking)", "");
+      const itemCategory = (cart[idx] as any)?.ai_guessed_category || "Uncategorized";
+      
       const { data, error } = await supabase.from("products").insert({
         name: cleanName,
-        category: "Uncategorized",
+        category: itemCategory,
         price: price,
         stock_quantity: 0,
         show_in_store: false
