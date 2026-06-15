@@ -166,7 +166,8 @@ export default function Purchases() {
         name: cleanName,
         category: "Uncategorized",
         price: price,
-        stock_quantity: 0
+        stock_quantity: 0,
+        show_in_store: false
       }).select().single();
 
       if (error) throw error;

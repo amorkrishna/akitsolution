@@ -27,7 +27,7 @@ export default function Products() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [form, setForm] = useState({
     name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "",
-    cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false, is_featured: false,
+    cash_discount_price: "", discount_percentage: "0", show_in_store: false, call_for_price: false, is_featured: false,
     specifications: [] as {feature: string, description: string}[],
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -439,7 +439,7 @@ export default function Products() {
   };
 
   const resetForm = () => {
-    setForm({ name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "", cash_discount_price: "", discount_percentage: "0", show_in_store: true, call_for_price: false, is_featured: false, specifications: [] });
+    setForm({ name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "", cash_discount_price: "", discount_percentage: "0", show_in_store: false, call_for_price: false, is_featured: false, specifications: [] });
     setImageFile(null); setImagePreview(null);
     setAdditionalImages([]); setAdditionalPreviews([]); setExistingImages([]);
     setVariants([]); setDeletedVariantIds([]);
