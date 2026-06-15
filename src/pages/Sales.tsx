@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import {
   TrendingUp, Plus, Search, Edit2, Trash2, Package,
   Users, DollarSign, ShoppingBag, Filter, ArrowUpRight,
-  CheckCircle, Clock, XCircle,
+  CheckCircle, Clock, XCircle, Scan
 } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
@@ -29,6 +29,7 @@ interface SaleForm {
   payment_status: PaymentStatus;
   sale_date: string;
   notes: string;
+  selected_serials: string[];
 }
 
 const defaultForm: SaleForm = {
@@ -39,6 +40,7 @@ const defaultForm: SaleForm = {
   payment_status: "paid",
   sale_date: format(new Date(), "yyyy-MM-dd"),
   notes: "",
+  selected_serials: [],
 };
 
 const paymentStatusConfig: Record<PaymentStatus, { label: string; color: string; icon: typeof CheckCircle }> = {
@@ -72,7 +74,7 @@ export default function Sales() {
   const { data: products = [] } = useQuery({
     queryKey: ["products-for-sales"],
     queryFn: async () => {
-      const { data } = await supabase.from("products").select("id, name, price, sku").order("name");
+      const { data } = await supabase.from("products").select("id, name, price, sku, has_serial").order("name");
       return data || [];
     },
   });
@@ -85,9 +87,33 @@ export default function Sales() {
     },
   });
 
+  const { data: availableSerials = [], isLoading: isLoadingSerials } = useQuery({
+    queryKey: ["product-serials", form.product_id],
+    enabled: !!form.product_id,
+    queryFn: async () => {
+      // If editing, we also want to fetch serials that are already attached to this sale
+      let query = supabase.from("product_serials").select("*").eq("product_id", form.product_id);
+      
+      if (editingId) {
+        query = query.or(`status.eq.in_stock,sale_id.eq.${editingId}`);
+      } else {
+        query = query.eq("status", "in_stock");
+      }
+      
+      const { data } = await query;
+      return data || [];
+    }
+  });
+
+  const selectedProduct = products.find(p => p.id === form.product_id);
+
   // Mutations
   const saveMutation = useMutation({
     mutationFn: async (data: SaleForm & { id?: string }) => {
+      if (selectedProduct?.has_serial && data.selected_serials.length !== data.quantity) {
+         throw new Error(`Please select exactly ${data.quantity} serial number(s). You selected ${data.selected_serials.length}.`);
+      }
+
       const payload = {
         product_id: data.product_id || null,
         client_id: data.client_id || null,
@@ -98,31 +124,48 @@ export default function Sales() {
         sale_date: data.sale_date,
         notes: data.notes || null,
       };
-      if (data.id) {
-        const { error } = await supabase.from("sales").update(payload).eq("id", data.id);
+
+      let saleId = data.id;
+
+      if (saleId) {
+        const { error } = await supabase.from("sales").update(payload).eq("id", saleId);
         if (error) throw error;
+        
+        // Reset previously attached serials
+        await supabase.from("product_serials").update({ status: 'in_stock', sale_id: null }).eq("sale_id", saleId);
       } else {
-        const { error } = await supabase.from("sales").insert(payload);
+        const { data: newSale, error } = await supabase.from("sales").insert(payload).select().single();
         if (error) throw error;
+        saleId = newSale.id;
+      }
+      
+      // Attach selected serials
+      if (selectedProduct?.has_serial && data.selected_serials.length > 0) {
+         const { error } = await supabase.from("product_serials").update({ status: 'sold', sale_id: saleId }).in("id", data.selected_serials);
+         if (error) throw error;
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sales"] });
+      qc.invalidateQueries({ queryKey: ["product-serials"] });
       toast.success(editingId ? "Sale updated!" : "Sale recorded!");
       setDialogOpen(false);
       setForm(defaultForm);
       setEditingId(null);
     },
-    onError: () => toast.error("Something went wrong"),
+    onError: (err: any) => toast.error(err.message || "Something went wrong"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      // First un-assign serials
+      await supabase.from("product_serials").update({ status: 'in_stock', sale_id: null }).eq("sale_id", id);
       const { error } = await supabase.from("sales").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sales"] });
+      qc.invalidateQueries({ queryKey: ["product-serials"] });
       toast.success("Sale deleted");
       setDeleteId(null);
     },
@@ -151,7 +194,11 @@ export default function Sales() {
     setDialogOpen(true);
   };
 
-  const openEdit = (sale: any) => {
+  const openEdit = async (sale: any) => {
+    // Fetch currently attached serials
+    const { data: serials } = await supabase.from("product_serials").select("id").eq("sale_id", sale.id);
+    const selected_serials = serials?.map(s => s.id) || [];
+
     setForm({
       product_id: sale.product_id || "",
       client_id: sale.client_id || "",
@@ -160,6 +207,7 @@ export default function Sales() {
       payment_status: sale.payment_status as PaymentStatus,
       sale_date: sale.sale_date,
       notes: sale.notes || "",
+      selected_serials,
     });
     setEditingId(sale.id);
     setDialogOpen(true);
@@ -167,16 +215,40 @@ export default function Sales() {
 
   const handleProductChange = (productId: string) => {
     const product = products.find((p: any) => p.id === productId);
-    setForm(f => ({ ...f, product_id: productId, unit_price: product ? Number(product.price) : f.unit_price }));
+    setForm(f => ({ 
+      ...f, 
+      product_id: productId, 
+      unit_price: product ? Number(product.price) : f.unit_price,
+      selected_serials: [] // Reset serials when product changes
+    }));
   };
 
-  const handleBarcodeDetected = (sku: string) => {
-    const product = products?.find((p: any) => p.sku === sku);
+  const handleBarcodeDetected = (skuOrSn: string) => {
+    // 1. Check if it's a serial number for the currently selected product
+    if (form.product_id && selectedProduct?.has_serial) {
+      const serial = availableSerials.find((s: any) => s.serial_number === skuOrSn);
+      if (serial) {
+        if (!form.selected_serials.includes(serial.id)) {
+          if (form.selected_serials.length >= form.quantity) {
+            toast.error(`You only need ${form.quantity} serial(s).`);
+          } else {
+            setForm(f => ({ ...f, selected_serials: [...f.selected_serials, serial.id] }));
+            toast.success(`Serial added: ${serial.serial_number}`);
+          }
+        } else {
+          toast.info("Serial already selected.");
+        }
+        return;
+      }
+    }
+
+    // 2. Otherwise, treat as Product SKU
+    const product = products?.find((p: any) => p.sku === skuOrSn);
     if (product) {
-      setForm(f => ({ ...f, product_id: product.id, unit_price: Number(product.price) }));
-      toast.success(`Product found: ${product.name}`);
+      handleProductChange(product.id);
+      toast.success(`Product selected: ${product.name}`);
     } else {
-      toast.error(`No product found with SKU: ${sku}`);
+      toast.error(`Not found: ${skuOrSn}`);
     }
   };
 
@@ -186,6 +258,20 @@ export default function Sales() {
       return;
     }
     saveMutation.mutate({ ...form, id: editingId || undefined });
+  };
+
+  const toggleSerialSelection = (serialId: string) => {
+    setForm(f => {
+      const newSerials = f.selected_serials.includes(serialId)
+        ? f.selected_serials.filter(id => id !== serialId)
+        : [...f.selected_serials, serialId];
+      
+      if (newSerials.length > f.quantity) {
+        toast.error(`You cannot select more than ${f.quantity} serial(s).`);
+        return f;
+      }
+      return { ...f, selected_serials: newSerials };
+    });
   };
 
   return (
@@ -253,240 +339,244 @@ export default function Sales() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by product or client..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      {/* Main List */}
+      <Card className="glass-card border-0 shadow-sm overflow-hidden">
+        <div className="p-4 border-b bg-card flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="relative w-full sm:w-[300px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search product or client..."
+              className="pl-8 bg-muted/30"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+              <SelectTrigger className="w-[140px] bg-muted/30">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="partial">Partial</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex gap-2">
-          {(["all", "paid", "pending", "partial"] as const).map(status => (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
-                statusFilter === status
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              {status === "all" ? "All" : paymentStatusConfig[status].label}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {/* Sales Table */}
-      <Card className="glass-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            Sales Records
-            <Badge variant="secondary" className="ml-auto">{filtered.length}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
+        <div className="divide-y">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
-            </div>
+            <div className="p-10 text-center text-muted-foreground text-sm">Loading sales...</div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12">
-              <ShoppingBag className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No sales found</p>
-              <Button variant="outline" size="sm" className="mt-3" onClick={openNew}>
-                <Plus className="h-3.5 w-3.5 mr-1.5" /> Record First Sale
-              </Button>
+            <div className="p-10 text-center text-muted-foreground flex flex-col items-center">
+              <Package className="h-10 w-10 mb-3 opacity-20" />
+              <p className="text-sm">No sales found.</p>
             </div>
           ) : (
-            <div className="divide-y divide-border/50">
-              {/* Table header */}
-              <div className="hidden sm:grid grid-cols-[1fr_1fr_80px_100px_100px_80px] gap-4 px-4 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
-                <span>Product</span>
-                <span>Client</span>
-                <span>Qty</span>
-                <span>Total</span>
-                <span>Status</span>
-                <span className="text-right">Actions</span>
-              </div>
-              {filtered.map(sale => {
-                const cfg = paymentStatusConfig[sale.payment_status as PaymentStatus] || paymentStatusConfig.pending;
-                const StatusIcon = cfg.icon;
-                return (
-                  <div
-                    key={sale.id}
-                    className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_80px_100px_100px_80px] gap-2 sm:gap-4 px-4 py-3 hover:bg-muted/20 transition-colors"
-                  >
-                    {/* Product */}
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Package className="h-3.5 w-3.5 text-primary" />
+            filtered.map((s: any) => {
+              const status = paymentStatusConfig[s.payment_status as PaymentStatus] || paymentStatusConfig.pending;
+              const StatusIcon = status.icon;
+
+              return (
+                <div key={s.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-start gap-4">
+                    <div className={`mt-1 flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${status.color}`}>
+                      <StatusIcon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-foreground">{(s.products as any)?.name || "Unknown Product"}</span>
+                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-medium ${status.color}`}>
+                          {status.label}
+                        </Badge>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{(sale as any).products?.name || "Unknown Product"}</p>
-                        <p className="text-[10px] text-muted-foreground">{format(new Date(sale.sale_date), "dd MMM yyyy")}</p>
+                      <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {(s.clients as any)?.name || "Walk-in Customer"}
+                        </span>
+                        <span>•</span>
+                        <span>Qty: {s.quantity}</span>
+                        <span>•</span>
+                        <span>{format(new Date(s.sale_date), "MMM d, yyyy")}</span>
                       </div>
                     </div>
-                    {/* Client */}
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <Users className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                      <span className="text-sm truncate">{(sale as any).clients?.name || "Walk-in"}</span>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-end gap-6 sm:w-auto w-full">
+                    <div className="text-left sm:text-right">
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-0.5">Total Amount</p>
+                      <p className="font-bold text-foreground">৳{Number(s.total).toLocaleString()}</p>
                     </div>
-                    {/* Qty */}
-                    <div className="flex items-center">
-                      <span className="text-sm font-semibold">×{sale.quantity}</span>
-                    </div>
-                    {/* Total */}
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold">৳{Number(sale.total).toLocaleString()}</span>
-                      <span className="text-[10px] text-muted-foreground">৳{Number(sale.unit_price).toLocaleString()} each</span>
-                    </div>
-                    {/* Status */}
-                    <div className="flex items-center">
-                      <Badge variant="outline" className={`text-[10px] gap-1 ${cfg.color}`}>
-                        <StatusIcon className="h-2.5 w-2.5" />
-                        {cfg.label}
-                      </Badge>
-                    </div>
-                    {/* Actions */}
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(sale)}>
-                        <Edit2 className="h-3.5 w-3.5" />
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(s)} className="h-8 w-8 text-muted-foreground hover:text-primary">
+                        <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(sale.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(s.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })
           )}
-        </CardContent>
+        </div>
       </Card>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={open => { setDialogOpen(open); if (!open) { setForm(defaultForm); setEditingId(null); } }}>
-        <DialogContent className="max-w-md">
+      {/* Sale Form Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md border-0 shadow-2xl bg-card/95 backdrop-blur-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              {editingId ? "Edit Sale" : "Record New Sale"}
-            </DialogTitle>
+            <DialogTitle>{editingId ? "Edit Sale" : "Record New Sale"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+
+          <div className="bg-primary/5 rounded-md p-3 mb-2 flex flex-col">
+            <span className="text-xs font-semibold flex items-center mb-2"><Scan className="w-3 h-3 mr-1" /> Barcode/Serial Scanner</span>
             <BarcodeScanner onBarcodeDetected={handleBarcodeDetected} />
-            {/* Product */}
-            <div className="space-y-1.5">
-              <Label>Product</Label>
+          </div>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Product <span className="text-destructive">*</span></Label>
               <Select value={form.product_id} onValueChange={handleProductChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select product..." />
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Select product" />
                 </SelectTrigger>
                 <SelectContent>
                   {products.map((p: any) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} {p.sku ? `(${p.sku})` : ""}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {/* Client */}
-            <div className="space-y-1.5">
-              <Label>Client <span className="text-muted-foreground text-xs">(optional)</span></Label>
-              <Select value={form.client_id} onValueChange={v => setForm(f => ({ ...f, client_id: v }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select client..." />
+
+            {selectedProduct?.has_serial && (
+              <div className="grid gap-2 bg-muted/30 p-3 rounded-lg border border-border/50">
+                <Label className="flex items-center text-primary text-xs font-semibold">
+                  <Scan className="w-3 h-3 mr-1" /> Serial Numbers ({form.selected_serials.length} / {form.quantity})
+                </Label>
+                {isLoadingSerials ? (
+                  <div className="text-xs text-muted-foreground">Loading serials...</div>
+                ) : availableSerials.length === 0 ? (
+                  <div className="text-xs text-destructive">No serials in stock for this product.</div>
+                ) : (
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-1">
+                    {availableSerials.map((s: any) => {
+                      const isSelected = form.selected_serials.includes(s.id);
+                      return (
+                        <Badge 
+                          key={s.id} 
+                          variant={isSelected ? "default" : "outline"}
+                          className={`cursor-pointer ${isSelected ? 'bg-primary' : 'hover:border-primary/50 text-muted-foreground'}`}
+                          onClick={() => toggleSerialSelection(s.id)}
+                        >
+                          {s.serial_number}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+                <span className="text-[10px] text-muted-foreground">Scan or click to select exact serials.</span>
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <Label>Client (Optional)</Label>
+              <Select value={form.client_id} onValueChange={v => setForm({ ...form, client_id: v })}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Select client (Walk-in)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Walk-in Customer</SelectItem>
+                  <SelectItem value="none">-- Walk-in Customer --</SelectItem>
                   {clients.map((c: any) => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {/* Qty & Price */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Quantity *</Label>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Quantity</Label>
                 <Input
                   type="number"
-                  min={1}
-                  value={form.quantity}
-                  onChange={e => setForm(f => ({ ...f, quantity: Number(e.target.value) }))}
+                  min="1"
+                  value={form.quantity || ""}
+                  onChange={e => setForm({ ...form, quantity: Number(e.target.value) })}
+                  className="bg-background"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label>Unit Price (৳) *</Label>
+              <div className="grid gap-2">
+                <Label>Unit Price (৳)</Label>
                 <Input
                   type="number"
-                  min={0}
-                  value={form.unit_price}
-                  onChange={e => setForm(f => ({ ...f, unit_price: Number(e.target.value) }))}
+                  min="0"
+                  value={form.unit_price || ""}
+                  onChange={e => setForm({ ...form, unit_price: Number(e.target.value) })}
+                  className="bg-background"
                 />
               </div>
             </div>
-            {/* Total preview */}
-            <div className="rounded-lg bg-primary/5 border border-primary/20 px-3 py-2 flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">Total</span>
-              <span className="text-base font-bold text-primary">৳{(form.quantity * form.unit_price).toLocaleString()}</span>
-            </div>
-            {/* Status & Date */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
                 <Label>Payment Status</Label>
-                <Select value={form.payment_status} onValueChange={v => setForm(f => ({ ...f, payment_status: v as PaymentStatus }))}>
-                  <SelectTrigger>
+                <Select value={form.payment_status} onValueChange={(v: PaymentStatus) => setForm({ ...form, payment_status: v })}>
+                  <SelectTrigger className="bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="paid">✅ Paid</SelectItem>
-                    <SelectItem value="pending">⏳ Pending</SelectItem>
-                    <SelectItem value="partial">🔄 Partial</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="partial">Partial</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label>Sale Date</Label>
+              <div className="grid gap-2">
+                <Label>Date</Label>
                 <Input
                   type="date"
                   value={form.sale_date}
-                  onChange={e => setForm(f => ({ ...f, sale_date: e.target.value }))}
+                  onChange={e => setForm({ ...form, sale_date: e.target.value })}
+                  className="bg-background"
                 />
               </div>
             </div>
-            {/* Notes */}
-            <div className="space-y-1.5">
-              <Label>Notes <span className="text-muted-foreground text-xs">(optional)</span></Label>
+
+            <div className="grid gap-2">
+              <Label>Notes</Label>
               <Textarea
-                rows={2}
-                placeholder="Any additional notes..."
+                placeholder="Any special notes..."
                 value={form.notes}
-                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                onChange={e => setForm({ ...form, notes: e.target.value })}
+                className="resize-none bg-background h-16"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={saveMutation.isPending} className="corporate-gradient text-white border-0">
-              {saveMutation.isPending ? "Saving..." : editingId ? "Update Sale" : "Record Sale"}
+          
+          <DialogFooter className="sm:justify-between items-center border-t pt-4">
+            <div className="text-sm font-medium text-muted-foreground flex items-center w-full sm:w-auto justify-between sm:justify-start mb-4 sm:mb-0">
+              Total: <span className="ml-2 text-xl font-black text-foreground">৳{(form.quantity * form.unit_price).toLocaleString()}</span>
+            </div>
+            <Button onClick={handleSubmit} disabled={saveMutation.isPending} className="w-full sm:w-auto corporate-gradient border-0 text-white shadow-md shadow-primary/20 hover:shadow-primary/40 transition-shadow">
+              {saveMutation.isPending ? "Saving..." : "Save Sale"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
+      {/* Delete confirmation */}
       <ConfirmDeleteDialog
         open={!!deleteId}
-        onClose={() => setDeleteId(null)}
+        onOpenChange={(open) => !open && setDeleteId(null)}
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
         title="Delete Sale"
-        description="Are you sure you want to delete this sale record? This action cannot be undone."
+        description="Are you sure you want to delete this sale? This action cannot be undone."
       />
     </div>
   );

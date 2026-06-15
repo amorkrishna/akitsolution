@@ -1068,12 +1068,13 @@ export type Database = {
           created_at: string
           description: string | null
           discount_percentage: number | null
+          has_serial: boolean
           id: string
           image_url: string | null
+          is_featured: boolean
           name: string
           price: number
           show_in_store: boolean
-          is_featured: boolean
           sku: string | null
           stock_quantity: number
           updated_at: string
@@ -1082,16 +1083,17 @@ export type Database = {
           brand?: string | null
           call_for_price?: boolean
           cash_discount_price?: number | null
-          category?: string
+          category: string
           created_at?: string
           description?: string | null
           discount_percentage?: number | null
+          has_serial?: boolean
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           name: string
           price?: number
           show_in_store?: boolean
-          is_featured?: boolean
           sku?: string | null
           stock_quantity?: number
           updated_at?: string
@@ -1104,12 +1106,13 @@ export type Database = {
           created_at?: string
           description?: string | null
           discount_percentage?: number | null
+          has_serial?: boolean
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           name?: string
           price?: number
           show_in_store?: boolean
-          is_featured?: boolean
           sku?: string | null
           stock_quantity?: number
           updated_at?: string
@@ -1193,19 +1196,62 @@ export type Database = {
           },
         ]
       }
+      purchase_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string | null
+          purchase_id: string | null
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          purchase_id?: string | null
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          purchase_id?: string | null
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchases: {
         Row: {
           created_at: string
           created_by: string | null
           id: string
           notes: string | null
+          paid_amount: number
           payment_status: string
-          product_id: string | null
           purchase_date: string
-          quantity: number
           supplier_name: string
           total_cost: number
-          unit_cost: number
           updated_at: string
         }
         Insert: {
@@ -1213,13 +1259,11 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          paid_amount?: number
           payment_status?: string
-          product_id?: string | null
           purchase_date?: string
-          quantity?: number
           supplier_name: string
           total_cost?: number
-          unit_cost?: number
           updated_at?: string
         }
         Update: {
@@ -1227,24 +1271,14 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          paid_amount?: number
           payment_status?: string
-          product_id?: string | null
           purchase_date?: string
-          quantity?: number
           supplier_name?: string
           total_cost?: number
-          unit_cost?: number
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "purchases_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       quotation_items: {
         Row: {

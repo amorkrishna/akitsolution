@@ -12,9 +12,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Plus, ArrowLeft, Trash2, CalendarIcon } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, CalendarIcon, Scan } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
@@ -27,6 +28,9 @@ interface LineItem {
   type: "product" | "service";
   warranty: string;
   sn: string;
+  product_id?: string;
+  has_serial?: boolean;
+  selected_serials?: string[];
 }
 
 export default function CreateInvoice() {
@@ -44,11 +48,13 @@ export default function CreateInvoice() {
   const [loaded, setLoaded] = useState(false);
   const location = useLocation();
 
+  const [serialDialogOpen, setSerialDialogOpen] = useState(false);
+  const [activeSerialItemIndex, setActiveSerialItemIndex] = useState<number | null>(null);
+
   useEffect(() => {
     if (!isEditMode) {
       setForm(f => ({ ...f, tax_rate: String(settings.default_tax_rate) }));
       
-      // Handle pre-fill from Servicing
       if (location.state?.fromServicing && !loaded) {
         const rec = location.state.servicingRecord;
         setClientMode("type");
@@ -59,16 +65,15 @@ export default function CreateInvoice() {
           unit_price: rec.amount,
           type: "service",
           warranty: "",
-          sn: ""
+          sn: "",
+          selected_serials: []
         }]);
         setLoaded(true);
-        // Clear state so it doesn't persist on refresh
         window.history.replaceState({}, document.title);
       }
     }
   }, [settings.default_tax_rate, isEditMode, location.state, loaded]);
 
-  // Load existing invoice for edit mode
   useEffect(() => {
     if (!editId || loaded) return;
     const loadInvoice = async () => {
@@ -87,29 +92,44 @@ export default function CreateInvoice() {
       if (inv.due_date) setDueDate(new Date(inv.due_date));
       if (inv.client_id) setClientMode("select");
 
-      // Parse items back
-      const parsedItems: LineItem[] = (invItems || []).map((item: any) => {
+      // Load items and their assigned serials
+      const parsedItems: LineItem[] = [];
+      for (const item of (invItems || [])) {
         const isService = item.description?.startsWith("[Service]");
-        const isProduct = item.description?.startsWith("[Product]");
         const cleanDesc = item.description?.replace(/^\[(Service|Product)\]\s*/, "").replace(/\s*\(Warranty:.*?\)$/, "").replace(/\s*\(SN:.*?\)/, "") || item.description;
         const warranty = item.description?.match(/\(Warranty:\s*(.*?)\)/)?.[1] || "";
         const sn = item.description?.match(/\(SN:\s*(.*?)\)/)?.[1] || "";
-        return {
+        
+        // Find if any serials were attached to this invoice item
+        const { data: attachedSerials } = await supabase.from("product_serials").select("id, product_id").eq("invoice_item_id", item.id);
+        
+        let productId = undefined;
+        let hasSerial = false;
+        let selectedSerials: string[] = [];
+
+        if (attachedSerials && attachedSerials.length > 0) {
+           productId = attachedSerials[0].product_id;
+           hasSerial = true;
+           selectedSerials = attachedSerials.map(s => s.id);
+        }
+
+        parsedItems.push({
           description: cleanDesc,
           quantity: item.quantity,
           unit_price: Number(item.unit_price),
           type: isService ? "service" as const : "product" as const,
           warranty,
           sn,
-        };
-      });
+          product_id: productId,
+          has_serial: hasSerial,
+          selected_serials: selectedSerials
+        });
+      }
       setItems(parsedItems);
       setLoaded(true);
     };
     loadInvoice();
   }, [editId, loaded, navigate, toast]);
-
-  // Add item form state removed as we use inline spreadsheet now
 
   const { data: clients } = useQuery({ queryKey: ["clients"], queryFn: async () => (await supabase.from("clients").select("id, name")).data || [] });
   const { data: services } = useQuery({
@@ -122,7 +142,7 @@ export default function CreateInvoice() {
   const { data: products } = useQuery({
     queryKey: ["products-list"],
     queryFn: async () => {
-      const { data } = await supabase.from("products").select("id, name, price, category, sku").order("name");
+      const { data } = await supabase.from("products").select("id, name, price, category, sku, has_serial").order("name");
       return data || [];
     },
   });
@@ -135,43 +155,49 @@ export default function CreateInvoice() {
   const dueAmount = Math.max(0, total - paidAmount);
 
   const handleBarcodeDetected = (sku: string) => {
+    // Note: If we are in the serial selection dialog, this barcode handler shouldn't trigger, or we should handle it there.
+    if (serialDialogOpen) return; 
+
     const product = products?.find(p => p.sku?.toLowerCase() === sku.toLowerCase() || p.name.toLowerCase() === sku.toLowerCase());
     if (product) {
-      setItems(prev => [...prev, { description: product.name, quantity: 1, unit_price: Number(product.price), type: "product", warranty: "", sn: "" }]);
+      setItems(prev => [...prev, { 
+        description: product.name, 
+        quantity: 1, 
+        unit_price: Number(product.price), 
+        type: "product", 
+        warranty: "", 
+        sn: "",
+        product_id: product.id,
+        has_serial: product.has_serial,
+        selected_serials: []
+      }]);
       toast({ title: "Product added", description: `${product.name} — ৳${Number(product.price).toLocaleString()}` });
     } else {
       toast({ title: "Product not found", description: `No product found with SKU: ${sku}`, variant: "destructive" });
     }
   };
 
-  const buildLineItems = (invoiceId: string) => {
-    return items.filter(i => i.description).map(i => {
-      let desc = i.description;
-      if (i.type === "service") desc = `[Service] ${desc}`;
-      if (i.type === "product") desc = `[Product] ${desc}`;
-      if (i.sn) desc += ` (SN: ${i.sn})`;
-      if (i.warranty) desc += ` (Warranty: ${i.warranty})`;
-      return {
-        invoice_id: invoiceId,
-        description: desc,
-        quantity: i.quantity,
-        unit_price: i.unit_price,
-        total: i.quantity * i.unit_price,
-      };
-    });
-  };
-
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (isEditMode && editId) {
-        // Update existing invoice
-        let clientId: string | null = form.client_id || null;
-        if (clientMode === "type" && typedClientName.trim()) {
-          const { data: newClient, error: clientError } = await supabase.from("clients").insert({ name: typedClientName.trim() }).select("id").single();
-          if (clientError) throw clientError;
-          clientId = newClient.id;
+      // Validation for serial numbers
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.has_serial && (item.selected_serials?.length || 0) !== item.quantity) {
+          throw new Error(`Row ${i + 1} (${item.description}): Please select exactly ${item.quantity} serial number(s). You selected ${item.selected_serials?.length || 0}.`);
         }
+      }
 
+      let clientId: string | null = form.client_id || null;
+      if (clientMode === "type" && typedClientName.trim()) {
+        const { data: newClient, error: clientError } = await supabase.from("clients").insert({ name: typedClientName.trim() }).select("id").single();
+        if (clientError) throw clientError;
+        clientId = newClient.id;
+      }
+
+      let currentInvoiceId = editId;
+
+      if (isEditMode && currentInvoiceId) {
+        // Update existing invoice
         const { error } = await supabase.from("invoices").update({
           client_id: clientId,
           status: form.status,
@@ -182,29 +208,20 @@ export default function CreateInvoice() {
           tax_amount: taxAmount,
           total,
           paid_amount: paidAmount,
-        }).eq("id", editId);
+        }).eq("id", currentInvoiceId);
         if (error) throw error;
 
-        // Delete old items and re-insert
-        const { error: deleteError } = await supabase.from("invoice_items").delete().eq("invoice_id", editId);
-        if (deleteError) throw deleteError;
-        
-        const lineItems = buildLineItems(editId);
-        if (lineItems.length > 0) {
-          const { error: itemsError } = await supabase.from("invoice_items").insert(lineItems);
-          if (itemsError) throw itemsError;
+        // Reset serials before deleting invoice items
+        const { data: oldItems } = await supabase.from("invoice_items").select("id").eq("invoice_id", currentInvoiceId);
+        if (oldItems && oldItems.length > 0) {
+          const oldIds = oldItems.map(i => i.id);
+          await supabase.from("product_serials").update({ status: 'in_stock', invoice_item_id: null }).in("invoice_item_id", oldIds);
+          await supabase.from("invoice_items").delete().eq("invoice_id", currentInvoiceId);
         }
       } else {
         // Create new invoice
         const { data: invNum } = await supabase.rpc("generate_invoice_number");
         const invoiceNumber = invNum || `AK-${Date.now()}`;
-
-        let clientId: string | null = form.client_id || null;
-        if (clientMode === "type" && typedClientName.trim()) {
-          const { data: newClient, error: clientError } = await supabase.from("clients").insert({ name: typedClientName.trim() }).select("id").single();
-          if (clientError) throw clientError;
-          clientId = newClient.id;
-        }
 
         const { data: invoice, error } = await supabase.from("invoices").insert({
           invoice_number: invoiceNumber,
@@ -220,16 +237,42 @@ export default function CreateInvoice() {
           paid_amount: paidAmount,
         }).select().single();
         if (error) throw error;
+        currentInvoiceId = invoice.id;
+      }
 
-        const lineItems = buildLineItems(invoice.id);
-        if (lineItems.length > 0) {
-          const { error: itemsError } = await supabase.from("invoice_items").insert(lineItems);
-          if (itemsError) throw itemsError;
+      // Insert line items one by one to capture their IDs and link serials
+      for (const item of items) {
+        if (!item.description) continue;
+        let desc = item.description;
+        if (item.type === "service") desc = `[Service] ${desc}`;
+        if (item.type === "product") desc = `[Product] ${desc}`;
+        // Map actual selected serials to the sn field for backward compatibility/printing
+        const serialsText = item.selected_serials?.length ? "See DB" : item.sn; // Will be properly shown via DB relation, but fallback sn text
+        if (serialsText) desc += ` (SN: ${serialsText})`;
+        if (item.warranty) desc += ` (Warranty: ${item.warranty})`;
+
+        const { data: insertedItem, error: itemsError } = await supabase.from("invoice_items").insert({
+          invoice_id: currentInvoiceId!,
+          description: desc,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total: item.quantity * item.unit_price,
+        }).select("id").single();
+        
+        if (itemsError) throw itemsError;
+
+        // Link serials
+        if (item.has_serial && item.selected_serials && item.selected_serials.length > 0) {
+          await supabase.from("product_serials").update({ 
+            status: 'sold', 
+            invoice_item_id: insertedItem.id 
+          }).in("id", item.selected_serials);
         }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["product-serials"] });
       toast({ title: isEditMode ? "Invoice updated" : "Invoice created" });
       navigate("/invoices");
     },
@@ -240,13 +283,22 @@ export default function CreateInvoice() {
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
     const updated = [...items];
     updated[idx] = { ...updated[idx], [field]: value };
+    // If quantity changes, ensure serials aren't more than quantity
+    if (field === 'quantity' && updated[idx].selected_serials) {
+       if (updated[idx].selected_serials!.length > value) {
+         updated[idx].selected_serials = updated[idx].selected_serials!.slice(0, value);
+       }
+    }
     setItems(updated);
   };
 
-  // Unused logic removed
+  const openSerialDialog = (idx: number) => {
+    setActiveSerialItemIndex(idx);
+    setSerialDialogOpen(true);
+  };
 
   return (
-    <div className="space-y-6 md:space-y-8 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 md:space-y-8 max-w-5xl mx-auto pb-12 animate-fade-in">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate("/invoices")} className="hover:bg-primary/10 hover:text-primary transition-colors">
           <ArrowLeft className="h-5 w-5" />
@@ -387,7 +439,17 @@ export default function CreateInvoice() {
                     const product = products?.find(p => p.id === id);
                     const service = services?.find(s => s.id === id);
                     if (product) {
-                      setItems([...items, { description: product.name, quantity: 1, unit_price: Number(product.price), type: "product", warranty: "", sn: "" }]);
+                      setItems([...items, { 
+                        description: product.name, 
+                        quantity: 1, 
+                        unit_price: Number(product.price), 
+                        type: "product", 
+                        warranty: "", 
+                        sn: "",
+                        product_id: product.id,
+                        has_serial: product.has_serial,
+                        selected_serials: []
+                      }]);
                     } else if (service) {
                       setItems([...items, { description: service.name, quantity: 1, unit_price: Number(service.price), type: "service", warranty: "", sn: "" }]);
                     }
@@ -404,7 +466,7 @@ export default function CreateInvoice() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {/* Desktop Headers (Hidden on Mobile) */}
+            {/* Desktop Headers */}
             <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/30 text-xs font-bold text-muted-foreground uppercase tracking-wider border-b">
               <div className="col-span-2">Type</div>
               <div className="col-span-3">Description</div>
@@ -418,9 +480,8 @@ export default function CreateInvoice() {
             <div className="divide-y divide-border/50">
               {items.map((item, idx) => (
                 <div key={idx} className="p-4 lg:p-0 lg:px-6 lg:py-3 hover:bg-muted/10 transition-colors">
-                  {/* Desktop Row View */}
-                  <div className="hidden lg:grid grid-cols-12 gap-4 items-center">
-                    <div className="col-span-2">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                    <div className="col-span-1 lg:col-span-2">
                       <Select value={item.type} onValueChange={(v) => updateItem(idx, "type", v)}>
                         <SelectTrigger className="h-9 bg-background"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -429,16 +490,28 @@ export default function CreateInvoice() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="col-span-3">
+                    <div className="col-span-1 lg:col-span-3">
                       <Input value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} placeholder="Item description" className="h-9 bg-background" />
                     </div>
-                    <div className="col-span-2">
-                      <Input value={item.sn} onChange={(e) => updateItem(idx, "sn", e.target.value)} placeholder="Serial No." className="h-9 bg-background" />
+                    <div className="col-span-1 lg:col-span-2">
+                      {item.has_serial ? (
+                        <Button 
+                          type="button" 
+                          variant={(item.selected_serials?.length || 0) === item.quantity ? "outline" : "destructive"} 
+                          className="h-9 w-full text-xs font-medium"
+                          onClick={() => openSerialDialog(idx)}
+                        >
+                          <Scan className="w-3 h-3 mr-1" />
+                          Serials ({item.selected_serials?.length || 0}/{item.quantity})
+                        </Button>
+                      ) : (
+                        <Input value={item.sn} onChange={(e) => updateItem(idx, "sn", e.target.value)} placeholder="Serial No." className="h-9 bg-background" />
+                      )}
                     </div>
                     <div className="col-span-1">
-                      <Input type="number" value={item.quantity === 0 ? "" : item.quantity} onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))} className="h-9 text-center bg-background px-1" />
+                      <Input type="number" min={1} value={item.quantity === 0 ? "" : item.quantity} onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))} className="h-9 text-center bg-background px-1" />
                     </div>
-                    <div className="col-span-2 relative">
+                    <div className="col-span-1 lg:col-span-2 relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">৳</span>
                       <Input type="number" value={item.unit_price === 0 ? "" : item.unit_price} onChange={(e) => updateItem(idx, "unit_price", Number(e.target.value))} className="h-9 text-right pl-6 pr-2 bg-background font-medium" />
                     </div>
@@ -451,99 +524,181 @@ export default function CreateInvoice() {
                       </Button>
                     </div>
                   </div>
-
-                  {/* Mobile Card View */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden relative pt-2">
-                    <Button type="button" variant="ghost" size="icon" className="absolute -top-2 -right-2 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 bg-background shadow-sm border" onClick={() => removeItem(idx)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                    
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <Label className="text-xs text-muted-foreground">Description</Label>
-                      <Input value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} placeholder="Item description" className="h-10 bg-background text-base" />
-                    </div>
-                    
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Type</Label>
-                      <Select value={item.type} onValueChange={(v) => updateItem(idx, "type", v)}>
-                        <SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="product">Product</SelectItem>
-                          <SelectItem value="service">Service</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Serial No.</Label>
-                      <Input value={item.sn} onChange={(e) => updateItem(idx, "sn", e.target.value)} placeholder="S/N" className="h-10 bg-background" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 sm:col-span-2">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">Quantity</Label>
-                        <Input type="number" value={item.quantity === 0 ? "" : item.quantity} onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))} className="h-10 text-center bg-background text-lg font-medium" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">Unit Price (৳)</Label>
-                        <Input type="number" value={item.unit_price === 0 ? "" : item.unit_price} onChange={(e) => updateItem(idx, "unit_price", Number(e.target.value))} className="h-10 text-right bg-background text-lg font-medium" />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <Label className="text-xs text-muted-foreground">Warranty</Label>
-                      <Input value={item.warranty} onChange={(e) => updateItem(idx, "warranty", e.target.value)} placeholder="e.g. 1 Yr" className="h-10 bg-background disabled:opacity-50" disabled={item.type === "service"} />
-                    </div>
-
-                    <div className="sm:col-span-2 flex justify-between items-center p-3 mt-2 bg-primary/5 rounded-lg border border-primary/10">
-                      <span className="text-sm font-semibold text-primary">Row Total</span>
-                      <span className="text-lg font-bold text-primary">৳{(item.quantity * item.unit_price).toLocaleString()}</span>
-                    </div>
-                  </div>
                 </div>
               ))}
               {items.length === 0 && (
-                <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center">
-                  <div className="p-4 bg-muted/30 rounded-full mb-3">
-                    <Plus className="h-8 w-8 opacity-20" />
+                <div className="py-12 text-center text-muted-foreground text-sm flex flex-col items-center">
+                  <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+                    <Plus className="h-6 w-6 text-muted-foreground/50" />
                   </div>
-                  <p className="font-medium">No items added yet</p>
-                  <p className="text-sm mt-1">Search the catalog or add a blank row to get started.</p>
+                  Add an item to get started
                 </div>
               )}
             </div>
-            {items.length > 0 && (
-              <div className="p-4 border-t bg-muted/10 flex justify-center">
-                <Button type="button" variant="outline" size="sm" className="text-primary hover:text-primary/80 bg-background shadow-sm" onClick={() => {
-                  setItems([...items, { description: "", quantity: 1, unit_price: 0, type: "product", warranty: "", sn: "" }]);
-                }}>
-                  <Plus className="h-4 w-4 mr-1.5" /> Add Another Row
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
 
-        <Card className="glass-card shadow-md border-border/50">
-          <CardContent className="p-6">
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">Additional Notes</Label>
-              <Textarea 
-                value={form.notes} 
-                onChange={(e) => setForm({ ...form, notes: e.target.value })} 
-                placeholder="Payment terms, bank details, or a thank you message..." 
-                className="min-h-[100px] resize-y bg-background text-base"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="pb-8">
-          <Button type="submit" size="lg" className="w-full text-lg h-14 font-bold shadow-xl shadow-primary/20" disabled={saveMutation.isPending || items.length === 0}>
-            {isEditMode ? "Update Invoice & Save" : "Generate Invoice Now"}
-          </Button>
+        {/* Footer actions */}
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-t border-border/50 pt-6">
+          <div className="w-full sm:w-1/2">
+            <Label className="text-sm font-semibold">Additional Notes</Label>
+            <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Thank you for your business!" className="mt-2 bg-background/50 h-20 resize-none" />
+          </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <Button type="button" variant="outline" onClick={() => navigate("/invoices")} className="flex-1 sm:flex-none h-12 px-6">Cancel</Button>
+            <Button type="submit" disabled={saveMutation.isPending || items.length === 0} className="flex-1 sm:flex-none h-12 px-8 font-bold text-md shadow-lg shadow-primary/20">
+              {saveMutation.isPending ? "Saving..." : "Save Invoice"}
+            </Button>
+          </div>
         </div>
       </form>
+
+      <SerialSelectionDialog 
+        open={serialDialogOpen} 
+        onOpenChange={setSerialDialogOpen} 
+        item={activeSerialItemIndex !== null ? items[activeSerialItemIndex] : null}
+        editId={editId}
+        onSave={(newSerials) => {
+          if (activeSerialItemIndex !== null) {
+            updateItem(activeSerialItemIndex, "selected_serials", newSerials);
+          }
+        }}
+      />
     </div>
+  );
+}
+
+function SerialSelectionDialog({ open, onOpenChange, item, editId, onSave }: { open: boolean, onOpenChange: (o: boolean) => void, item: LineItem | null, editId?: string, onSave: (s: string[]) => void }) {
+  const [tempSerials, setTempSerials] = useState<string[]>([]);
+  
+  useEffect(() => {
+    if (open && item) {
+      setTempSerials(item.selected_serials || []);
+    }
+  }, [open, item]);
+
+  const { data: availableSerials = [], isLoading } = useQuery({
+    queryKey: ["product-serials-invoice", item?.product_id],
+    enabled: open && !!item?.product_id,
+    queryFn: async () => {
+      let query = supabase.from("product_serials").select("*").eq("product_id", item!.product_id);
+      
+      // If editing an invoice, fetch serials that are already attached to ANY item in this invoice
+      if (editId) {
+        // Technically we should check if invoice_item_id belongs to this invoice.
+        // For simplicity, we just fetch all in_stock and then we'll also fetch the specific ones attached to THIS item later if needed.
+        // Actually, earlier in CreateInvoice we attached the already selected serials to the state.
+        // We can just fetch 'in_stock' and merge with currently selected ones.
+        query = query.eq("status", "in_stock");
+      } else {
+        query = query.eq("status", "in_stock");
+      }
+      
+      const { data } = await query;
+      return data || [];
+    }
+  });
+
+  // We must also include serials that were already attached to this item before
+  // (e.g. if we are editing an invoice, the attached serials have status='sold', so they won't show up in the query above).
+  // We can fetch them individually, or just accept that they are in the `tempSerials` but we don't know their serial_number text.
+  // To fix this, let's fetch the actual serial_number texts for tempSerials.
+  const { data: currentSerialsDetails } = useQuery({
+    queryKey: ["product-serials-details", tempSerials],
+    enabled: open && tempSerials.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("product_serials").select("id, serial_number").in("id", tempSerials);
+      return data || [];
+    }
+  });
+
+  if (!item) return null;
+
+  // Merge available with currently selected ones
+  const allSerialsToShow = [...availableSerials];
+  if (currentSerialsDetails) {
+    currentSerialsDetails.forEach(cs => {
+      if (!allSerialsToShow.find(s => s.id === cs.id)) {
+        allSerialsToShow.push(cs);
+      }
+    });
+  }
+
+  const handleToggle = (id: string) => {
+    if (tempSerials.includes(id)) {
+      setTempSerials(tempSerials.filter(s => s !== id));
+    } else {
+      if (tempSerials.length >= item.quantity) {
+        toast({ title: "Limit reached", description: `You only need ${item.quantity} serial(s).`, variant: "destructive" });
+        return;
+      }
+      setTempSerials([...tempSerials, id]);
+    }
+  };
+
+  const handleBarcodeDetected = (skuOrSn: string) => {
+    const serial = allSerialsToShow.find((s: any) => s.serial_number === skuOrSn);
+    if (serial) {
+      if (!tempSerials.includes(serial.id)) {
+        if (tempSerials.length >= item.quantity) {
+          toast({ title: "Limit reached", description: `You only need ${item.quantity} serial(s).`, variant: "destructive" });
+        } else {
+          setTempSerials([...tempSerials, serial.id]);
+        }
+      }
+    } else {
+      toast({ title: "Not found", description: `Serial ${skuOrSn} not found in stock.`, variant: "destructive" });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Select Serials for {item.description}</DialogTitle>
+        </DialogHeader>
+        
+        <div className="bg-primary/5 rounded-md p-3 mb-2">
+          <span className="text-xs font-semibold flex items-center mb-2"><Scan className="w-3 h-3 mr-1" /> Scan Serial</span>
+          <BarcodeScanner onBarcodeDetected={handleBarcodeDetected} />
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <Label className="text-sm">Available Serials</Label>
+            <Badge variant="outline">{tempSerials.length} / {item.quantity} Selected</Badge>
+          </div>
+          
+          <div className="bg-muted/30 border rounded-lg p-3 max-h-[300px] overflow-y-auto">
+            {isLoading ? (
+              <div className="text-center text-sm text-muted-foreground p-4">Loading...</div>
+            ) : allSerialsToShow.length === 0 ? (
+              <div className="text-center text-sm text-destructive p-4">No serials available in stock.</div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {allSerialsToShow.map(s => {
+                  const isSelected = tempSerials.includes(s.id);
+                  return (
+                    <Badge 
+                      key={s.id} 
+                      variant={isSelected ? "default" : "outline"}
+                      className={`cursor-pointer ${isSelected ? 'bg-primary' : 'hover:border-primary/50 text-muted-foreground'}`}
+                      onClick={() => handleToggle(s.id)}
+                    >
+                      {s.serial_number}
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={() => { onSave(tempSerials); onOpenChange(false); }}>Confirm</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
