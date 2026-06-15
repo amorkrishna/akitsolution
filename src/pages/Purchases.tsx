@@ -159,6 +159,34 @@ export default function Purchases() {
     }
   };
 
+  const handleCreateNewProduct = async (idx: number, name: string, price: number) => {
+    try {
+      const cleanName = name.replace(" (Needs linking)", "");
+      const { data, error } = await supabase.from("products").insert({
+        name: cleanName,
+        category: "Uncategorized",
+        price: price,
+        stock_quantity: 0
+      }).select().single();
+
+      if (error) throw error;
+      
+      toast({ title: "Product Created", description: `Created new product: ${cleanName}` });
+      
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+
+      const newCart = [...cart];
+      newCart[idx].product_id = data.id;
+      newCart[idx].product_name = data.name;
+      newCart[idx].has_serial = data.has_serial;
+      setCart(newCart);
+
+    } catch (err: any) {
+      toast({ title: "Error creating product", description: err.message, variant: "destructive" });
+    }
+  };
+
+
   const cartTotal = cart.reduce((sum, item) => sum + item.total_price, 0);
   const dueAmount = cartTotal - paidAmount;
 
@@ -472,21 +500,31 @@ export default function Purchases() {
                                       </div>
                                     )}
                                     {!item.product_id && (
-                                      <Select value="" onValueChange={(val) => {
-                                        const p = products?.find((pr: any) => pr.id === val);
-                                        const newCart = [...cart];
-                                        newCart[idx].product_id = p.id;
-                                        newCart[idx].product_name = p.name;
-                                        newCart[idx].has_serial = p.has_serial;
-                                        setCart(newCart);
-                                      }}>
-                                        <SelectTrigger className="h-6 text-[10px] mt-1"><SelectValue placeholder="Link to existing product" /></SelectTrigger>
-                                        <SelectContent>
-                                          {products?.map((p: any) => (
-                                            <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
+                                      <div className="flex flex-col gap-1 mt-1">
+                                        <Select value="" onValueChange={(val) => {
+                                          const p = products?.find((pr: any) => pr.id === val);
+                                          const newCart = [...cart];
+                                          newCart[idx].product_id = p.id;
+                                          newCart[idx].product_name = p.name;
+                                          newCart[idx].has_serial = p.has_serial;
+                                          setCart(newCart);
+                                        }}>
+                                          <SelectTrigger className="h-6 text-[10px]"><SelectValue placeholder="Link to existing product" /></SelectTrigger>
+                                          <SelectContent>
+                                            {products?.map((p: any) => (
+                                              <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="h-6 text-[10px] w-full border-dashed"
+                                          onClick={() => handleCreateNewProduct(idx, item.product_name, item.unit_price)}
+                                        >
+                                          <Plus className="h-3 w-3 mr-1" /> Add as New Product
+                                        </Button>
+                                      </div>
                                     )}
                                   </TableCell>
                                   <TableCell className="py-2 text-xs">{item.quantity}</TableCell>
