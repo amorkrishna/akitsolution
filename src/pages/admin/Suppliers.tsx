@@ -193,18 +193,26 @@ export default function Suppliers() {
         </Card>
       </div>
 
-      {/* Print Styles injected locally for this page */}
+      {/* Print Styles */}
       <style>{`
         @media print {
+          @page { size: auto;  margin: 10mm; }
+          body {
+            background-color: #ffffff !important;
+            -webkit-print-color-adjust: exact;
+          }
+          
+          /* Hide everything first */
           body * {
             visibility: hidden;
           }
-          .hide-on-print {
-            display: none !important;
-          }
+          
+          /* Show only the ledger */
           .print-fullscreen, .print-fullscreen * {
             visibility: visible;
+            color: #000000 !important; /* Force black text */
           }
+          
           .print-fullscreen {
             position: absolute;
             left: 0;
@@ -212,6 +220,17 @@ export default function Suppliers() {
             width: 100%;
             border: none !important;
             box-shadow: none !important;
+            background-color: #ffffff !important;
+          }
+
+          /* Fix table borders for printing */
+          table, th, td {
+            border-color: #e5e7eb !important;
+          }
+          
+          /* Hide the print button itself */
+          .hide-on-print {
+            display: none !important;
           }
         }
       `}</style>
