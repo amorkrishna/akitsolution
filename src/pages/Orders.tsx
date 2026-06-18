@@ -71,6 +71,7 @@ export default function Orders() {
           });
 
           // Decrement stock if product exists
+          if (order.product_id) {
             const { data: product } = await supabase.from("products").select("stock_quantity").eq("id", order.product_id).single();
             if (product) {
               await supabase.from("inventory_movements").insert({

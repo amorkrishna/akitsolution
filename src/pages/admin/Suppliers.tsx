@@ -46,7 +46,57 @@ export default function Suppliers() {
   ) || [];
 
   const handlePrint = () => {
-    window.print();
+    const printContent = document.getElementById("printable-ledger");
+    if (!printContent) return;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    document.body.appendChild(iframe);
+
+    // Get all Tailwind styles and custom styles
+    const styles = Array.from(document.querySelectorAll("style, link[rel='stylesheet']"))
+      .map((s) => s.outerHTML)
+      .join("");
+
+    iframe.contentDocument?.write(`
+      <html>
+        <head>
+          <title>Supplier Ledger - ${selectedSupplier?.name || "Print"}</title>
+          ${styles}
+          <style>
+            body { 
+              background-color: white !important; 
+              color: black !important; 
+              padding: 40px; 
+            }
+            * { 
+              color: black !important; 
+              border-color: #ddd !important; 
+            }
+            .hide-on-print { 
+              display: none !important; 
+            }
+          </style>
+        </head>
+        <body>
+          <div style="margin-bottom: 30px; text-align: center;">
+             <h2>AK IT SOLUTION</h2>
+             <p>Supplier Ledger Statement</p>
+          </div>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+
+    iframe.contentDocument?.close();
+    
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 500);
   };
 
   const totalPurchased = ledger?.reduce((sum, p) => sum + Number(p.total_cost), 0) || 0;
@@ -105,7 +155,7 @@ export default function Suppliers() {
         </Card>
 
         {/* Right Column: Ledger View */}
-        <Card className="md:col-span-2 print-fullscreen">
+        <Card id="printable-ledger" className="md:col-span-2 print-fullscreen">
           {selectedSupplierId ? (
             <>
               <CardHeader className="flex flex-row items-start justify-between border-b pb-6">
