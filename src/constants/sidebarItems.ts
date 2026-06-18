@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, FolderKanban, Package, FileText, Wrench, Settings, ShieldCheck, ShoppingCart, Store, Receipt, Hammer, MessageSquareQuote, Globe, Warehouse, UserPlus, ClipboardList, Briefcase, Sparkles, CalendarDays, Paintbrush, FileBarChart, Clock, BarChart3, Megaphone, Ticket
+  LayoutDashboard, Users, FolderKanban, Package, FileText, Wrench, Settings, ShieldCheck, ShoppingCart, Store, Receipt, Hammer, MessageSquareQuote, Globe, Warehouse, UserPlus, ClipboardList, Briefcase, Sparkles, CalendarDays, Paintbrush, FileBarChart, Clock, BarChart3, Megaphone, Ticket, Building2
 } from "lucide-react";
 
 export const mainItems = [
@@ -9,6 +9,7 @@ export const mainItems = [
   { title: "nav.products", url: "/products", icon: Package },
   { title: "nav.product_finder", url: "/product-finder", icon: Globe, adminOnly: true },
   { title: "nav.purchases", url: "/purchases", icon: ShoppingCart },
+  { title: "Suppliers", url: "/suppliers", icon: Building2 },
   { title: "nav.orders", url: "/orders", icon: ShoppingCart, badgeKey: "orders" as const },
   { title: "nav.inventory", url: "/inventory", icon: Warehouse },
 ];
@@ -23,6 +24,7 @@ export const financeItems = [
 
 export const serviceItems = [
   { title: "nav.service_requests", url: "/service-requests", icon: ClipboardList, badgeKey: "serviceReqs" as const },
+  { title: "Repair Tickets", url: "/repair-tickets", icon: Wrench },
   { title: "nav.packages", url: "/projects", icon: FolderKanban },
   { title: "nav.services", url: "/services", icon: Wrench },
   { title: "nav.servicing", url: "/servicing", icon: Hammer },

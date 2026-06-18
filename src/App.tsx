@@ -31,6 +31,9 @@ const StoreSettings = lazy(() => import('./pages/StoreSettings'));
 const Revenue = lazy(() => import('./pages/Revenue'));
 const Sales = lazy(() => import('./pages/Sales'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
+const SupportHub = lazy(() => import('./pages/SupportHub'));
+const RepairTickets = lazy(() => import('./pages/admin/RepairTickets'));
+const Suppliers = lazy(() => import('./pages/admin/Suppliers'));
 const WarrantyCheck = lazy(() => import('./pages/WarrantyCheck'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
@@ -165,8 +168,9 @@ const App = () => (
             <Route path="/clients" element={<Clients />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/products" element={<Products />} />
-            <Route path="/quotations" element={<Quotations />} />
             <Route path="/purchases" element={<Purchases />} />
+            <Route path="/suppliers" element={<Suppliers />} />
+            <Route path="/quotations" element={<Quotations />} />
             <Route path="/servicing" element={<Servicing />} />
             <Route path="/quotations/create" element={<CreateQuotation />} />
             <Route path="/quotations/edit/:id" element={<CreateQuotation />} />
@@ -178,6 +182,7 @@ const App = () => (
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/inventory" element={<Inventory />} />
+            <Route path="/repair-tickets" element={<RepairTickets />} />
             <Route path="/leads" element={<Leads />} />
             <Route path="/sales" element={<Sales />} />
             <Route path="/service-requests" element={<ServiceRequests />} />

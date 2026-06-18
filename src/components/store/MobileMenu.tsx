@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, Globe, Moon, Sun, Wrench, MessageCircle, LogIn, Phone } from "lucide-react";
+import { Menu, X, Globe, Moon, Sun, Wrench, MessageCircle, LogIn, Phone, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -85,6 +85,13 @@ export function MobileMenu({ lang, setLang, theme, setTheme, isDark, settings }:
                   <Wrench className="h-4 w-4 text-blue-600 dark:text-blue-400 group-hover:text-white" />
                 </div>
                 <span className="font-medium">{lang === "bn" ? "আমাদের সার্ভিসসমূহ" : "Our Services"}</span>
+              </a>
+
+              <a href="/support" className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+                <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                  <ShieldCheck className="h-4 w-4 text-purple-600 dark:text-purple-400 group-hover:text-white" />
+                </div>
+                <span className="font-medium">{lang === "bn" ? "সাপোর্ট ও সার্ভিসিং" : "Support & Servicing"}</span>
               </a>
               
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">

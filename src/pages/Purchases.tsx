@@ -25,7 +25,8 @@ export default function Purchases() {
   const [editId, setEditId] = useState<string | null>(null);
 
   // Form State
-  const [supplierName, setSupplierName] = useState("");
+  const [supplierId, setSupplierId] = useState("");
+  const [supplierName, setSupplierName] = useState(""); // Kept for backwards compatibility or new supplier creation
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
   const [paymentStatus, setPaymentStatus] = useState("pending");
   const [notes, setNotes] = useState("");
@@ -38,6 +39,14 @@ export default function Purchases() {
   const [currentUnitCost, setCurrentUnitCost] = useState(0);
 
   const [isParsingBill, setIsParsingBill] = useState(false);
+
+  const { data: suppliers } = useQuery({
+    queryKey: ["suppliers"],
+    queryFn: async () => {
+      const { data } = await supabase.from("suppliers").select("*").order("name");
+      return data || [];
+    }
+  });
 
   const { data: purchases, isLoading } = useQuery({
     queryKey: ["purchases"],
@@ -205,13 +214,14 @@ export default function Purchases() {
   const savePurchase = useMutation({
     mutationFn: async () => {
       if (cart.length === 0) throw new Error("Please add at least one product to the purchase");
-      if (!supplierName) throw new Error("Supplier name is required");
+      if (!supplierId && !supplierName) throw new Error("Supplier is required");
       if (cart.some(c => !c.product_id)) throw new Error("All items must be linked to a real product before saving.");
 
       const { data: { user } } = await supabase.auth.getUser();
       
       const payload = {
-        supplier_name: supplierName,
+        supplier_id: supplierId === 'new' || !supplierId ? null : supplierId,
+        supplier_name: supplierName || (suppliers?.find(s => s.id === supplierId)?.name) || "Unknown",
         total_cost: cartTotal,
         paid_amount: paidAmount,
         purchase_date: purchaseDate,
@@ -332,7 +342,8 @@ export default function Purchases() {
 
   const openEdit = async (p: any) => {
     setEditId(p.id);
-    setSupplierName(p.supplier_name);
+    setSupplierId(p.supplier_id || "");
+    setSupplierName(p.supplier_name || "");
     setPurchaseDate(p.purchase_date);
     setPaymentStatus(p.payment_status);
     setNotes(p.notes || "");
@@ -429,8 +440,34 @@ export default function Purchases() {
                 {/* General Info */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div className="col-span-2 sm:col-span-1">
-                    <Label>Supplier Name *</Label>
-                    <Input value={supplierName} onChange={e => setSupplierName(e.target.value)} placeholder="Supplier name" required />
+                    <Label>Supplier *</Label>
+                    <Select value={supplierId} onValueChange={(v) => {
+                      setSupplierId(v);
+                      if (v !== 'new') {
+                        setSupplierName(suppliers?.find(s => s.id === v)?.name || "");
+                      } else {
+                        setSupplierName("");
+                      }
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a supplier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers?.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                        <SelectItem value="new">+ Add New Supplier</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {supplierId === 'new' && (
+                      <Input 
+                        className="mt-2" 
+                        value={supplierName} 
+                        onChange={e => setSupplierName(e.target.value)} 
+                        placeholder="Type new supplier name" 
+                        required 
+                      />
+                    )}
                   </div>
                   <div>
                     <Label>Purchase Date</Label>
