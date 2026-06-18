@@ -132,7 +132,7 @@ export default function Sales() {
         if (error) throw error;
         
         // Reset previously attached serials
-        await supabase.from("product_serials").update({ status: 'in_stock', sale_id: null }).eq("sale_id", saleId);
+        await supabase.from("product_serials").update({ status: 'in_stock', sale_id: null, warranty_end_date: null }).eq("sale_id", saleId);
       } else {
         const { data: newSale, error } = await supabase.from("sales").insert(payload).select().single();
         if (error) throw error;
@@ -141,7 +141,18 @@ export default function Sales() {
       
       // Attach selected serials
       if (selectedProduct?.has_serial && data.selected_serials.length > 0) {
-         const { error } = await supabase.from("product_serials").update({ status: 'sold', sale_id: saleId }).in("id", data.selected_serials);
+         let warranty_end_date = null;
+         if (selectedProduct.warranty_months && selectedProduct.warranty_months > 0) {
+           const endDate = new Date(data.sale_date);
+           endDate.setMonth(endDate.getMonth() + selectedProduct.warranty_months);
+           warranty_end_date = endDate.toISOString();
+         }
+         
+         const { error } = await supabase.from("product_serials").update({ 
+           status: 'sold', 
+           sale_id: saleId,
+           warranty_end_date
+         }).in("id", data.selected_serials);
          if (error) throw error;
       }
     },
@@ -159,7 +170,7 @@ export default function Sales() {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       // First un-assign serials
-      await supabase.from("product_serials").update({ status: 'in_stock', sale_id: null }).eq("sale_id", id);
+      await supabase.from("product_serials").update({ status: 'in_stock', sale_id: null, warranty_end_date: null }).eq("sale_id", id);
       const { error } = await supabase.from("sales").delete().eq("id", id);
       if (error) throw error;
     },

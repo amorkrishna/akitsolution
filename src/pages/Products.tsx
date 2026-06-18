@@ -28,6 +28,7 @@ export default function Products() {
   const [form, setForm] = useState({
     name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "",
     cash_discount_price: "", discount_percentage: "0", show_in_store: false, call_for_price: false, is_featured: false,
+    warranty_months: "0",
     specifications: [] as {feature: string, description: string}[],
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -207,6 +208,7 @@ export default function Products() {
         cash_discount_price: data.cash_discount_price ? Number(data.cash_discount_price) : null,
         discount_percentage: Number(data.discount_percentage) || 0,
         show_in_store: data.show_in_store,
+        warranty_months: Number(data.warranty_months) || 0,
       };
       // Extra fields — may not exist if migrations not applied yet; safe-update separately
       const extraPayload: any = {
@@ -439,7 +441,7 @@ export default function Products() {
   };
 
   const resetForm = () => {
-    setForm({ name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "", cash_discount_price: "", discount_percentage: "0", show_in_store: false, call_for_price: false, is_featured: false, specifications: [] });
+    setForm({ name: "", category: "CCTV", brand: "Other", description: "", price: "", stock_quantity: "0", sku: "", cash_discount_price: "", discount_percentage: "0", show_in_store: false, call_for_price: false, is_featured: false, warranty_months: "0", specifications: [] });
     setImageFile(null); setImagePreview(null);
     setAdditionalImages([]); setAdditionalPreviews([]); setExistingImages([]);
     setVariants([]); setDeletedVariantIds([]);
@@ -466,6 +468,7 @@ export default function Products() {
       show_in_store: p.show_in_store,
       is_featured: p.is_featured || false,
       call_for_price: (p as any).call_for_price || false,
+      warranty_months: (p.warranty_months || 0).toString(),
       specifications: parsedSpecs,
     });
     setImagePreview((p as any).image_url || null);
@@ -626,6 +629,9 @@ export default function Products() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2"><Label>Discount %</Label><Input type="number" step="0.1" min="0" max="99" value={form.discount_percentage} onChange={(e) => handlePercentageChange(e.target.value)} /></div>
                       <div className="space-y-2"><Label>Stock</Label><Input type="number" value={form.stock_quantity} onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>Warranty (Months)</Label><Input type="number" min="0" value={form.warranty_months} onChange={(e) => setForm({ ...form, warranty_months: e.target.value })} placeholder="e.g. 12" /></div>
                     </div>
                     {Number(form.discount_percentage) > 0 && (
                       <p className="text-xs text-muted-foreground">💰 Save ৳{(Number(form.price) - Number(form.cash_discount_price)).toLocaleString()} ({form.discount_percentage}% off)</p>
@@ -826,6 +832,7 @@ export default function Products() {
                   <TableHead>Cash Price</TableHead>
                   <TableHead>Discount</TableHead>
                   <TableHead>Stock</TableHead>
+                  <TableHead>Warranty</TableHead>
                   <TableHead className="w-16">Store</TableHead>
                   <TableHead className="w-28">Actions</TableHead>
                 </TableRow>
@@ -872,6 +879,7 @@ export default function Products() {
                       ) : "—"}
                     </TableCell>
                     <TableCell><span className={Number(p.stock_quantity) <= 5 ? "text-destructive font-medium" : ""}>{p.stock_quantity}</span></TableCell>
+                    <TableCell><span className="text-xs text-muted-foreground">{p.warranty_months ? `${p.warranty_months} m` : "None"}</span></TableCell>
                     <TableCell>
                       <Switch checked={p.show_in_store !== false} onCheckedChange={(v) => toggleVisibility.mutate({ id: p.id, show: v })} className="scale-75" />
                     </TableCell>

@@ -26,6 +26,7 @@ export const serviceItems = [
   { title: "nav.packages", url: "/projects", icon: FolderKanban },
   { title: "nav.services", url: "/services", icon: Wrench },
   { title: "nav.servicing", url: "/servicing", icon: Hammer },
+  { title: "Warranty Check", url: "/warranty-check", icon: ShieldCheck },
   { title: "nav.reviews", url: "/reviews", icon: MessageSquareQuote },
   { title: "nav.portfolio", url: "/portfolio", icon: FolderKanban },
 ];

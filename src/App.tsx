@@ -31,6 +31,7 @@ const StoreSettings = lazy(() => import('./pages/StoreSettings'));
 const Revenue = lazy(() => import('./pages/Revenue'));
 const Sales = lazy(() => import('./pages/Sales'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
+const WarrantyCheck = lazy(() => import('./pages/WarrantyCheck'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Quotations = lazy(() => import('./pages/Quotations'));
@@ -52,6 +53,7 @@ const AIChats = lazy(() => import('./pages/AIChats'));
 const Marketing = lazy(() => import('./pages/Marketing'));
 const PromoGenerator = lazy(() => import('./pages/PromoGenerator'));
 const PublicServices = lazy(() => import('./pages/PublicServices'));
+const PublicServiceDetails = lazy(() => import('./pages/PublicServiceDetails'));
 
 const queryClient = new QueryClient();
 
@@ -150,6 +152,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Store />} />
           <Route path="/our-services" element={<PublicServices />} />
+          <Route path="/service/:id" element={<PublicServiceDetails />} />
           <Route path="/shop" element={<Navigate to="/" replace />} />
           <Route path="/store" element={<Navigate to="/" replace />} />
           <Route path="/reset-password" element={<ResetPassword />} />
@@ -185,6 +188,7 @@ const App = () => (
             <Route path="/ai-chats" element={<AIChats />} />
             <Route path="/marketing" element={<Marketing />} />
             <Route path="/promo" element={<PromoGenerator />} />
+            <Route path="/warranty-check" element={<WarrantyCheck />} />
           </Route>
 
           {/* Revenue-only routes */}

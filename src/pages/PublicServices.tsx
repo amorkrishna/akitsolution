@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,8 +16,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { SEOHead } from "@/components/SEOHead";
 import { TopBar } from "@/components/store/TopBar";
-import { LiveSalesPopup } from "@/components/marketing/LiveSalesPopup";
-import { LeadCapturePopup } from "@/components/marketing/LeadCapturePopup";
+// import { LiveSalesPopup } from "@/components/marketing/LiveSalesPopup";
+// import { LeadCapturePopup } from "@/components/marketing/LeadCapturePopup";
 
 // Fallback icons for categories
 const CategoryIcon = ({ category, className }: { category: string, className?: string }) => {
@@ -32,6 +33,7 @@ const CategoryIcon = ({ category, className }: { category: string, className?: s
 const CATEGORIES = ["All", "CCTV", "Computer", "Network", "Server", "Attendance", "IT Support"];
 
 export default function PublicServices() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { settings } = useCompanySettings();
   const [openDialog, setOpenDialog] = useState<string | null>(null);
@@ -143,7 +145,7 @@ export default function PublicServices() {
       <SEOHead 
         title={lang === "bn" ? "আমাদের সার্ভিস | AK IT Solution" : "Our Services | AK IT Solution"}
         description="AK IT Solution provides professional CCTV camera installation, LAN/WAN network setup, Server configuration, and Attendance device installation services in Dhaka and across Bangladesh. সিসিটিভি ক্যামেরা ও নেটওয়ার্ক সার্ভিস।"
-        keywords="CCTV installation service in Dhaka, CC camera setup in Bangladesh, CCTV installer near me, office network setup service Dhaka, LAN WAN configuration Bangladesh, router configuration service, fingerprint attendance machine installation Dhaka, ZKTeco attendance device setup BD, IT support service company in Dhaka, server configuration service Bangladesh, computer repair service Dhaka, best IT solutions provider in Dhaka, CCTV repair and maintenance BD, IP camera installation Dhaka, সিসিটিভি ক্যামেরা ইনস্টলেশন ঢাকা, সিসি ক্যামেরা লাগানো, সিসি ক্যামেরা সার্ভিসিং, নেটওয়ার্ক সেটআপ, আইটি সাপোর্ট, ফিঙ্গারপ্রিন্ট এটেন্ডেন্স মেশিন, cc camera lagano, cctv lagate koto khoroch, cc cemera, cc camra dhaka, netwok setup, attendence mechine, finger print mechine, router configure kora, rutar setup, compoter repair, leptop thik kora, it sopport, cctv pakaege dhaka, cc camera dam koto bd, basa barite cctv lagabo, dokane cctv lagano, mikrotik setup dhaka, lan cable tanano, pabx setup dhaka, intercom lagano, cctv banani, mirpur cctv repair, uttara cctv setup, motijheel network setup, wifi range extender setup, router password reset, server rack wiring, সিসি ক্যামেরায় রেকর্ডিং হচ্ছে না, cc camera recording problem, dvr nosto, nvr setup, ptz camera price bd, 360 camera lagano, sosti cc camera, v380 wifi camera dhaka"
+        keywords="CCTV installation service in Dhaka, Best CCTV camera installation in Dhaka, Top IT company in Motijheel, CC camera setup near Gulshan, Network installation service Banani, CCTV repair in Uttara, IT support service Dhanmondi, Attendance machine setup Mirpur, Server configuration Dhaka BD, CCTV dealer in Elephant Road, Network cabling service in Mohakhali, IP camera shop in Badda, Office IT setup in Karwan Bazar, CC camera setup in Bangladesh, CCTV installer near me, office network setup service Dhaka, router configuration service, fingerprint attendance machine installation Dhaka, ZKTeco attendance device setup BD, IT support service company in Dhaka, server configuration service Bangladesh, computer repair service Dhaka, best IT solutions provider in Dhaka, CCTV repair and maintenance BD, IP camera installation Dhaka, সিসিটিভি ক্যামেরা ইনস্টলেশন ঢাকা, সিসি ক্যামেরা লাগানো, সিসি ক্যামেরা সার্ভিসিং, নেটওয়ার্ক সেটআপ, আইটি সাপোর্ট, ফিঙ্গারপ্রিন্ট এটেন্ডেন্স মেশিন, cc camera lagano, cctv lagate koto khoroch, cc cemera, cc camra dhaka, netwok setup, attendence mechine, finger print mechine, router configure kora, compoter repair, it sopport, cctv pakaege dhaka, cc camera dam koto bd, basa barite cctv lagabo, dokane cctv lagano, mikrotik setup dhaka, lan cable tanano, pabx setup dhaka, intercom lagano, cctv banani, mirpur cctv repair, uttara cctv setup, motijheel network setup, wifi range extender setup, router password reset, server rack wiring, cc camera recording problem, dvr nosto, nvr setup, ptz camera price bd, 360 camera lagano, sosti cc camera, v380 wifi camera dhaka"
       />
       
       {/* Top Navigation Bar with Theme & Lang Toggles */}
@@ -343,122 +345,13 @@ export default function PublicServices() {
                     </div>
                     
                     <div className="p-4 pt-0">
-                      <Dialog open={openDialog === service.id} onOpenChange={(open) => setOpenDialog(open ? service.id : null)}>
-                        <DialogTrigger asChild>
-                          <Button className="w-full rounded-xl h-12 font-semibold bg-gray-50 hover:bg-blue-600 text-gray-900 hover:text-white dark:bg-gray-800 dark:text-white dark:hover:bg-blue-600 transition-all duration-300 group/btn">
-                            Request Service
-                            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                          </Button>
-                        </DialogTrigger>
-                        
-                        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-[2rem] border-0 shadow-2xl p-0 overflow-hidden bg-white dark:bg-[#111118]">
-                          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-6 text-white relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-8 opacity-10">
-                              <CategoryIcon category={service.category} className="h-32 w-32 -mt-10 -mr-10" />
-                            </div>
-                            <DialogHeader className="relative z-10 text-left">
-                              <DialogTitle className="text-2xl font-bold text-white mb-2">Request {service.name}</DialogTitle>
-                              <DialogDescription className="text-blue-100 text-sm">
-                                Fill out the details below. Our technical experts will get back to you shortly to discuss requirements.
-                              </DialogDescription>
-                            </DialogHeader>
-                          </div>
-                          
-                          <form onSubmit={(e) => handleSubmit(e, service)} className="p-6 space-y-5">
-                            <div className="space-y-1.5">
-                              <Label htmlFor="name" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Full Name <span className="text-red-500">*</span></Label>
-                              <Input 
-                                id="name" 
-                                placeholder="e.g. John Doe" 
-                                className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600"
-                                value={form.customer_name}
-                                onChange={(e) => setForm({...form, customer_name: e.target.value})}
-                                required
-                              />
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-1.5">
-                                <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Phone <span className="text-red-500">*</span></Label>
-                                <Input 
-                                  id="phone" 
-                                  placeholder="017xxxxxxxx" 
-                                  className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600"
-                                  value={form.phone}
-                                  onChange={(e) => setForm({...form, phone: e.target.value})}
-                                  required
-                                />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Email <span className="text-gray-400 font-normal">(Optional)</span></Label>
-                                <Input 
-                                  id="email" 
-                                  type="email" 
-                                  placeholder="john@email.com" 
-                                  className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600"
-                                  value={form.email}
-                                  onChange={(e) => setForm({...form, email: e.target.value})}
-                                />
-                              </div>
-                            </div>
-
-                            <div className="space-y-1.5">
-                              <Label htmlFor="desc" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Additional Context</Label>
-                              <Textarea 
-                                id="desc" 
-                                placeholder="Any specific requirements or details..." 
-                                rows={3}
-                                className="rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600 resize-none py-3"
-                                value={form.description}
-                                onChange={(e) => setForm({...form, description: e.target.value})}
-                              />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-1.5">
-                                <Label htmlFor="date" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Preferred Date</Label>
-                                <Input 
-                                  id="date" 
-                                  type="date" 
-                                  className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600"
-                                  value={form.preferred_date}
-                                  onChange={(e) => setForm({...form, preferred_date: e.target.value})}
-                                />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label htmlFor="urgency" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Priority</Label>
-                                <Select 
-                                  value={form.urgency} 
-                                  onValueChange={(val) => setForm({...form, urgency: val})}
-                                >
-                                  <SelectTrigger id="urgency" className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-600">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent className="rounded-xl border-gray-200 dark:border-gray-800 shadow-xl">
-                                    <SelectItem value="normal">Normal</SelectItem>
-                                    <SelectItem value="urgent">Urgent</SelectItem>
-                                    <SelectItem value="emergency">Emergency</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            <Button 
-                              type="submit" 
-                              className="w-full h-12 rounded-xl text-base font-bold mt-6 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20" 
-                              disabled={submitRequest.isPending}
-                            >
-                              {submitRequest.isPending ? (
-                                <>
-                                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
-                                </>
-                              ) : (
-                                "Submit Request"
-                              )}
-                            </Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
+                      <Button 
+                        onClick={() => navigate(`/service/${service.id}`)}
+                        className="w-full rounded-xl h-12 font-semibold bg-gray-50 hover:bg-blue-600 text-gray-900 hover:text-white dark:bg-gray-800 dark:text-white dark:hover:bg-blue-600 transition-all duration-300 group/btn"
+                      >
+                        {lang === "bn" ? "বিস্তারিত দেখুন" : "View Details"}
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                      </Button>
                     </div>
                   </Card>
                 </motion.div>
@@ -484,8 +377,8 @@ export default function PublicServices() {
       </motion.a>
 
       {/* Marketing & CRO Components */}
-      <LiveSalesPopup />
-      <LeadCapturePopup />
+      {/* <LiveSalesPopup />
+      <LeadCapturePopup /> */}
     </div>
   );
 }

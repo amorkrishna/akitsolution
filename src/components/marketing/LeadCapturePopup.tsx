@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +14,7 @@ export function LeadCapturePopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
+  const [service, setService] = useState("General Inquiry");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { language } = useTranslation();
@@ -41,8 +43,8 @@ export function LeadCapturePopup() {
       const { error } = await supabase.from("service_requests").insert({
         customer_name: name || "Website Visitor",
         phone: phone,
-        category: "Free Consultation",
-        description: "Requested a callback from the website lead capture popup.",
+        category: service,
+        description: `Requested a callback from the website lead capture popup. Interested in: ${service}`,
         status: "pending",
         urgency: "high"
       });
@@ -120,6 +122,24 @@ export function LeadCapturePopup() {
                   placeholder="01XXXXXXXXX"
                   className="dark:bg-[#1a1a24] dark:border-gray-800"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label className="dark:text-gray-300">
+                  {language === "bn" ? "কি সার্ভিস চাচ্ছেন?" : "What service are you looking for?"}
+                </Label>
+                <Select value={service} onValueChange={setService}>
+                  <SelectTrigger className="dark:bg-[#1a1a24] dark:border-gray-800">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-[#1a1a24] dark:border-gray-800">
+                    <SelectItem value="CCTV Installation">CCTV Installation</SelectItem>
+                    <SelectItem value="Network Setup">Network & Wi-Fi Setup</SelectItem>
+                    <SelectItem value="Server Configuration">Server Configuration</SelectItem>
+                    <SelectItem value="Fingerprint / Attendance">Fingerprint / Attendance Device</SelectItem>
+                    <SelectItem value="IT Support">General IT Support</SelectItem>
+                    <SelectItem value="General Inquiry">Other / General Inquiry</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <Button 
