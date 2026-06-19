@@ -59,19 +59,20 @@ export default function Suppliers() {
     const element = printRef.current;
     if (!element) return;
 
-    // Temporarily apply print styles
-    element.classList.add("print-mode-pdf");
+    // Make the hidden template visible momentarily for html2canvas
+    const originalDisplay = element.style.display;
+    element.style.display = 'block';
 
     const opt = {
       margin:       0.5,
       filename:     `Supplier_Ledger_${selectedSupplier?.name || 'Statement'}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
       jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
     html2pdf().set(opt).from(element).save().then(() => {
-      element.classList.remove("print-mode-pdf");
+      element.style.display = originalDisplay;
     });
   };
 
@@ -131,7 +132,7 @@ export default function Suppliers() {
         </Card>
 
         {/* Right Column: Ledger View */}
-        <Card id="printable-ledger" className="md:col-span-2 print-fullscreen" ref={printRef}>
+        <Card className="md:col-span-2">
           {selectedSupplierId ? (
             <>
               <CardHeader className="flex flex-row items-start justify-between border-b pb-6">
@@ -224,59 +225,102 @@ export default function Suppliers() {
         </Card>
       </div>
 
+      {/* Hidden Professional Print Template */}
+      <div style={{ display: 'none' }}>
+        <div ref={printRef} className="print-template" style={{ padding: '40px', backgroundColor: 'white', color: 'black', width: '800px', maxWidth: '100%' }}>
+          
+          {/* Header */}
+          <div style={{ textAlign: 'center', borderBottom: '2px solid #eee', paddingBottom: '20px', marginBottom: '30px' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0', color: '#1a1a1a' }}>AK IT SOLUTION</h1>
+            <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '14px' }}>CCTV | Attendance Devices | IT Services</p>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', marginTop: '20px', letterSpacing: '1px', textTransform: 'uppercase' }}>Supplier Ledger Statement</h2>
+          </div>
+
+          {/* Supplier Info */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#666' }}>Billed To:</h3>
+              <p style={{ margin: '0', fontWeight: 'bold', fontSize: '18px' }}>{selectedSupplier?.name}</p>
+              {selectedSupplier?.phone && <p style={{ margin: '5px 0 0 0' }}>Phone: {selectedSupplier.phone}</p>}
+              {selectedSupplier?.address && <p style={{ margin: '5px 0 0 0', whiteSpace: 'pre-wrap' }}>Address: {selectedSupplier.address}</p>}
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ margin: '0 0 5px 0' }}><strong>Date:</strong> {format(new Date(), 'dd MMM yyyy')}</p>
+            </div>
+          </div>
+
+          {/* Summary Boxes */}
+          <div style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
+            <div style={{ flex: 1, padding: '15px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#64748b', textTransform: 'uppercase' }}>Total Purchased</p>
+              <p style={{ margin: '0', fontSize: '20px', fontWeight: 'bold', color: '#0f172a' }}>৳{totalPurchased.toLocaleString()}</p>
+            </div>
+            <div style={{ flex: 1, padding: '15px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#166534', textTransform: 'uppercase' }}>Total Paid</p>
+              <p style={{ margin: '0', fontSize: '20px', fontWeight: 'bold', color: '#14532d' }}>৳{totalPaid.toLocaleString()}</p>
+            </div>
+            <div style={{ flex: 1, padding: '15px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#991b1b', textTransform: 'uppercase' }}>Balance Due</p>
+              <p style={{ margin: '0', fontSize: '20px', fontWeight: 'bold', color: '#7f1d1d' }}>৳{totalDue.toLocaleString()}</p>
+            </div>
+          </div>
+
+          {/* Transactions Table */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '40px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+                <th style={{ padding: '12px', textAlign: 'left', color: '#334155', fontWeight: '600' }}>Date</th>
+                <th style={{ padding: '12px', textAlign: 'left', color: '#334155', fontWeight: '600' }}>Reference / Notes</th>
+                <th style={{ padding: '12px', textAlign: 'right', color: '#334155', fontWeight: '600' }}>Bill Amount</th>
+                <th style={{ padding: '12px', textAlign: 'right', color: '#334155', fontWeight: '600' }}>Paid</th>
+                <th style={{ padding: '12px', textAlign: 'right', color: '#334155', fontWeight: '600' }}>Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ledger?.map((purchase: any) => {
+                const due = Number(purchase.total_cost) - Number(purchase.paid_amount);
+                return (
+                  <tr key={purchase.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '12px' }}>{format(new Date(purchase.purchase_date), 'dd MMM yyyy')}</td>
+                    <td style={{ padding: '12px' }}>{purchase.notes || 'Purchase Invoice'}</td>
+                    <td style={{ padding: '12px', textAlign: 'right' }}>৳{Number(purchase.total_cost).toLocaleString()}</td>
+                    <td style={{ padding: '12px', textAlign: 'right', color: '#16a34a' }}>৳{Number(purchase.paid_amount).toLocaleString()}</td>
+                    <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: '#dc2626' }}>৳{due.toLocaleString()}</td>
+                  </tr>
+                );
+              })}
+              {ledger?.length === 0 && (
+                <tr>
+                  <td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>No transactions found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Footer */}
+          <div style={{ marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #eee', textAlign: 'center', color: '#666', fontSize: '12px' }}>
+            <p>This is a computer-generated document. No signature is required.</p>
+          </div>
+        </div>
+      </div>
+
       {/* Print Styles */}
       <style>{`
         @media print {
-          @page { size: auto;  margin: 10mm; }
+          @page { size: auto; margin: 10mm; }
           body {
             background-color: #ffffff !important;
             -webkit-print-color-adjust: exact;
             color: #000000 !important;
           }
-          
-          /* Hide everything first */
-          body * {
-            visibility: hidden;
-          }
-          
-          /* Show only the ledger */
-          .print-fullscreen, .print-fullscreen * {
-            visibility: visible;
-            color: #000000 !important; /* Force black text */
-          }
-          
-          .print-fullscreen {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            border: none !important;
-            box-shadow: none !important;
-            background-color: #ffffff !important;
-          }
-
-          /* Fix table borders for printing */
-          table, th, td {
-            border-color: #e5e7eb !important;
-          }
-          
-          /* Hide the print button itself */
-          .hide-on-print {
+          body > :not(.print-template) {
             display: none !important;
           }
-        }
-
-        /* Specific styles for PDF generation using html2pdf */
-        .print-mode-pdf {
-          background-color: white !important;
-          color: black !important;
-          padding: 20px;
-        }
-        .print-mode-pdf * {
-          color: black !important;
-        }
-        .print-mode-pdf table, .print-mode-pdf th, .print-mode-pdf td {
-          border-color: #ccc !important;
+          .print-template {
+            display: block !important;
+            width: 100% !important;
+            padding: 0 !important;
+          }
         }
       `}</style>
     </div>
