@@ -59,10 +59,8 @@ export default function Suppliers() {
     const element = printRef.current;
     if (!element) return;
 
-    // Make the hidden template visible momentarily for html2canvas
-    const originalDisplay = element.style.display;
-    element.style.display = 'block';
-
+    // For html2pdf, we don't need to change display since it's already rendered off-screen
+    // just absolute positioned.
     const opt = {
       margin:       0.5,
       filename:     `Supplier_Ledger_${selectedSupplier?.name || 'Statement'}.pdf`,
@@ -71,9 +69,7 @@ export default function Suppliers() {
       jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(element).save().then(() => {
-      element.style.display = originalDisplay;
-    });
+    html2pdf().set(opt).from(element).save();
   };
 
   const totalPurchased = ledger?.reduce((sum, p) => sum + Number(p.total_cost), 0) || 0;
@@ -226,7 +222,7 @@ export default function Suppliers() {
       </div>
 
       {/* Hidden Professional Print Template */}
-      <div style={{ display: 'none' }}>
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
         <div ref={printRef} className="print-template" style={{ padding: '40px', backgroundColor: 'white', color: 'black', width: '800px', maxWidth: '100%' }}>
           
           {/* Header */}
@@ -313,11 +309,7 @@ export default function Suppliers() {
             -webkit-print-color-adjust: exact;
             color: #000000 !important;
           }
-          body > :not(.print-template) {
-            display: none !important;
-          }
           .print-template {
-            display: block !important;
             width: 100% !important;
             padding: 0 !important;
           }
