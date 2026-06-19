@@ -1,16 +1,21 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Printer, Search, Building2, ChevronRight, Phone, MapPin } from "lucide-react";
+import { Printer, Search, Building2, ChevronRight, Phone, MapPin, Download } from "lucide-react";
+import { format } from "date-fns";
+import { useReactToPrint } from "react-to-print";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 import { format } from "date-fns";
 
 export default function Suppliers() {
   const [search, setSearch] = useState("");
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   // Fetch all suppliers
   const { data: suppliers, isLoading: loadingSuppliers } = useQuery({
@@ -45,61 +50,29 @@ export default function Suppliers() {
     s.phone?.includes(search)
   ) || [];
 
-  const handlePrint = () => {
-    const printContent = document.getElementById("printable-ledger");
-    if (!printContent) return;
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `Supplier_Ledger_${selectedSupplier?.name || "Statement"}`,
+  });
 
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "absolute";
-    iframe.style.width = "0px";
-    iframe.style.height = "0px";
-    iframe.style.border = "none";
-    document.body.appendChild(iframe);
+  const handleDownloadPdf = () => {
+    const element = printRef.current;
+    if (!element) return;
 
-    // Get all Tailwind styles and custom styles
-    const styles = Array.from(document.querySelectorAll("style, link[rel='stylesheet']"))
-      .map((s) => s.outerHTML)
-      .join("");
+    // Temporarily apply print styles
+    element.classList.add("print-mode-pdf");
 
-    iframe.contentDocument?.write(`
-      <html>
-        <head>
-          <title>Supplier Ledger - ${selectedSupplier?.name || "Print"}</title>
-          ${styles}
-          <style>
-            body { 
-              background-color: white !important; 
-              color: black !important; 
-              padding: 40px; 
-            }
-            * { 
-              color: black !important; 
-              border-color: #ddd !important; 
-            }
-            .hide-on-print { 
-              display: none !important; 
-            }
-          </style>
-        </head>
-        <body>
-          <div style="margin-bottom: 30px; text-align: center;">
-             <h2>AK IT SOLUTION</h2>
-             <p>Supplier Ledger Statement</p>
-          </div>
-          ${printContent.innerHTML}
-        </body>
-      </html>
-    `);
+    const opt = {
+      margin:       0.5,
+      filename:     `Supplier_Ledger_${selectedSupplier?.name || 'Statement'}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
 
-    iframe.contentDocument?.close();
-    
-    setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
-    }, 500);
+    html2pdf().set(opt).from(element).save().then(() => {
+      element.classList.remove("print-mode-pdf");
+    });
   };
 
   const totalPurchased = ledger?.reduce((sum, p) => sum + Number(p.total_cost), 0) || 0;
@@ -158,7 +131,7 @@ export default function Suppliers() {
         </Card>
 
         {/* Right Column: Ledger View */}
-        <Card id="printable-ledger" className="md:col-span-2 print-fullscreen">
+        <Card id="printable-ledger" className="md:col-span-2 print-fullscreen" ref={printRef}>
           {selectedSupplierId ? (
             <>
               <CardHeader className="flex flex-row items-start justify-between border-b pb-6">
@@ -172,9 +145,14 @@ export default function Suppliers() {
                     {selectedSupplier?.address && <p className="flex items-center gap-1"><MapPin className="h-3 w-3"/> {selectedSupplier.address}</p>}
                   </div>
                 </div>
-                <Button variant="outline" className="hide-on-print" onClick={handlePrint}>
-                  <Printer className="mr-2 h-4 w-4" /> Print Ledger
-                </Button>
+                <div className="flex gap-2 hide-on-print">
+                  <Button variant="outline" onClick={() => handlePrint()}>
+                    <Printer className="mr-2 h-4 w-4" /> Print Ledger
+                  </Button>
+                  <Button variant="default" onClick={handleDownloadPdf}>
+                    <Download className="mr-2 h-4 w-4" /> Download PDF
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="pt-6">
                 
@@ -253,6 +231,7 @@ export default function Suppliers() {
           body {
             background-color: #ffffff !important;
             -webkit-print-color-adjust: exact;
+            color: #000000 !important;
           }
           
           /* Hide everything first */
@@ -285,6 +264,19 @@ export default function Suppliers() {
           .hide-on-print {
             display: none !important;
           }
+        }
+
+        /* Specific styles for PDF generation using html2pdf */
+        .print-mode-pdf {
+          background-color: white !important;
+          color: black !important;
+          padding: 20px;
+        }
+        .print-mode-pdf * {
+          color: black !important;
+        }
+        .print-mode-pdf table, .print-mode-pdf th, .print-mode-pdf td {
+          border-color: #ccc !important;
         }
       `}</style>
     </div>
