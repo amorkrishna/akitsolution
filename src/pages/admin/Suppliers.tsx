@@ -50,7 +50,10 @@ export default function Suppliers() {
     if (!printContent) return;
 
     const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
+    iframe.style.position = "absolute";
+    iframe.style.width = "0px";
+    iframe.style.height = "0px";
+    iframe.style.border = "none";
     document.body.appendChild(iframe);
 
     // Get all Tailwind styles and custom styles
