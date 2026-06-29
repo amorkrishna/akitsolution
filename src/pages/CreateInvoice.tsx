@@ -59,8 +59,12 @@ export default function CreateInvoice() {
         const rec = location.state.servicingRecord;
         setClientMode("type");
         setTypedClientName(rec.client_name);
+        
+        // Combine category and description for better detail in the invoice
+        const itemDescription = rec.description ? `${rec.category}: ${rec.description}` : rec.category;
+        
         setItems([{
-          description: rec.description,
+          description: itemDescription,
           quantity: 1,
           unit_price: rec.amount,
           type: "service",
@@ -68,6 +72,12 @@ export default function CreateInvoice() {
           sn: "",
           selected_serials: []
         }]);
+        
+        // Pass servicing notes to invoice notes if available
+        if (rec.notes) {
+          setForm(f => ({ ...f, notes: rec.notes }));
+        }
+        
         setLoaded(true);
         window.history.replaceState({}, document.title);
       }
